@@ -12,19 +12,40 @@ import (
 	"strings"
 	"sync"
 	//"github.com/davecgh/go-spew/spew"
+	"log"
+	"bufio"
 )
 
 func decodetorrentfile(path string) map[string]interface{} {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 	var torrent map[string]interface{}
 	if err := bencode.DecodeBytes([]byte(dat), &torrent); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return torrent
+}
+
+func encodetorrentfile(path string, newstructure map[string]interface{}) bool {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		os.Create(path)
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	bufferedWriter := bufio.NewWriter(file)
+	enc := bencode.NewEncoder(bufferedWriter)
+	if err := enc.Encode(newstructure); err != nil {
+		log.Fatal(err)
+	}
+	bufferedWriter.Flush()
+	return true
 }
 
 func gethash(info interface{}) string {
@@ -37,20 +58,20 @@ func gethash(info interface{}) string {
 
 func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	newstructure := map[string]interface{}{"active_time": new(int), "added_time": new(int), "announce_to_dht": new(int),
-		"announce_to_lsd": new(int), "announce_to_trackers": new(int), "auto_managed": new(int),
-		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": new(int),
-		"completed_time": new(int), "download_rate_limit": new(int), "file sizes": new([][]int),
-		"file-format": new(int), "file-version": new(int), "file_priority": new([]int), "finished_time": new(int),
-		"info-hash": new([]byte), "last_seen_complete": new(int), "libtorrent-version": new(string),
-		"max_connections": new(int), "max_uploads": new(int), "num_complete": new(int), "num_downloaded": new(int),
-		"num_incomplete": new(int), "paused": new(int), "peers": new(string), "peers6": new(string),
-		"pieces": new([]byte), "qBt-category": new(string), "qBt-hasRootFolder": new(int), "qBt-name": new(string),
-		"qBt-queuePosition": new(int), "qBt-ratioLimit": new(int), "qBt-savePath": new(string),
-		"qBt-seedStatus": new(int), "qBt-seedingTimeLimit": new(int), "qBt-tags": new([]string),
-		"qBt-tempPathDisabled": new(int), "save_path": new(string), "seed_mode": new(int), "seeding_time": new(int),
-		"sequential_download": new(int), "super_seeding": new(int), "total_downloaded": new(int),
-		"total_uploadedv": new(int), "trackers": new([][]string), "upload_rate_limit": new(int),
+	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
+		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
+		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
+		"completed_time": 0, "download_rate_limit": 0, "file sizes": new([][]int),
+		"file-format": "libtorrent resume file", "file-version": 0, "file_priority": new([]int), "finished_time": 0,
+		"info-hash": new([]byte), "last_seen_complete": 0, "libtorrent-version": "1.1.5.0",
+		"max_connections": 0, "max_uploads": 0, "num_complete": 0, "num_downloaded": 0,
+		"num_incomplete": 0, "paused": 0, "peers": new(string), "peers6": new(string),
+		"pieces": new([]byte), "qBt-category": new(string), "qBt-hasRootFolder": 0, "qBt-name": new(string),
+		"qBt-queuePosition": 0, "qBt-ratioLimit": 0, "qBt-savePath": new(string),
+		"qBt-seedStatus": 1, "qBt-seedingTimeLimit": -2, "qBt-tags": new([]string),
+		"qBt-tempPathDisabled": 0, "save_path": new(string), "seed_mode": 0, "seeding_time": 0,
+		"sequential_download": 0, "super_seeding": 0, "total_downloaded": 0,
+		"total_uploadedv": 0, "trackers": new([][]string), "upload_rate_limit": 0,
 	}
 	local := value.(map[string]interface{})
 	uncastedlabel := local["labels"].([]interface{})
@@ -73,6 +94,14 @@ func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup) {
 			files = append(files, strings.Join(newpath, "/"))
 		}
 	}
+	newstructure["added_time"] = local["added_on"]
+	newstructure["completed_time"] = local["completed_on"]
+	newstructure["info-hash"] = local["info"]
+	//newstructure["pieces"] = local["info"]
+	//newstructure["qBt-savePath"] = local["
+	newstructure["qBt-tags"] = local["labels"]
+	//newstructure["trackers"].([][]string)[0] =  local["trackers"].([]string)
+	encodetorrentfile("F:/test.fastdecode", newstructure)
 	fmt.Println(newstructure)
 }
 
