@@ -15,6 +15,7 @@ import (
 	"log"
 	"bufio"
 	//"unicode/utf8"
+	"strconv"
 )
 
 func decodetorrentfile(path string) map[string]interface{} {
@@ -58,13 +59,14 @@ func gethash(info interface{}) string {
 }
 
 func piecesconvert(s []byte ) (newpieces []byte) {
-	var binString string
+
 	for _, c := range s {
+		var binString string
 		binString = fmt.Sprintf("%s%b",binString, c)
-	}
-	for _, c := range binString {
-		chr, _ := fmt.Printf("%c", int(c))
-		newpieces = append(newpieces, byte(chr))
+		for _, d := range binString {
+			chr, _ := strconv.Atoi(string(d))
+			newpieces = append(newpieces, byte(chr))
+		}
 	}
 	return
 }
@@ -124,7 +126,7 @@ func main() {
 	torrent := decodetorrentfile(bitfile)
 
 	for key, value := range torrent {
-		if key != ".fileguard" && key != "rec" {
+		if key != ".fileguard" && key != "rec" && key == "annabelle-lane-3840x1920.mp4.torrent" {
 			wg.Add(1)
 			go logic(key, value, &bitdir, &wg)
 		}
