@@ -14,6 +14,7 @@ import (
 	//"github.com/davecgh/go-spew/spew"
 	"log"
 	"bufio"
+	//"unicode/utf8"
 )
 
 func decodetorrentfile(path string) map[string]interface{} {
@@ -54,6 +55,18 @@ func gethash(info interface{}) string {
 	io.WriteString(h, torinfo)
 	hash := hex.EncodeToString(h.Sum(nil))
 	return hash
+}
+
+func piecesconvert(s []byte ) (newpieces []byte) {
+	var binString string
+	for _, c := range s {
+		binString = fmt.Sprintf("%s%b",binString, c)
+	}
+	for _, c := range binString {
+		chr, _ := fmt.Printf("%c", int(c))
+		newpieces = append(newpieces, byte(chr))
+	}
+	return
 }
 
 func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup) {
@@ -97,12 +110,10 @@ func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup) {
 	newstructure["added_time"] = local["added_on"]
 	newstructure["completed_time"] = local["completed_on"]
 	newstructure["info-hash"] = local["info"]
-	//newstructure["pieces"] = local["info"]
-	//newstructure["qBt-savePath"] = local["
 	newstructure["qBt-tags"] = local["labels"]
-	//newstructure["trackers"].([][]string)[0] =  local["trackers"].([]string)
+	newstructure["blocks per piece"] = torrentfile["info"].(map[string]interface{})["piece length"].(int64) / local["blocksize"].(int64)
+	newstructure["pieces"] = piecesconvert([]byte(local["have"].(string)))
 	encodetorrentfile("F:/test.fastdecode", newstructure)
-	fmt.Println(newstructure)
 }
 
 func main() {
