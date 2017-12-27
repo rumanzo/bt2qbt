@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/zeebo/bencode"
 	"io/ioutil"
 	"os"
@@ -59,11 +59,8 @@ func gethash(info interface{}) string {
 }
 
 func piecesconvert(s []byte ) (newpieces []byte) {
-
 	for _, c := range s {
-		var binString string
-		binString = fmt.Sprintf("%s%b",binString, c)
-		for _, d := range binString {
+		for _, d := range strconv.FormatInt(int64(c), 2) {
 			chr, _ := strconv.Atoi(string(d))
 			newpieces = append(newpieces, byte(chr))
 		}
@@ -126,7 +123,7 @@ func main() {
 	torrent := decodetorrentfile(bitfile)
 
 	for key, value := range torrent {
-		if key != ".fileguard" && key != "rec" && key == "annabelle-lane-3840x1920.mp4.torrent" {
+		if key != ".fileguard" && key != "rec" {
 			wg.Add(1)
 			go logic(key, value, &bitdir, &wg)
 		}
