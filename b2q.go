@@ -8,7 +8,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"io"
-	"strings"
 	"sync"
 	"log"
 	"bufio"
@@ -16,6 +15,7 @@ import (
 	"strconv"
 	"time"
 	"path/filepath"
+	"fmt"
 )
 
 func decodetorrentfile(path string) map[string]interface{} {
@@ -96,7 +96,35 @@ func fmtime (path string) (mtime int64) {
 	return
 }
 
-func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, with_label *bool, with_tags *bool) {
+func copyfile (src string, dst string) error {
+	originalFile, err := os.Open(src)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	defer originalFile.Close()
+
+	newFile, err := os.Create(dst)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	defer newFile.Close()
+
+	if _, err := io.Copy(newFile, originalFile); err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	err = newFile.Sync()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	return nil
+}
+
+func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, with_label *bool, with_tags *bool, qbitdir *string) {
 	defer wg.Done()
 	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
 		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
@@ -115,17 +143,6 @@ func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, wi
 	}
 	local := value.(map[string]interface{})
 	torrentfile := decodetorrentfile(*bitdir + key)
-	var files []string
-	if val, ok := torrentfile["info"].(map[string]interface{})["files"].([]interface{}); ok {
-		for _, i := range val {
-			pathslice := i.(map[string]interface{})["path"]
-			var newpath []string
-			for _, path := range pathslice.([]interface{}) {
-				newpath = append(newpath, path.(string))
-			}
-			files = append(files, strings.Join(newpath, "/"))
-		}
-	}
 	newstructure["active_time"] = local["runtime"]
 	newstructure["added_time"] = local["added_on"]
 	newstructure["completed_time"] = local["completed_on"]
@@ -157,26 +174,33 @@ func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, wi
 			flenmtime := []int64{lenght, mtime}
 			filelists = append(filelists, flenmtime)
 		}
-		newstructure["save_path"] = local["path"]
+		newstructure["save_path"] = local["path"].(string)+"\\"
 		newstructure["file sizes"] = filelists
 	} else {
 		newstructure["save_path"] = filepath.Dir(local["path"].(string))+"\\"
 		newstructure["file sizes"] = [][]int64{{lenght(torrentfile), fmtime(local["path"].(string))}}
 	}
 	newstructure["qBt-savePath"] = newstructure["save_path"]
-	encodetorrentfile("F:/test.fastdecode", newstructure)
+	newbasename := gethash(torrentfile["info"])
+	if err := encodetorrentfile(*qbitdir + newbasename + ".fastresume", newstructure); err != nil {
+		fmt.Println(err)
+	}
+	if err := copyfile(*bitdir + key, *qbitdir + newbasename + ".torrent"); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func main() {
 	var wg sync.WaitGroup
 	bitdir := "C:/Users/rumanzo/AppData/Roaming/BitTorrent/"
+	qbitdir := "F:/rbtemp/"
 	torrent := decodetorrentfile(bitdir + "resume.dat")
 	var with_label, with_tags bool
 	with_label, with_tags = true, true
 	for key, value := range torrent {
 		if key != ".fileguard" && key != "rec" {
 			wg.Add(1)
-			go logic(key, value, &bitdir, &wg, &with_label, &with_tags)
+			go logic(key, value, &bitdir, &wg, &with_label, &with_tags, &qbitdir)
 		}
 	}
 	wg.Wait()
