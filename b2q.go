@@ -15,7 +15,6 @@ import (
 	//"unicode/utf8"
 	"strconv"
 	"time"
-	"fmt"
 	"path/filepath"
 )
 
@@ -88,7 +87,7 @@ func lenght (src interface{}) (lenght int64) {
 	return src.(map[string]interface{})["info"].(map[string]interface{})["length"].(int64)
 }
 
-func mtime (path string) (mtime int64) {
+func fmtime (path string) (mtime int64) {
 	fi, err := os.Stat(path)
 	if err != nil {
 		return 0
@@ -115,14 +114,6 @@ func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, wi
 		"total_uploadedv": 0, "trackers": new([][]string), "upload_rate_limit": 0,
 	}
 	local := value.(map[string]interface{})
-	uncastedlabel := local["labels"].([]interface{})
-	newlabels := make([]string, len(uncastedlabel), len(uncastedlabel)+1)
-	for num, value := range uncastedlabel {
-		if value == nil {
-			value = "Empty"
-		}
-		newlabels[num] = value.(string)
-	}
 	torrentfile := decodetorrentfile(*bitdir + key)
 	var files []string
 	if val, ok := torrentfile["info"].(map[string]interface{})["files"].([]interface{}); ok {
@@ -153,25 +144,35 @@ func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, wi
 	if *with_tags == true { newstructure["qBt-tags"] = local["labels"] }
 	newstructure["trackers"] = [][]interface{}{local["trackers"].([]interface{})}
 	newstructure["file_priority"] = prioconvert(local["prio"].(string))
-	if _, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
-		fmt.Println("test")
+	if files, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
+		var filelists []interface{}
+		for num, file := range files.([]interface{}) {
+			var lenght, mtime int64
+			filename := file.(map[string]interface{})["path"].([]interface{})[0].(string)
+			fullpath := local["path"].(string) + "\\" + filename
+			if n := newstructure["file_priority"].([]int)[num]; n != 0 {
+				lenght = file.(map[string]interface{})["length"].(int64)
+				mtime = fmtime(fullpath)
+			} else { lenght, mtime = 0, 0 }
+			flenmtime := []int64{lenght, mtime}
+			filelists = append(filelists, flenmtime)
+		}
+		newstructure["save_path"] = local["path"]
+		newstructure["file sizes"] = filelists
 	} else {
 		newstructure["save_path"] = filepath.Dir(local["path"].(string))+"\\"
-		newstructure["file sizes"] = [][]int64{{lenght(torrentfile), mtime(local["path"].(string))}}
+		newstructure["file sizes"] = [][]int64{{lenght(torrentfile), fmtime(local["path"].(string))}}
 	}
+	newstructure["qBt-savePath"] = newstructure["save_path"]
 	encodetorrentfile("F:/test.fastdecode", newstructure)
 }
 
 func main() {
 	var wg sync.WaitGroup
 	bitdir := "C:/Users/rumanzo/AppData/Roaming/BitTorrent/"
-	bitfile := bitdir + "resume.dat"
-
-	torrent := decodetorrentfile(bitfile)
-
+	torrent := decodetorrentfile(bitdir + "resume.dat")
 	var with_label, with_tags bool
 	with_label, with_tags = true, true
-
 	for key, value := range torrent {
 		if key != ".fileguard" && key != "rec" {
 			wg.Add(1)
