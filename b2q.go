@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"fmt"
 	"github.com/zeebo/bencode"
 	"io/ioutil"
 	"os"
@@ -11,12 +10,13 @@ import (
 	"io"
 	"strings"
 	"sync"
-	//"github.com/davecgh/go-spew/spew"
 	"log"
 	"bufio"
 	//"unicode/utf8"
 	"strconv"
 	"time"
+	"fmt"
+	"path/filepath"
 )
 
 func decodetorrentfile(path string) map[string]interface{} {
@@ -31,7 +31,7 @@ func decodetorrentfile(path string) map[string]interface{} {
 	return torrent
 }
 
-func encodetorrentfile(path string, newstructure map[string]interface{}) bool {
+func encodetorrentfile(path string, newstructure map[string]interface{}) error {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		os.Create(path)
@@ -40,6 +40,7 @@ func encodetorrentfile(path string, newstructure map[string]interface{}) bool {
 	file, err := os.OpenFile(path, os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 	defer file.Close()
 	bufferedWriter := bufio.NewWriter(file)
@@ -48,15 +49,15 @@ func encodetorrentfile(path string, newstructure map[string]interface{}) bool {
 		log.Fatal(err)
 	}
 	bufferedWriter.Flush()
-	return true
+	return nil
 }
 
-func gethash(info interface{}) string {
+func gethash(info interface{}) (hash string) {
 	torinfo, _ := bencode.EncodeString(info.(map[string]interface{}))
 	h := sha1.New()
 	io.WriteString(h, torinfo)
-	hash := hex.EncodeToString(h.Sum(nil))
-	return hash
+	hash = hex.EncodeToString(h.Sum(nil))
+	return
 }
 
 func piecesconvert(s []byte ) (newpieces []byte) {
@@ -69,12 +70,39 @@ func piecesconvert(s []byte ) (newpieces []byte) {
 	return
 }
 
+func prioconvert(src string) (newprio []int){
+	for _, c := range []byte(src) {
+		if i := int(c); (i == 0) || (i ==128) { // if not selected
+			newprio = append(newprio, 0)
+		} else if (i == 4) || (i ==8) { // if low or normal prio
+			newprio = append(newprio, 1)
+		} else if (i == 12) { // if high prio
+			newprio = append(newprio, 6)
+		}
+	}
+	return
+}
+
+
+func lenght (src interface{}) (lenght int64) {
+	return src.(map[string]interface{})["info"].(map[string]interface{})["length"].(int64)
+}
+
+func mtime (path string) (mtime int64) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return 0
+	}
+	mtime = int64(fi.ModTime().Unix())
+	return
+}
+
 func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, with_label *bool, with_tags *bool) {
 	defer wg.Done()
 	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
 		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
 		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
-		"completed_time": 0, "download_rate_limit": -1, "file sizes": new([][]int),
+		"completed_time": 0, "download_rate_limit": -1, "file sizes": new([][]int64),
 		"file-format": "libtorrent resume file", "file-version": 1, "file_priority": new([]int), "finished_time": 0,
 		"info-hash": new([]byte), "last_seen_complete": 0, "libtorrent-version": "1.1.5.0",
 		"max_connections": 100, "max_uploads": 100, "num_complete": 0, "num_downloaded": 0,
@@ -124,6 +152,13 @@ func logic(key string, value interface{}, bitdir *string, wg *sync.WaitGroup, wi
 	if *with_label == true { newstructure["qBt-category"] = local["label"] }
 	if *with_tags == true { newstructure["qBt-tags"] = local["labels"] }
 	newstructure["trackers"] = [][]interface{}{local["trackers"].([]interface{})}
+	newstructure["file_priority"] = prioconvert(local["prio"].(string))
+	if _, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
+		fmt.Println("test")
+	} else {
+		newstructure["save_path"] = filepath.Dir(local["path"].(string))+"\\"
+		newstructure["file sizes"] = [][]int64{{lenght(torrentfile), mtime(local["path"].(string))}}
+	}
 	encodetorrentfile("F:/test.fastdecode", newstructure)
 }
 
