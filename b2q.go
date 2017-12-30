@@ -59,7 +59,7 @@ func gethash(info map[string]interface{}) (hash string) {
 }
 
 func piecesconvert(s string) []byte {
-	var newpieces  = make([]byte, 0 , len(s))
+	var newpieces  = make([]byte, 0 , len(s) * 8)
 	for _, c := range []byte(s) {
 		var binString string
 		binString = fmt.Sprintf("%s%.8b", binString, c)
