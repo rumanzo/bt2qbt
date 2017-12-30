@@ -136,7 +136,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 		"qBt-seedStatus": 1, "qBt-seedingTimeLimit": -2, "qBt-tags": new([]string),
 		"qBt-tempPathDisabled": 0, "save_path": new(string), "seed_mode": 0, "seeding_time": 0,
 		"sequential_download": 0, "super_seeding": 0, "total_downloaded": 0,
-		"total_uploadedv": 0, "trackers": new([][]string), "upload_rate_limit": 0,
+		"total_uploadedv": 0, "trackers": new([][]interface{}), "upload_rate_limit": 0,
 	}
 	torrentfile := decodetorrentfile(*bitdir + key)
 	newstructure["active_time"] = value["runtime"]
@@ -165,7 +165,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 	}
 	var trackers []interface{}
 	for _, tracker := range value["trackers"].([]interface{}) {
-		trackers = append(trackers, tracker)
+		trackers = append(trackers, []interface{}{tracker})
 	}
 	newstructure["trackers"] = trackers
 	newstructure["file_priority"] = prioconvert(value["prio"].(string))
