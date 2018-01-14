@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 	//"github.com/juju/gnuflag"
+	"strings"
 )
 
 func decodetorrentfile(path string) map[string]interface{} {
@@ -58,12 +59,17 @@ func gethash(info map[string]interface{}) (hash string) {
 	return
 }
 
-func piecesconvert(s string) []byte {
-	var newpieces  = make([]byte, 0 , len(s) * 8)
-	for _, c := range []byte(s) {
+func piecesconvert(s string, npieces *int) []byte {
+	var newpieces  = make([]byte, 0 , *npieces)
+	d := hex.EncodeToString([]byte(string(s)))
+	d = strings.Replace(d, "80", "01", -1)
+	d = strings.Replace(d, "3f", "fc", -1)
+	b, _ := hex.DecodeString(d)
+	for _, c := range []byte(b) {
 		var binString string
 		binString = fmt.Sprintf("%s%.8b", binString, c)
 		for _, d := range binString {
+			if len(newpieces) == cap(newpieces) { break }
 			chr, _ := strconv.Atoi(string(d))
 			newpieces = append(newpieces, byte(chr))
 		}
@@ -131,8 +137,8 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 		"info-hash": new([]byte), "last_seen_complete": 0, "libtorrent-version": "1.1.5.0",
 		"max_connections": 100, "max_uploads": 100, "num_complete": 0, "num_downloaded": 0,
 		"num_incomplete": 0, "paused": 0, "peers": new(string), "peers6": new(string),
-		"pieces": new([]byte), "qBt-category": new(string), "qBt-hasRootFolder": 0, "qBt-name": new(string),
-		"qBt-queuePosition": 0, "qBt-ratioLimit": 0, "qBt-savePath": new(string),
+		"pieces": new([]byte), "qBt-category": new(string), "qBt-hasRootFolder": 1, "qBt-name": new(string),
+		"qBt-queuePosition": 1, "qBt-ratioLimit": 0, "qBt-savePath": new(string),
 		"qBt-seedStatus": 1, "qBt-seedingTimeLimit": -2, "qBt-tags": new([]string),
 		"qBt-tempPathDisabled": 0, "save_path": new(string), "seed_mode": 0, "seeding_time": 0,
 		"sequential_download": 0, "super_seeding": 0, "total_downloaded": 0,
@@ -145,7 +151,8 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 	newstructure["info-hash"] = value["info"]
 	newstructure["qBt-tags"] = value["labels"]
 	newstructure["blocks per piece"] = torrentfile["info"].(map[string]interface{})["piece length"].(int64) / value["blocksize"].(int64)
-	newstructure["pieces"] = piecesconvert(value["have"].(string))
+	npieces := len(torrentfile["info"].(map[string]interface{})["pieces"].(string)) / 20
+	newstructure["pieces"] = piecesconvert(value["have"].(string), &npieces)
 	newstructure["seeding_time"] = value["runtime"]
 	if newstructure["paused"] = 0; value["started"] == 0 {
 		newstructure["paused"] = 1
@@ -203,7 +210,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 
 func main() {
 	var wg sync.WaitGroup
-	bitdir := "C:/Users/rumanzo/AppData/Roaming/BitTorrent/"
+	bitdir := "C:/Users/rumanzo/AppData/Roaming/uTorrent/"
 	qbitdir := "C:/Users/rumanzo/AppData/Local/qBittorrent/BT_backup/"
 	torrent := decodetorrentfile(bitdir + "resume.dat")
 	var with_label, with_tags bool
