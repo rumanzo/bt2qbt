@@ -61,9 +61,18 @@ func gethash(info map[string]interface{}) (hash string) {
 
 func piecesconvert(s string, npieces *int) []byte {
 	var newpieces  = make([]byte, 0 , *npieces)
+	fmt.Println(hex.Dump([]byte(s)))
 	d := hex.EncodeToString([]byte(string(s)))
+	for _, w := range []byte(s) {
+		fmt.Printf("%02x\n", w)
+	}
+	fmt.Println(d)
 	d = strings.Replace(d, "80", "01", -1)
 	d = strings.Replace(d, "3f", "fc", -1)
+	d = strings.Replace(d, "00f0", "000f", -1)
+	d = strings.Replace(d, "ff0f", "fff0", -1)
+	d = strings.Replace(d, "f8", "1f", -1)
+	fmt.Println(d)
 	b, _ := hex.DecodeString(d)
 	for _, c := range []byte(b) {
 		var binString string
