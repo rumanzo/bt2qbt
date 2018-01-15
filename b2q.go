@@ -14,8 +14,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	//"github.com/juju/gnuflag"
-	"strings"
 )
 
 func decodetorrentfile(path string) map[string]interface{} {
@@ -61,20 +59,7 @@ func gethash(info map[string]interface{}) (hash string) {
 
 func piecesconvert(s string, npieces *int) []byte {
 	var newpieces  = make([]byte, 0 , *npieces)
-	fmt.Println(hex.Dump([]byte(s)))
-	d := hex.EncodeToString([]byte(string(s)))
-	for _, w := range []byte(s) {
-		fmt.Printf("%02x\n", w)
-	}
-	fmt.Println(d)
-	d = strings.Replace(d, "80", "01", -1)
-	d = strings.Replace(d, "3f", "fc", -1)
-	d = strings.Replace(d, "00f0", "000f", -1)
-	d = strings.Replace(d, "ff0f", "fff0", -1)
-	d = strings.Replace(d, "f8", "1f", -1)
-	fmt.Println(d)
-	b, _ := hex.DecodeString(d)
-	for _, c := range []byte(b) {
+	for _, c := range []byte(s) {
 		var binString string
 		binString = fmt.Sprintf("%s%.8b", binString, c)
 		for _, d := range binString {
@@ -219,7 +204,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 
 func main() {
 	var wg sync.WaitGroup
-	bitdir := "C:/Users/rumanzo/AppData/Roaming/uTorrent/"
+	bitdir := "C:/Users/rumanzo/AppData/Roaming/BitTorrent/"
 	qbitdir := "C:/Users/rumanzo/AppData/Local/qBittorrent/BT_backup/"
 	torrent := decodetorrentfile(bitdir + "resume.dat")
 	var with_label, with_tags bool
