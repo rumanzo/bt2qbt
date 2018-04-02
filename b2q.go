@@ -71,6 +71,42 @@ func piecesconvert(s string, npieces *int64) []byte {
 	return newpieces
 }
 
+func fillallhave(npieces *int64) []byte {
+	var newpieces  = make([]byte, 0 , *npieces)
+	for i := int64(0); i < *npieces; i++ {
+		chr, _ := strconv.Atoi("1")
+		newpieces = append(newpieces, byte(chr))
+	}
+	return newpieces
+}
+
+func fillhavefiles(sizeandprio [][]int64, npieces int64, piecelenght int64) []byte {
+	var newpieces  = make([]byte, 0 , npieces)
+	bytes := int64(0)
+	n := 0
+	for i := int64(0); i < npieces; i++ {
+		belongs := false
+		first, last := i * piecelenght, (i+1) * piecelenght
+		if last > bytes + sizeandprio[n][0] && n < len(sizeandprio){
+			bytes += sizeandprio[n][0]
+			n++
+		}
+		for _, pair := range sizeandprio{
+			if (first >= bytes && last <= pair[0] + bytes ) && pair[1] != 0 {
+				belongs = true
+			}
+		}
+		var chr int
+		if belongs {
+			chr, _ = strconv.Atoi("1")
+		} else {
+			chr, _ = strconv.Atoi("0")
+		}
+		newpieces = append(newpieces, byte(chr))
+	}
+	return newpieces
+}
+
 func prioconvert(src string) (newprio []int) {
 	for _, c := range []byte(src) {
 		if i := int(c); (i == 0) || (i == 128) { // if not selected
@@ -119,15 +155,15 @@ func copyfile(src string, dst string) error {
 
 func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string) error {
 	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
-		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
+		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 1,
 		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
 		"completed_time": 0, "download_rate_limit": -1, "file sizes": new([][]int64),
 		"file-format": "libtorrent resume file", "file-version": 1, "file_priority": new([]int), "finished_time": 0,
 		"info-hash": new([]byte), "last_seen_complete": 0, "libtorrent-version": "1.1.6.0",
-		"max_connections": 100, "max_uploads": 100, "num_complete": 0, "num_downloaded": 0,
+		"max_connections": 100, "max_uploads": 100, "num_downloaded": 0,
 		"num_incomplete": 0, "paused": new(int), "peers": new(string), "peers6": new(string),
 		"pieces": new([]byte), "qBt-category": new(string), "qBt-name": new(string),
-		"qBt-queuePosition": 1, "qBt-ratioLimit": 0, "qBt-savePath": new(string),
+		"qBt-queuePosition": 1, "qBt-ratioLimit": -2000, "qBt-savePath": new(string),
 		"qBt-seedStatus": 1, "qBt-seedingTimeLimit": -2, "qBt-tags": new([]string),
 		"qBt-tempPathDisabled": 0, "save_path": new(string), "seed_mode": 0, "seeding_time": 0,
 		"sequential_download": 0, "super_seeding": 0, "total_downloaded": 0,
@@ -149,11 +185,12 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["info-hash"] = value["info"]
 	newstructure["qBt-tags"] = value["labels"]
 	newstructure["seeding_time"] = value["runtime"]
-	if value["started"] == 0 {
+	/*if value["started"] == 0 {
 		newstructure["paused"] = 1
 	} else {
 		newstructure["paused"] = 0
-	}
+	}*/
+	newstructure["paused"] = 1
 	newstructure["finished_time"] = int(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
 	if value["completed_on"] != 0 {
 		newstructure["last_seen_complete"] = int(time.Now().Unix())
@@ -178,43 +215,60 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["trackers"] = trackers
 	newstructure["file_priority"] = prioconvert(value["prio"].(string))
 	var hasfiles bool
-	var filesizes int64
+	if _, ok := torrentfile["info"].(map[string]interface{})["files"]; ok  {
+		hasfiles = true
+	} else {
+		hasfiles = false
+	}
+	var filesizes float32
 	filesizes = 0
+	var sizeandprio [][]int64
 	if files, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
 		var filelists []interface{}
 		for num, file := range files.([]interface{}) {
 			var lenght, mtime int64
 			filename := file.(map[string]interface{})["path"].([]interface{})[0].(string)
 			fullpath := value["path"].(string) + "\\" + filename
-			filesizes += file.(map[string]interface{})["length"].(int64)
+			filesizes += float32(file.(map[string]interface{})["length"].(int64))
 			if n := newstructure["file_priority"].([]int)[num]; n != 0 {
 				lenght = file.(map[string]interface{})["length"].(int64)
+				sizeandprio = append(sizeandprio, []int64{lenght,1})
 				mtime = fmtime(fullpath)
 			} else {
 				lenght, mtime = 0, 0
+				sizeandprio = append(sizeandprio, []int64{file.(map[string]interface{})["length"].(int64),0})
 			}
 			flenmtime := []int64{lenght, mtime}
 			filelists = append(filelists, flenmtime)
 		}
 		newstructure["file sizes"] = filelists
-		hasfiles = true
 	} else {
-		filesizes = torrentfile["info"].(map[string]interface{})["length"].(int64)
+		filesizes = float32(torrentfile["info"].(map[string]interface{})["length"].(int64))
 		newstructure["file sizes"] = [][]int64{{torrentfile["info"].(map[string]interface{})["length"].(int64), fmtime(value["path"].(string))}}
-		hasfiles = false
 	}
 	newstructure["blocks per piece"] = torrentfile["info"].(map[string]interface{})["piece length"].(int64) / value["blocksize"].(int64)
-	npieces := (filesizes / torrentfile["info"].(map[string]interface{})["piece length"].(int64)) + 1
-	newstructure["pieces"] = piecesconvert(value["have"].(string), &npieces)
+	var npieces int64
+	piecelenght := torrentfile["info"].(map[string]interface{})["piece length"].(int64)
+	if ((filesizes / float32(piecelenght)) - float32((int64(filesizes) / piecelenght))) != 0 { // check fraction
+		npieces = int64(filesizes) / torrentfile["info"].(map[string]interface{})["piece length"].(int64) + 1
+	} else {
+		npieces = int64(filesizes) / torrentfile["info"].(map[string]interface{})["piece length"].(int64)
+	}
+	if hasfiles{
+		newstructure["pieces"] = fillhavefiles(sizeandprio, npieces, piecelenght)
+	} else {
+		newstructure["pieces"] = fillallhave(&npieces)
+	}
 	torrentname := torrentfile["info"].(map[string]interface{})["name"].(string)
 	origpath := value["path"].(string)
 	_, lastdirname := filepath.Split(strings.Replace(origpath, "\\", "/", -1))
 	if hasfiles {
-		newstructure["save_path"] = value["path"].(string) + "\\"
 		if lastdirname == torrentname {
 			newstructure["qBt-hasRootFolder"] = 1
+			newstructure["save_path"] = origpath[0 : len(origpath)-len(lastdirname)]
 		} else {
 			newstructure["qBt-hasRootFolder"] = 0
+			newstructure["save_path"] = value["path"].(string) + "\\"
 		}
 	} else {
 		newstructure["qBt-hasRootFolder"] = 0
@@ -267,17 +321,22 @@ func main() {
 	fmt.Println("Started")
 	totaljobs := len(resumefile) -2
 	numjob := 1
+	numjob2 := 1
 	comChannel := make(chan string, totaljobs)
 	var with_label, with_tags bool
 	with_label, with_tags = true, true
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel)
+			if numjob2 == 5 {
+				break
+			}
+			numjob2++
 		}
 	}
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
-		if numjob == totaljobs {
+		if numjob == 5 {
 			break
 		}
 		numjob++
