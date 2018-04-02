@@ -180,6 +180,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	}
 	newstructure["trackers"] = trackers
 	newstructure["file_priority"] = prioconvert(value["prio"].(string))
+	var hasfiles bool
 	if files, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
 		var filelists []interface{}
 		for num, file := range files.([]interface{}) {
@@ -196,19 +197,25 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 			filelists = append(filelists, flenmtime)
 		}
 		newstructure["file sizes"] = filelists
+		hasfiles = true
 	} else {
 		newstructure["file sizes"] = [][]int64{{torrentfile["info"].(map[string]interface{})["length"].(int64), fmtime(value["path"].(string))}}
+		hasfiles = false
 	}
 	torrentname := torrentfile["info"].(map[string]interface{})["name"].(string)
 	origpath := value["path"].(string)
 	_, lastdirname := filepath.Split(strings.Replace(origpath, "\\", "/", -1))
-	if lastdirname == torrentname {
-		newstructure["qBt-hasRootFolder"] = 1
-
+	if hasfiles {
+		newstructure["save_path"] = value["path"].(string) + "\\"
+		if lastdirname == torrentname {
+			newstructure["qBt-hasRootFolder"] = 1
+		} else {
+			newstructure["qBt-hasRootFolder"] = 0
+		}
 	} else {
 		newstructure["qBt-hasRootFolder"] = 0
+		newstructure["save_path"] = origpath[0 : len(origpath)-len(lastdirname)]
 	}
-	newstructure["save_path"] = value["path"].(string) + "\\"
 	newstructure["qBt-savePath"] = newstructure["save_path"]
 	newbasename := gethash(torrentfile["info"].(map[string]interface{}))
 	if err := encodetorrentfile(*qbitdir+newbasename+".fastresume", newstructure); err != nil {
@@ -219,6 +226,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		comChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", *qbitdir+newbasename+".torrent")
 		return err
 	}
+	comChannel <- fmt.Sprintf("Sucessfully imported %v", key)
 	return nil
 }
 
@@ -252,6 +260,7 @@ func main() {
 	color.HiRed("Check that the qBittorrent is turned off and the directory %v is backed up.\n\n", qbitdir)
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
+	fmt.Println("Started")
 	totaljobs := len(resumefile) -2
 	numjob := 1
 	comChannel := make(chan string, totaljobs)
