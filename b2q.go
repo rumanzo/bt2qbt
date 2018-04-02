@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/zeebo/bencode"
 	"io"
 	"io/ioutil"
@@ -12,20 +13,20 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"sync"
 	"time"
+	"strings"
 )
 
-func decodetorrentfile(path string) map[string]interface{} {
+func decodetorrentfile(path string) (map[string]interface{}, error) {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	var torrent map[string]interface{}
 	if err := bencode.DecodeBytes([]byte(dat), &torrent); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return torrent
+	return torrent, nil
 }
 
 func encodetorrentfile(path string, newstructure map[string]interface{}) error {
@@ -36,14 +37,13 @@ func encodetorrentfile(path string, newstructure map[string]interface{}) error {
 
 	file, err := os.OpenFile(path, os.O_WRONLY, 0666)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 	defer file.Close()
 	bufferedWriter := bufio.NewWriter(file)
 	enc := bencode.NewEncoder(bufferedWriter)
 	if err := enc.Encode(newstructure); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	bufferedWriter.Flush()
 	return nil
@@ -96,33 +96,28 @@ func fmtime(path string) (mtime int64) {
 func copyfile(src string, dst string) error {
 	originalFile, err := os.Open(src)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 	defer originalFile.Close()
 
 	newFile, err := os.Create(dst)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 	defer newFile.Close()
 
 	if _, err := io.Copy(newFile, originalFile); err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	err = newFile.Sync()
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 	return nil
 }
 
-func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.WaitGroup, with_label *bool, with_tags *bool, qbitdir *string) {
-	defer wg.Done()
+func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string) error {
 	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
 		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
 		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
@@ -131,14 +126,23 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 		"info-hash": new([]byte), "last_seen_complete": 0, "libtorrent-version": "1.1.5.0",
 		"max_connections": 100, "max_uploads": 100, "num_complete": 0, "num_downloaded": 0,
 		"num_incomplete": 0, "paused": 0, "peers": new(string), "peers6": new(string),
-		"pieces": new([]byte), "qBt-category": new(string), "qBt-hasRootFolder": 1, "qBt-name": new(string),
+		"pieces": new([]byte), "qBt-category": new(string), "qBt-name": new(string),
 		"qBt-queuePosition": 1, "qBt-ratioLimit": 0, "qBt-savePath": new(string),
 		"qBt-seedStatus": 1, "qBt-seedingTimeLimit": -2, "qBt-tags": new([]string),
 		"qBt-tempPathDisabled": 0, "save_path": new(string), "seed_mode": 0, "seeding_time": 0,
 		"sequential_download": 0, "super_seeding": 0, "total_downloaded": 0,
 		"total_uploadedv": 0, "trackers": new([][]interface{}), "upload_rate_limit": 0,
 	}
-	torrentfile := decodetorrentfile(*bitdir + key)
+	torrentfilepath := *bitdir + key
+	if _, err := os.Stat(torrentfilepath); os.IsNotExist(err) {
+		comChannel <- fmt.Sprintf("Can't find torrent file %v for %v", torrentfilepath, key)
+		return err
+	}
+	torrentfile, err := decodetorrentfile(torrentfilepath)
+	if err != nil {
+		comChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", torrentfilepath, key)
+		return err
+	}
 	newstructure["active_time"] = value["runtime"]
 	newstructure["added_time"] = value["added_on"]
 	newstructure["completed_time"] = value["completed_on"]
@@ -148,8 +152,10 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 	npieces := len(torrentfile["info"].(map[string]interface{})["pieces"].(string)) / 20
 	newstructure["pieces"] = piecesconvert(value["have"].(string), &npieces)
 	newstructure["seeding_time"] = value["runtime"]
-	if newstructure["paused"] = 0; value["started"] == 0 {
+	if value["started"] == 0 {
 		newstructure["paused"] = 1
+	} else {
+		newstructure["paused"] = 0
 	}
 	newstructure["finished_time"] = int(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
 	if value["completed_on"] != 0 {
@@ -160,9 +166,13 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 	newstructure["upload_rate_limit"] = value["upspeed"]
 	if *with_label == true {
 		newstructure["qBt-category"] = value["label"]
+	} else {
+		newstructure["qBt-category"] = ""
 	}
 	if *with_tags == true {
 		newstructure["qBt-tags"] = value["labels"]
+	} else {
+		newstructure["qBt-tags"] = ""
 	}
 	var trackers []interface{}
 	for _, tracker := range value["trackers"].([]interface{}) {
@@ -189,33 +199,76 @@ func logic(key string, value map[string]interface{}, bitdir *string, wg *sync.Wa
 	} else {
 		newstructure["file sizes"] = [][]int64{{torrentfile["info"].(map[string]interface{})["length"].(int64), fmtime(value["path"].(string))}}
 	}
-	newstructure["save_path"] = filepath.Dir(value["path"].(string)) + "\\"
+	torrentname := torrentfile["info"].(map[string]interface{})["name"].(string)
+	origpath := value["path"].(string)
+	_, lastdirname := filepath.Split(strings.Replace(origpath, "\\", "/", -1))
+	if lastdirname == torrentname {
+		newstructure["qBt-hasRootFolder"] = 1
+
+	} else {
+		newstructure["qBt-hasRootFolder"] = 0
+	}
+	newstructure["save_path"] = value["path"].(string) + "\\"
 	newstructure["qBt-savePath"] = newstructure["save_path"]
-
 	newbasename := gethash(torrentfile["info"].(map[string]interface{}))
-
 	if err := encodetorrentfile(*qbitdir+newbasename+".fastresume", newstructure); err != nil {
-		fmt.Println(err)
+		comChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", *qbitdir+newbasename+".fastresume")
+		return err
 	}
 	if err := copyfile(*bitdir+key, *qbitdir+newbasename+".torrent"); err != nil {
-		fmt.Println(err)
+		comChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", *qbitdir+newbasename+".torrent")
+		return err
 	}
+	return nil
 }
+
+
 
 func main() {
-	var wg sync.WaitGroup
 	bitdir := "C:/Users/rumanzo/AppData/Roaming/BitTorrent/"
 	qbitdir := "C:/Users/rumanzo/AppData/Local/qBittorrent/BT_backup/"
-	torrent := decodetorrentfile(bitdir + "resume.dat")
+	if _, err := os.Stat(bitdir); os.IsNotExist(err) {
+		log.Println("Can't find uTorrent\\Bittorrent folder")
+		time.Sleep(30 * time.Second)
+		os.Exit(1)
+	}
+	if _, err := os.Stat(qbitdir); os.IsNotExist(err) {
+		log.Println("Can't find qBittorrent folder")
+		time.Sleep(30 * time.Second)
+		os.Exit(1)
+	}
+	resumefilepath := bitdir + "resume.dat"
+	if _, err := os.Stat(resumefilepath); os.IsNotExist(err) {
+		log.Println("Can't find uTorrent\\Bittorrent resume file")
+		time.Sleep(30 * time.Second)
+		os.Exit(1)
+	}
+	resumefile, err := decodetorrentfile(resumefilepath)
+	if err != nil {
+		log.Println("Can't decode uTorrent\\Bittorrent resume file")
+		time.Sleep(30 * time.Second)
+		os.Exit(1)
+	}
+	color.HiRed("Check that the qBittorrent is turned off and the directory %v is backed up.\n\n", qbitdir)
+	fmt.Println("Press Enter to start")
+	fmt.Scanln()
+	totaljobs := len(resumefile) -2
+	numjob := 1
+	comChannel := make(chan string, totaljobs)
 	var with_label, with_tags bool
 	with_label, with_tags = true, true
-	for key, value := range torrent {
+	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
-			wg.Add(1)
-			go logic(key, value.(map[string]interface{}), &bitdir, &wg, &with_label, &with_tags, &qbitdir)
+			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel)
 		}
 	}
-	wg.Wait()
+	for message := range comChannel {
+		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
+		if numjob == totaljobs {
+			break
+		}
+		numjob++
+	}
+	fmt.Println("\nPress Enter to exit")
+	fmt.Scanln()
 }
-
-//TODO fix pieces.
