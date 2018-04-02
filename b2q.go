@@ -57,7 +57,7 @@ func gethash(info map[string]interface{}) (hash string) {
 	return
 }
 
-func piecesconvert(s string, npieces *int) []byte {
+func piecesconvert(s string, npieces *int64) []byte {
 	var newpieces  = make([]byte, 0 , *npieces)
 	for _, c := range []byte(s) {
 		var binString string
@@ -123,15 +123,15 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
 		"completed_time": 0, "download_rate_limit": -1, "file sizes": new([][]int64),
 		"file-format": "libtorrent resume file", "file-version": 1, "file_priority": new([]int), "finished_time": 0,
-		"info-hash": new([]byte), "last_seen_complete": 0, "libtorrent-version": "1.1.5.0",
+		"info-hash": new([]byte), "last_seen_complete": 0, "libtorrent-version": "1.1.6.0",
 		"max_connections": 100, "max_uploads": 100, "num_complete": 0, "num_downloaded": 0,
-		"num_incomplete": 0, "paused": 0, "peers": new(string), "peers6": new(string),
+		"num_incomplete": 0, "paused": new(int), "peers": new(string), "peers6": new(string),
 		"pieces": new([]byte), "qBt-category": new(string), "qBt-name": new(string),
 		"qBt-queuePosition": 1, "qBt-ratioLimit": 0, "qBt-savePath": new(string),
 		"qBt-seedStatus": 1, "qBt-seedingTimeLimit": -2, "qBt-tags": new([]string),
 		"qBt-tempPathDisabled": 0, "save_path": new(string), "seed_mode": 0, "seeding_time": 0,
 		"sequential_download": 0, "super_seeding": 0, "total_downloaded": 0,
-		"total_uploadedv": 0, "trackers": new([][]interface{}), "upload_rate_limit": 0,
+		"total_uploaded": 0, "trackers": new([][]interface{}), "upload_rate_limit": 0,
 	}
 	torrentfilepath := *bitdir + key
 	if _, err := os.Stat(torrentfilepath); os.IsNotExist(err) {
@@ -148,9 +148,6 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["completed_time"] = value["completed_on"]
 	newstructure["info-hash"] = value["info"]
 	newstructure["qBt-tags"] = value["labels"]
-	newstructure["blocks per piece"] = torrentfile["info"].(map[string]interface{})["piece length"].(int64) / value["blocksize"].(int64)
-	npieces := len(torrentfile["info"].(map[string]interface{})["pieces"].(string)) / 20
-	newstructure["pieces"] = piecesconvert(value["have"].(string), &npieces)
 	newstructure["seeding_time"] = value["runtime"]
 	if value["started"] == 0 {
 		newstructure["paused"] = 1
@@ -181,12 +178,15 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["trackers"] = trackers
 	newstructure["file_priority"] = prioconvert(value["prio"].(string))
 	var hasfiles bool
+	var filesizes int64
+	filesizes = 0
 	if files, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
 		var filelists []interface{}
 		for num, file := range files.([]interface{}) {
 			var lenght, mtime int64
 			filename := file.(map[string]interface{})["path"].([]interface{})[0].(string)
 			fullpath := value["path"].(string) + "\\" + filename
+			filesizes += file.(map[string]interface{})["length"].(int64)
 			if n := newstructure["file_priority"].([]int)[num]; n != 0 {
 				lenght = file.(map[string]interface{})["length"].(int64)
 				mtime = fmtime(fullpath)
@@ -199,9 +199,13 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		newstructure["file sizes"] = filelists
 		hasfiles = true
 	} else {
+		filesizes = torrentfile["info"].(map[string]interface{})["length"].(int64)
 		newstructure["file sizes"] = [][]int64{{torrentfile["info"].(map[string]interface{})["length"].(int64), fmtime(value["path"].(string))}}
 		hasfiles = false
 	}
+	newstructure["blocks per piece"] = torrentfile["info"].(map[string]interface{})["piece length"].(int64) / value["blocksize"].(int64)
+	npieces := (filesizes / torrentfile["info"].(map[string]interface{})["piece length"].(int64)) + 1
+	newstructure["pieces"] = piecesconvert(value["have"].(string), &npieces)
 	torrentname := torrentfile["info"].(map[string]interface{})["name"].(string)
 	origpath := value["path"].(string)
 	_, lastdirname := filepath.Split(strings.Replace(origpath, "\\", "/", -1))
