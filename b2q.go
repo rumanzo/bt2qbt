@@ -85,16 +85,16 @@ func fillhavefiles(sizeandprio [][]int64, npieces int64, piecelenght int64) []by
 	var allocation [][]int64
 	offset := int64(0)
 	for _, pair := range sizeandprio {
-		allocation = append(allocation, []int64{offset, offset + pair[0], pair[1]})
+		allocation = append(allocation, []int64{offset + 1, offset + pair[0], pair[1]})
 		offset = offset + pair[0]
 	}
 	for i := int64(0); i < npieces; i++ {
 		belongs := false
 		first, last := i * piecelenght, (i+1) * piecelenght
 		for _, trio := range allocation {
-			if (first >= trio[0] && last <= trio[1] ) && trio[2] == 1 {
-				belongs = true
-			}
+				if (first >= trio[0] - piecelenght || last >= trio[1] - piecelenght ) && trio[2] == 1 {
+					belongs = true
+				}
 		}
 		var chr int
 		if belongs {
@@ -328,16 +328,16 @@ func main() {
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel)
-			if numjob2 == 5 {
-				break
+			if numjob2 == 20 {
+
 			}
 			numjob2++
 		}
 	}
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
-		if numjob == 5 {
-			break
+		if numjob == 20 {
+
 		}
 		numjob++
 	}
