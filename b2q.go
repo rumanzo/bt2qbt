@@ -82,17 +82,17 @@ func fillallhave(npieces *int64) []byte {
 
 func fillhavefiles(sizeandprio [][]int64, npieces int64, piecelenght int64) []byte {
 	var newpieces  = make([]byte, 0 , npieces)
-	bytes := int64(0)
-	n := 0
+	var allocation [][]int64
+	offset := int64(0)
+	for _, pair := range sizeandprio {
+		allocation = append(allocation, []int64{offset, offset + pair[0], pair[1]})
+		offset = offset + pair[0]
+	}
 	for i := int64(0); i < npieces; i++ {
 		belongs := false
 		first, last := i * piecelenght, (i+1) * piecelenght
-		if last > bytes + sizeandprio[n][0] && n < len(sizeandprio){
-			bytes += sizeandprio[n][0]
-			n++
-		}
-		for _, pair := range sizeandprio{
-			if (first >= bytes && last <= pair[0] + bytes ) && pair[1] != 0 {
+		for _, trio := range allocation {
+			if (first >= trio[0] && last <= trio[1] ) && trio[2] == 1 {
 				belongs = true
 			}
 		}
