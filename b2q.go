@@ -57,21 +57,7 @@ func gethash(info map[string]interface{}) (hash string) {
 	return
 }
 
-func piecesconvert(s string, npieces *int64) []byte {
-	var newpieces  = make([]byte, 0 , *npieces)
-	for _, c := range []byte(s) {
-		var binString string
-		binString = fmt.Sprintf("%s%.8b", binString, c)
-		for _, d := range binString {
-			if len(newpieces) == cap(newpieces) { break }
-			chr, _ := strconv.Atoi(string(d))
-			newpieces = append(newpieces, byte(chr))
-		}
-	}
-	return newpieces
-}
-
-func fillallhave(npieces *int64) []byte {
+func fillnothavefiles(npieces *int64) []byte {
 	var newpieces  = make([]byte, 0 , *npieces)
 	for i := int64(0); i < *npieces; i++ {
 		chr, _ := strconv.Atoi("1")
@@ -80,19 +66,19 @@ func fillallhave(npieces *int64) []byte {
 	return newpieces
 }
 
-func fillhavefiles(sizeandprio [][]int64, npieces int64, piecelenght int64) []byte {
-	var newpieces  = make([]byte, 0 , npieces)
+func fillhavefiles(sizeandprio *[][]int64, npieces *int64, piecelenght *int64) []byte {
+	var newpieces  = make([]byte, 0 , *npieces)
 	var allocation [][]int64
 	offset := int64(0)
-	for _, pair := range sizeandprio {
+	for _, pair := range *sizeandprio {
 		allocation = append(allocation, []int64{offset + 1, offset + pair[0], pair[1]})
 		offset = offset + pair[0]
 	}
-	for i := int64(0); i < npieces; i++ {
+	for i := int64(0); i < *npieces; i++ {
 		belongs := false
-		first, last := i * piecelenght, (i+1) * piecelenght
+		first, last := i * *piecelenght, (i+1) * *piecelenght
 		for _, trio := range allocation {
-				if (first >= trio[0] - piecelenght || last >= trio[1] - piecelenght ) && trio[2] == 1 {
+				if (first >= trio[0] - *piecelenght || last <= trio[1] + *piecelenght ) && trio[2] == 1 {
 					belongs = true
 				}
 		}
@@ -185,11 +171,11 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["info-hash"] = value["info"]
 	newstructure["qBt-tags"] = value["labels"]
 	newstructure["seeding_time"] = value["runtime"]
-	/*if value["started"] == 0 {
+	if value["started"] == 0 {
 		newstructure["paused"] = 1
 	} else {
 		newstructure["paused"] = 0
-	}*/
+	}
 	newstructure["paused"] = 1
 	newstructure["finished_time"] = int(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
 	if value["completed_on"] != 0 {
@@ -220,8 +206,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	} else {
 		hasfiles = false
 	}
-	var filesizes float32
-	filesizes = 0
+	filesizes := float32(0)
 	var sizeandprio [][]int64
 	if files, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
 		var filelists []interface{}
@@ -255,9 +240,9 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		npieces = int64(filesizes) / torrentfile["info"].(map[string]interface{})["piece length"].(int64)
 	}
 	if hasfiles{
-		newstructure["pieces"] = fillhavefiles(sizeandprio, npieces, piecelenght)
+		newstructure["pieces"] = fillhavefiles(&sizeandprio, &npieces, &piecelenght)
 	} else {
-		newstructure["pieces"] = fillallhave(&npieces)
+		newstructure["pieces"] = fillnothavefiles(&npieces)
 	}
 	torrentname := torrentfile["info"].(map[string]interface{})["name"].(string)
 	origpath := value["path"].(string)
@@ -291,8 +276,8 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 
 
 func main() {
-	bitdir := "C:/Users/rumanzo/AppData/Roaming/BitTorrent/"
-	qbitdir := "C:/Users/rumanzo/AppData/Local/qBittorrent/BT_backup/"
+	qbitdir := os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"
+	bitdir := os.Getenv("APPDATA") + "\\BitTorrent\\"
 	if _, err := os.Stat(bitdir); os.IsNotExist(err) {
 		log.Println("Can't find uTorrent\\Bittorrent folder")
 		time.Sleep(30 * time.Second)
@@ -321,24 +306,16 @@ func main() {
 	fmt.Println("Started")
 	totaljobs := len(resumefile) -2
 	numjob := 1
-	numjob2 := 1
 	comChannel := make(chan string, totaljobs)
 	var with_label, with_tags bool
 	with_label, with_tags = true, true
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel)
-			if numjob2 == 20 {
-
-			}
-			numjob2++
 		}
 	}
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
-		if numjob == 20 {
-
-		}
 		numjob++
 	}
 	fmt.Println("\nPress Enter to exit")
