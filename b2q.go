@@ -317,6 +317,9 @@ func main() {
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
 		numjob++
+		if numjob == totaljobs {
+			break
+		}
 	}
 	fmt.Println("\nPress Enter to exit")
 	fmt.Scanln()
