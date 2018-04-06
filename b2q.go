@@ -30,8 +30,7 @@ func decodetorrentfile(path string) (map[string]interface{}, error) {
 }
 
 func encodetorrentfile(path string, newstructure map[string]interface{}) error {
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Create(path)
 	}
 
@@ -107,12 +106,12 @@ func prioconvert(src string) (newprio []int) {
 }
 
 func fmtime(path string) (mtime int64) {
-	fi, err := os.Stat(path)
-	if err != nil {
+	if fi, err := os.Stat(path); err != nil {
 		return 0
+	} else {
+		mtime = int64(fi.ModTime().Unix())
+		return
 	}
-	mtime = int64(fi.ModTime().Unix())
-	return
 }
 
 func copyfile(src string, dst string) error {
@@ -121,19 +120,15 @@ func copyfile(src string, dst string) error {
 		return err
 	}
 	defer originalFile.Close()
-
 	newFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	defer newFile.Close()
-
 	if _, err := io.Copy(newFile, originalFile); err != nil {
 		return err
 	}
-
-	err = newFile.Sync()
-	if err != nil {
+	if err := newFile.Sync(); err != nil {
 		return err
 	}
 	return nil
