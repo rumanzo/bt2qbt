@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"time"
 	"strings"
+	"launchpad.net/gnuflag"
 )
 
 func decodetorrentfile(path string) (map[string]interface{}, error) {
@@ -269,10 +270,32 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 }
 
 
-
 func main() {
-	qbitdir := os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"
-	bitdir := os.Getenv("APPDATA") + "\\BitTorrent\\"
+	var bitdir, qbitdir string
+	var with_label, with_tags bool = true, true
+	var without_label, without_tags bool
+	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\BitTorrent\\"), "Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\BitTorrent\\"), "Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&qbitdir, "destination", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
+	gnuflag.StringVar(&qbitdir, "d", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
+	gnuflag.BoolVar(&without_label, "without-labels", false, "not export/import labels")
+	gnuflag.BoolVar(&without_tags, "without-tags", false, "not export/import tags")
+	gnuflag.Parse(true)
+
+	if without_label {
+		with_label = false
+	}
+	if without_tags {
+		with_tags = false
+	}
+
+	if bitdir[len(bitdir)-1] != os.PathSeparator {
+		bitdir += string(os.PathSeparator)
+	}
+	if qbitdir[len(qbitdir)-1] != os.PathSeparator {
+		qbitdir += string(os.PathSeparator)
+	}
+
 	if _, err := os.Stat(bitdir); os.IsNotExist(err) {
 		log.Println("Can't find uTorrent\\Bittorrent folder")
 		time.Sleep(30 * time.Second)
@@ -302,8 +325,6 @@ func main() {
 	totaljobs := len(resumefile) -2
 	numjob := 1
 	comChannel := make(chan string, totaljobs)
-	var with_label, with_tags bool
-	with_label, with_tags = true, true
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel)
