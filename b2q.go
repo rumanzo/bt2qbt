@@ -317,6 +317,7 @@ func main() {
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
+	color.Green("It will be performed processing from directory %v to directory %v\n", bitdir, qbitdir)
 	color.HiRed("Check that the qBittorrent is turned off and the directory %v is backed up.\n\n", qbitdir)
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
