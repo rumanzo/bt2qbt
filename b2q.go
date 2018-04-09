@@ -278,8 +278,8 @@ func main() {
 	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\BitTorrent\\"), "Source directory that contains resume.dat and torrents files")
 	gnuflag.StringVar(&qbitdir, "destination", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
 	gnuflag.StringVar(&qbitdir, "d", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
-	gnuflag.BoolVar(&without_label, "without-labels", false, "not export/import labels")
-	gnuflag.BoolVar(&without_tags, "without-tags", false, "not export/import tags")
+	gnuflag.BoolVar(&without_label, "without-labels", false, "Do not export/import labels")
+	gnuflag.BoolVar(&without_tags, "without-tags", false, "Do not export/import tags")
 	gnuflag.Parse(true)
 
 	if without_label {
