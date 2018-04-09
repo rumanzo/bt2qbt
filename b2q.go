@@ -9,13 +9,13 @@ import (
 	"github.com/zeebo/bencode"
 	"io"
 	"io/ioutil"
+	"launchpad.net/gnuflag"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 	"strings"
-	"launchpad.net/gnuflag"
+	"time"
 )
 
 func decodetorrentfile(path string) (map[string]interface{}, error) {
@@ -31,7 +31,7 @@ func decodetorrentfile(path string) (map[string]interface{}, error) {
 }
 
 func encodetorrentfile(path string, newstructure map[string]interface{}) error {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Create(path)
 	}
 
@@ -58,7 +58,7 @@ func gethash(info map[string]interface{}) (hash string) {
 }
 
 func fillnothavefiles(npieces *int64) []byte {
-	var newpieces  = make([]byte, 0 , *npieces)
+	var newpieces = make([]byte, 0, *npieces)
 	for i := int64(0); i < *npieces; i++ {
 		chr, _ := strconv.Atoi("1")
 		newpieces = append(newpieces, byte(chr))
@@ -67,7 +67,7 @@ func fillnothavefiles(npieces *int64) []byte {
 }
 
 func fillhavefiles(sizeandprio *[][]int64, npieces *int64, piecelenght *int64) []byte {
-	var newpieces  = make([]byte, 0 , *npieces)
+	var newpieces = make([]byte, 0, *npieces)
 	var allocation [][]int64
 	offset := int64(0)
 	for _, pair := range *sizeandprio {
@@ -76,11 +76,11 @@ func fillhavefiles(sizeandprio *[][]int64, npieces *int64, piecelenght *int64) [
 	}
 	for i := int64(0); i < *npieces; i++ {
 		belongs := false
-		first, last := i * *piecelenght, (i+1) * *piecelenght
+		first, last := i**piecelenght, (i+1)**piecelenght
 		for _, trio := range allocation {
-				if (first >= trio[0] - *piecelenght || last <= trio[1] + *piecelenght ) && trio[2] == 1 {
-					belongs = true
-				}
+			if (first >= trio[0]-*piecelenght || last <= trio[1]+*piecelenght) && trio[2] == 1 {
+				belongs = true
+			}
 		}
 		var chr int
 		if belongs {
@@ -197,7 +197,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["trackers"] = trackers
 	newstructure["file_priority"] = prioconvert(value["prio"].(string))
 	var hasfiles bool
-	if _, ok := torrentfile["info"].(map[string]interface{})["files"]; ok  {
+	if _, ok := torrentfile["info"].(map[string]interface{})["files"]; ok {
 		hasfiles = true
 	} else {
 		hasfiles = false
@@ -213,11 +213,11 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 			filesizes += float32(file.(map[string]interface{})["length"].(int64))
 			if n := newstructure["file_priority"].([]int)[num]; n != 0 {
 				lenght = file.(map[string]interface{})["length"].(int64)
-				sizeandprio = append(sizeandprio, []int64{lenght,1})
+				sizeandprio = append(sizeandprio, []int64{lenght, 1})
 				mtime = fmtime(fullpath)
 			} else {
 				lenght, mtime = 0, 0
-				sizeandprio = append(sizeandprio, []int64{file.(map[string]interface{})["length"].(int64),0})
+				sizeandprio = append(sizeandprio, []int64{file.(map[string]interface{})["length"].(int64), 0})
 			}
 			flenmtime := []int64{lenght, mtime}
 			filelists = append(filelists, flenmtime)
@@ -231,11 +231,11 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	var npieces int64
 	piecelenght := torrentfile["info"].(map[string]interface{})["piece length"].(int64)
 	if ((filesizes / float32(piecelenght)) - float32((int64(filesizes) / piecelenght))) != 0 { // check fraction
-		npieces = int64(filesizes) / torrentfile["info"].(map[string]interface{})["piece length"].(int64) + 1
+		npieces = int64(filesizes)/torrentfile["info"].(map[string]interface{})["piece length"].(int64) + 1
 	} else {
 		npieces = int64(filesizes) / torrentfile["info"].(map[string]interface{})["piece length"].(int64)
 	}
-	if hasfiles{
+	if hasfiles {
 		newstructure["pieces"] = fillhavefiles(&sizeandprio, &npieces, &piecelenght)
 	} else {
 		newstructure["pieces"] = fillnothavefiles(&npieces)
@@ -268,7 +268,6 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	comChannel <- fmt.Sprintf("Sucessfully imported %v", key)
 	return nil
 }
-
 
 func main() {
 	var bitdir, qbitdir string
@@ -333,7 +332,7 @@ func main() {
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
 		numjob++
-		if numjob - 1 == totaljobs {
+		if numjob-1 == totaljobs {
 			break
 		}
 	}
