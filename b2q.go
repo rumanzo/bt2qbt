@@ -57,10 +57,10 @@ func gethash(info map[string]interface{}) (hash string) {
 	return
 }
 
-func fillnothavefiles(npieces *int64) []byte {
+func fillnothavefiles(npieces *int64, chr string) []byte {
 	var newpieces = make([]byte, 0, *npieces)
 	for i := int64(0); i < *npieces; i++ {
-		chr, _ := strconv.Atoi("1")
+		chr, _ := strconv.Atoi(chr)
 		newpieces = append(newpieces, byte(chr))
 	}
 	return newpieces
@@ -185,6 +185,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["finished_time"] = int(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
 	if value["completed_on"] != 0 {
 		newstructure["last_seen_complete"] = int(time.Now().Unix())
+		newstructure["unfinished"] = new([]interface{})
 	}
 	newstructure["total_downloaded"] = value["downloaded"]
 	newstructure["total_uploaded"] = value["uploaded"]
@@ -259,10 +260,14 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	} else {
 		npieces = int64(filesizes) / torrentfile["info"].(map[string]interface{})["piece length"].(int64)
 	}
-	if hasfiles {
-		newstructure["pieces"] = fillhavefiles(&sizeandprio, &npieces, &piecelenght)
+	if _, ok := newstructure["unfinished"]; ok {
+		newstructure["pieces"] = fillnothavefiles(&npieces, "0")
 	} else {
-		newstructure["pieces"] = fillnothavefiles(&npieces)
+		if hasfiles {
+			newstructure["pieces"] = fillhavefiles(&sizeandprio, &npieces, &piecelenght)
+		} else {
+			newstructure["pieces"] = fillnothavefiles(&npieces, "1")
+		}
 	}
 	var torrentname string
 	if name, ok := torrentfile["info"].(map[string]interface{})["name.utf-8"].(string); ok {
