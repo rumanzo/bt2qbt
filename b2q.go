@@ -202,6 +202,9 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	} else {
 		hasfiles = false
 	}
+	if value["path"].(string)[len(value["path"].(string))-1] == os.PathSeparator {
+		value["path"] = value["path"].(string)[:len(value["path"].(string))-1]
+	}
 	filesizes := float32(0)
 	var sizeandprio [][]int64
 	var torrentfilelist []string
@@ -209,7 +212,17 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		var filelists []interface{}
 		for num, file := range files.([]interface{}) {
 			var lenght, mtime int64
-			filename := file.(map[string]interface{})["path"].([]interface{})[0].(string)
+			var filestrings []string
+			if path, ok := file.(map[string]interface{})["path.utf-8"].([]interface{}); ok {
+				for _, f := range path {
+					filestrings = append(filestrings, f.(string))
+				}
+			} else {
+				for _, f := range file.(map[string]interface{})["path"].([]interface{}) {
+					filestrings = append(filestrings, f.(string))
+				}
+			}
+			filename := strings.Join(filestrings, string(os.PathSeparator))
 			torrentfilelist = append(torrentfilelist, filename)
 			fullpath := value["path"].(string) + "\\" + filename
 			filesizes += float32(file.(map[string]interface{})["length"].(int64))
@@ -242,7 +255,12 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	} else {
 		newstructure["pieces"] = fillnothavefiles(&npieces)
 	}
-	torrentname := torrentfile["info"].(map[string]interface{})["name"].(string)
+	var torrentname string
+	if name, ok := torrentfile["info"].(map[string]interface{})["name.utf-8"].(string); ok {
+		torrentname = name
+	} else {
+		torrentname = torrentfile["info"].(map[string]interface{})["name"].(string)
+	}
 	origpath := value["path"].(string)
 	_, lastdirname := filepath.Split(strings.Replace(origpath, "\\", "/", -1))
 	if hasfiles {
