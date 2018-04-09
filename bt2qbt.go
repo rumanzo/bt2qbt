@@ -185,6 +185,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["finished_time"] = int(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
 	if value["completed_on"] != 0 {
 		newstructure["last_seen_complete"] = int(time.Now().Unix())
+	} else {
 		newstructure["unfinished"] = new([]interface{})
 	}
 	newstructure["total_downloaded"] = value["downloaded"]
