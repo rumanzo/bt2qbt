@@ -322,7 +322,7 @@ func main() {
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	fmt.Println("Started")
-	totaljobs := len(resumefile) -2
+	totaljobs := len(resumefile) - 2
 	numjob := 1
 	comChannel := make(chan string, totaljobs)
 	for key, value := range resumefile {
@@ -333,7 +333,7 @@ func main() {
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
 		numjob++
-		if numjob == totaljobs {
+		if numjob - 1 == totaljobs {
 			break
 		}
 	}
