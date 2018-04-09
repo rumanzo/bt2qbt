@@ -78,7 +78,7 @@ func fillhavefiles(sizeandprio *[][]int64, npieces *int64, piecelenght *int64) [
 		belongs := false
 		first, last := i**piecelenght, (i+1)**piecelenght
 		for _, trio := range allocation {
-			if (first >= trio[0]-*piecelenght || last <= trio[1]+*piecelenght) && trio[2] == 1 {
+			if (first >= trio[0]-*piecelenght && last <= trio[1]+*piecelenght) && trio[2] == 1 {
 				belongs = true
 			}
 		}
@@ -135,9 +135,9 @@ func copyfile(src string, dst string) error {
 	return nil
 }
 
-func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string) error {
+func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, position int64) error {
 	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
-		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 1,
+		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
 		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
 		"completed_time": 0, "download_rate_limit": -1, "file sizes": new([][]int64),
 		"file-format": "libtorrent resume file", "file-version": 1, "file_priority": new([]int), "finished_time": 0,
@@ -167,10 +167,19 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure["info-hash"] = value["info"]
 	newstructure["qBt-tags"] = value["labels"]
 	newstructure["seeding_time"] = value["runtime"]
-	if value["started"] == 0 {
+	newstructure["qBt-queuePosition"] = position
+	if value["started"].(int64) == int64(0) {
 		newstructure["paused"] = 1
+		newstructure["auto_managed"] = 0
+		newstructure["announce_to_dht"] = 0
+		newstructure["announce_to_lsd"] = 0
+		newstructure["announce_to_trackers"] = 0
 	} else {
 		newstructure["paused"] = 0
+		newstructure["auto_managed"] = 1
+		newstructure["announce_to_dht"] = 1
+		newstructure["announce_to_lsd"] = 1
+		newstructure["announce_to_trackers"] = 1
 	}
 	newstructure["paused"] = 1
 	newstructure["finished_time"] = int(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
@@ -301,8 +310,8 @@ func main() {
 	var bitdir, qbitdir string
 	var with_label, with_tags bool = true, true
 	var without_label, without_tags bool
-	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\BitTorrent\\"), "Source directory that contains resume.dat and torrents files")
-	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\BitTorrent\\"), "Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\uTorrent\\"), "Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\uTorrent\\"), "Source directory that contains resume.dat and torrents files")
 	gnuflag.StringVar(&qbitdir, "destination", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
 	gnuflag.StringVar(&qbitdir, "d", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
 	gnuflag.BoolVar(&without_label, "without-labels", false, "Do not export/import labels")
@@ -350,12 +359,13 @@ func main() {
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	fmt.Println("Started")
-	totaljobs := len(resumefile) - 2
-	numjob := 1
+	totaljobs := int64(0)
+	numjob := int64(1)
 	comChannel := make(chan string, totaljobs)
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
-			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel)
+			totaljobs += 1
+			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, totaljobs)
 		}
 	}
 	for message := range comChannel {
