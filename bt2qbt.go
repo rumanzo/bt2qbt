@@ -235,7 +235,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 			}
 			filename := strings.Join(filestrings, string(os.PathSeparator))
 			torrentfilelist = append(torrentfilelist, filename)
-			fullpath := value["path"].(string) + "\\" + filename
+			fullpath := value["path"].(string) + string(os.PathSeparator) + filename
 			filesizes += float32(file.(map[string]interface{})["length"].(int64))
 			if n := newstructure["file_priority"].([]int)[num]; n != 0 {
 				lenght = file.(map[string]interface{})["length"].(int64)
@@ -277,14 +277,14 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		torrentname = torrentfile["info"].(map[string]interface{})["name"].(string)
 	}
 	origpath := value["path"].(string)
-	_, lastdirname := filepath.Split(strings.Replace(origpath, "\\", "/", -1))
+	_, lastdirname := filepath.Split(strings.Replace(origpath, string(os.PathSeparator), "/", -1))
 	if hasfiles {
 		if lastdirname == torrentname {
 			newstructure["qBt-hasRootFolder"] = 1
 			newstructure["save_path"] = origpath[0 : len(origpath)-len(lastdirname)]
 		} else {
 			newstructure["qBt-hasRootFolder"] = 0
-			newstructure["save_path"] = value["path"].(string) + "\\"
+			newstructure["save_path"] = value["path"].(string) + string(os.PathSeparator)
 			newstructure["mapped_files"] = torrentfilelist
 		}
 	} else {
