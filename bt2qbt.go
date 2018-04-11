@@ -16,7 +16,28 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/go-ini/ini"
 )
+
+func ASCIIconvert(s string) (newstring string) {
+	for _, c := range s {
+		if c > 127 {
+			newstring = fmt.Sprintf("%v\\x%x",newstring, c)
+		} else {
+			newstring = fmt.Sprintf("%v%v",newstring, string(c))
+		}
+	}
+	return
+}
+
+func checknotexists(s string, tags []string ) bool {
+	for _, value := range tags {
+		if value == s {
+			return false
+		}
+	}
+	return true
+}
 
 func decodetorrentfile(path string) (map[string]interface{}, error) {
 	dat, err := ioutil.ReadFile(path)
@@ -135,7 +156,7 @@ func copyfile(src string, dst string) error {
 	return nil
 }
 
-func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, position int) error {
+func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, position int, tags chan string) error {
 	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
 		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
 		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
@@ -308,6 +329,11 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		comChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", *qbitdir+newbasename+".torrent")
 		return err
 	}
+	if *with_tags == true {
+		for _, label := range newstructure["qBt-tags"].([]interface{}){
+			tags <- fmt.Sprintf("%v", ASCIIconvert(label.(string)))
+		}
+	}
 	comChannel <- fmt.Sprintf("Sucessfully imported %v", key)
 	return nil
 }
@@ -316,8 +342,8 @@ func main() {
 	var bitdir, qbitdir string
 	var with_label, with_tags bool = true, true
 	var without_label, without_tags bool
-	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\uTorrent\\"), "Source directory that contains resume.dat and torrents files")
-	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\uTorrent\\"), "Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\Bittorrents\\"), "Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\Bittorrent\\"), "Source directory that contains resume.dat and torrents files")
 	gnuflag.StringVar(&qbitdir, "destination", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
 	gnuflag.StringVar(&qbitdir, "d", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
 	gnuflag.BoolVar(&without_label, "without-labels", false, "Do not export/import labels")
@@ -360,6 +386,20 @@ func main() {
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
+	//var oldtags []string
+	var newtags []string
+	cfg, err := ini.Load(os.Getenv("APPDATA") + "\\qBittorrent\\qBittorrent.ini")
+	if err != nil {
+		fmt.Printf("Fail to read file: %v", err)
+		os.Exit(1)
+	}
+	dtags := cfg.Section("BitTorrent").Key("Session\\Tags").String()
+	dtags += ", фиииильм"
+	fmt.Println(dtags)
+	//fmt.Printf("%+x", "ф")
+
+	fmt.Println(ASCIIconvert("testфииилмь11111"))
+	//os.Exit(0)
 	color.Green("It will be performed processing from directory %v to directory %v\n", bitdir, qbitdir)
 	color.HiRed("Check that the qBittorrent is turned off and the directory %v is backed up.\n\n", qbitdir)
 	fmt.Println("Press Enter to start")
@@ -368,18 +408,27 @@ func main() {
 	totaljobs := len(resumefile) - 2
 	numjob := 1
 	comChannel := make(chan string, totaljobs)
+	tags := make(chan string, 1000000)
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
-			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, totaljobs)
+			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, totaljobs, tags)
 		}
 	}
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
 		numjob++
 		if numjob-1 == totaljobs {
+			close(tags)
 			break
 		}
 	}
+
+	for label := range tags{
+		if checknotexists(label, newtags) {
+			newtags = append(newtags, label)
+		}
+	}
+	fmt.Println(len(newtags), newtags)
 	fmt.Println("\nPress Enter to exit")
 	fmt.Scanln()
 }
