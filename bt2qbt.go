@@ -135,7 +135,7 @@ func copyfile(src string, dst string) error {
 	return nil
 }
 
-func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, position int64) error {
+func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, position int) error {
 	newstructure := map[string]interface{}{"active_time": 0, "added_time": 0, "announce_to_dht": 0,
 		"announce_to_lsd": 0, "announce_to_trackers": 0, "auto_managed": 0,
 		"banned_peers": new(string), "banned_peers6": new(string), "blocks per piece": 0,
@@ -365,12 +365,11 @@ func main() {
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	fmt.Println("Started")
-	totaljobs := int64(0)
-	numjob := int64(1)
+	totaljobs := len(resumefile) - 2
+	numjob := 1
 	comChannel := make(chan string, totaljobs)
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
-			totaljobs += 1
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, totaljobs)
 		}
 	}
