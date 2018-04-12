@@ -391,7 +391,7 @@ func main() {
 		}
 	}
 	color.Green("It will be performed processing from directory %v to directory %v\n", bitdir, qbitdir)
-	color.HiRed("Check that the qBittorrent is turned off and the directory %v is backed up.\n\n", qbitdir)
+	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n\n", qbitdir, config)
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	fmt.Println("Started")
@@ -405,7 +405,7 @@ func main() {
 			if with_tags == true {
 				for _, label := range value.(map[string]interface{})["labels"].([]interface{}) {
 					if len(label.(string)) > 0 {
-						if checknotexists(label.(string), newtags) {
+						if checknotexists(ASCIIconvert(label.(string)), newtags) {
 							newtags = append(newtags, ASCIIconvert(label.(string)))
 						}
 					}
