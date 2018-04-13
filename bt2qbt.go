@@ -30,13 +30,13 @@ func ASCIIconvert(s string) (newstring string) {
 	return
 }
 
-func checknotexists(s string, tags []string) bool {
+func checknotexists(s string, tags []string) (bool, string) {
 	for _, value := range tags {
 		if value == s {
-			return false
+			return false, s
 		}
 	}
-	return true
+	return true, s
 }
 
 func decodetorrentfile(path string) (map[string]interface{}, error) {
@@ -405,8 +405,8 @@ func main() {
 			if with_tags == true {
 				for _, label := range value.(map[string]interface{})["labels"].([]interface{}) {
 					if len(label.(string)) > 0 {
-						if checknotexists(ASCIIconvert(label.(string)), newtags) {
-							newtags = append(newtags, ASCIIconvert(label.(string)))
+						if ok, tag := checknotexists(ASCIIconvert(label.(string)), newtags); ok {
+							newtags = append(newtags, tag)
 						}
 					}
 				}
@@ -445,8 +445,8 @@ func main() {
 		if cfg.Section("BitTorrent").HasKey("Session\\Tags") {
 			oldtags = cfg.Section("BitTorrent").Key("Session\\Tags").String()
 			for _, tag := range strings.Split(oldtags, ", ") {
-				if checknotexists(tag, newtags) {
-					newtags = append(newtags, tag)
+				if ok, t := checknotexists(tag, newtags); ok {
+					newtags = append(newtags, t)
 				}
 			}
 			cfg.Section("BitTorrent").Key("Session\\Tags").SetValue(strings.Join(newtags, ", "))
