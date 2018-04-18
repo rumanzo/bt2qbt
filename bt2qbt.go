@@ -393,6 +393,8 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	}
 	if value["path"].(string)[len(value["path"].(string))-1] == os.PathSeparator {
 		newstructure.path = value["path"].(string)[:len(value["path"].(string))-1]
+	} else {
+		newstructure.path = value["path"].(string)
 	}
 	newstructure.Active_time = value["runtime"].(int64)
 	newstructure.Added_time = value["added_on"].(int64)
