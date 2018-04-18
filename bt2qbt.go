@@ -129,7 +129,7 @@ type NewTorrentStructure struct {
 	Peers6               string         `bencode:"peers6"`
 	Pieces               []byte         `bencode:"pieces"`
 	QbthasRootFolder     int64          `bencode:"qBt-hasRootFolder"`
-	Qbtcategory          string         `bencode:"qBt-category"`
+	Qbtcategory          string         `bencode:"qBt-category,omitempty"`
 	Qbtname              string         `bencode:"qBt-name"`
 	QbtqueuePosition     int            `bencode:"qBt-queuePosition"`
 	QbtratioLimit        int64          `bencode:"qBt-ratioLimit"`
@@ -492,7 +492,7 @@ func main() {
 	color.Green("It will be performed processing from directory %v to directory %v\n", bitdir, qbitdir)
 	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n\n", qbitdir, config)
 	fmt.Println("Press Enter to start")
-	//fmt.Scanln()
+	fmt.Scanln()
 	fmt.Println("Started")
 	totaljobs := len(resumefile) - 2
 	numjob := 1
@@ -555,5 +555,5 @@ func main() {
 		cfg.SaveTo(config)
 	}
 	fmt.Println("\nPress Enter to exit")
-	//fmt.Scanln()
+	fmt.Scanln()
 }
