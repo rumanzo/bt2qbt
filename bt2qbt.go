@@ -284,9 +284,9 @@ func (newstructure *NewTorrentStructure) fillsizes() {
 
 func (newstructure *NewTorrentStructure) fillnothavefiles(chr string) []byte {
 	var newpieces = make([]byte, 0, newstructure.npieces)
+	nchr, _ := strconv.Atoi(chr)
 	for i := int64(0); i < newstructure.npieces; i++ {
-		chr, _ := strconv.Atoi(chr)
-		newpieces = append(newpieces, byte(chr))
+		newpieces = append(newpieces, byte(nchr))
 	}
 	return newpieces
 }
@@ -302,6 +302,8 @@ func (newstructure *NewTorrentStructure) gethash() (hash string) {
 func (newstructure *NewTorrentStructure) fillhavefiles() []byte {
 	var newpieces = make([]byte, 0, newstructure.npieces)
 	var allocation [][]int64
+	chrone, _ := strconv.Atoi("1")
+	chrzero, _ := strconv.Atoi("0")
 	offset := int64(0)
 	for _, pair := range newstructure.sizeandprio {
 		allocation = append(allocation, []int64{offset + 1, offset + pair[0], pair[1]})
@@ -315,13 +317,11 @@ func (newstructure *NewTorrentStructure) fillhavefiles() []byte {
 				belongs = true
 			}
 		}
-		var chr int
 		if belongs {
-			chr, _ = strconv.Atoi("1")
+			newpieces = append(newpieces, byte(chrone))
 		} else {
-			chr, _ = strconv.Atoi("0")
+			newpieces = append(newpieces, byte(chrzero))
 		}
-		newpieces = append(newpieces, byte(chr))
 	}
 	return newpieces
 }
