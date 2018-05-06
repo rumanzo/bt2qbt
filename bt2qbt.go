@@ -154,7 +154,7 @@ type NewTorrentStructure struct {
 	torrentfilepath      string
 	torrentfile          map[string]interface{}
 	path                 string
-	filesizes            float32
+	filesizes            float64
 	sizeandprio          [][]int64
 	torrentfilelist      []string
 	npieces              int64
@@ -263,7 +263,7 @@ func (newstructure *NewTorrentStructure) fillsizes() {
 			filename := strings.Join(filestrings, string(os.PathSeparator))
 			newstructure.torrentfilelist = append(newstructure.torrentfilelist, filename)
 			fullpath := newstructure.path + string(os.PathSeparator) + filename
-			newstructure.filesizes += float32(file.(map[string]interface{})["length"].(int64))
+			newstructure.filesizes += float64(file.(map[string]interface{})["length"].(int64))
 			if n := newstructure.File_priority[num]; n != 0 {
 				lenght = file.(map[string]interface{})["length"].(int64)
 				newstructure.sizeandprio = append(newstructure.sizeandprio, []int64{lenght, 1})
@@ -277,14 +277,14 @@ func (newstructure *NewTorrentStructure) fillsizes() {
 		}
 		newstructure.Filesizes = filelists
 	} else {
-		newstructure.filesizes = float32(newstructure.torrentfile["info"].(map[string]interface{})["length"].(int64))
+		newstructure.filesizes = float64(newstructure.torrentfile["info"].(map[string]interface{})["length"].(int64))
 		newstructure.Filesizes = [][]int64{{newstructure.torrentfile["info"].(map[string]interface{})["length"].(int64), fmtime(newstructure.path)}}
 	}
 }
 
 func (newstructure *NewTorrentStructure) getnpieces() {
 	newstructure.fillsizes()
-	if ((newstructure.filesizes / float32(newstructure.piecelenght)) - float32((int64(newstructure.filesizes) / newstructure.piecelenght))) != 0 { // check fraction
+	if ((newstructure.filesizes / float64(newstructure.piecelenght)) - float64((int64(newstructure.filesizes) / newstructure.piecelenght))) != 0 { // check fraction
 		newstructure.npieces = int64(newstructure.filesizes)/newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64) + 1
 	} else {
 		newstructure.npieces = int64(newstructure.filesizes) / newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64)
@@ -415,7 +415,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	}
 	newstructure.gettrackers(value["trackers"].([]interface{}))
 	newstructure.prioconvert(value["prio"].(string))
-	newstructure.Blockperpiece = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64) / value["blocksize"].(int64)
+	newstructure.Blockperpiece = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64) / 16 / 1024 // https://libtorrent.org/manual-ref.html#fast-resume
 	newstructure.piecelenght = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64)
 	newstructure.fillmissing()
 	newbasename := newstructure.gethash()
