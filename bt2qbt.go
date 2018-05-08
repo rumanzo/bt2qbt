@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -207,9 +208,21 @@ func (newstructure *NewTorrentStructure) iflabel(label interface{}) {
 		newstructure.Qbtcategory = ""
 	}
 }
-func (newstructure *NewTorrentStructure) gettrackers(trackers []interface{}) {
-	for _, tracker := range trackers {
-		newstructure.Trackers = append(newstructure.Trackers, []string{tracker.(string)})
+
+func (newstructure *NewTorrentStructure) gettrackers(trackers interface{}) {
+	reg := regexp.MustCompile(`\s+`)
+	switch strct := trackers.(type) {
+	case []interface{}:
+		for _, st := range strct {
+			newstructure.gettrackers(st)
+		}
+	case string:
+		for _, str := range reg.Split(strct, -1) {
+			if len(str) != 0 {
+				newstructure.Trackers = append(newstructure.Trackers, []string{str})
+			}
+		}
+
 	}
 }
 
@@ -404,14 +417,14 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	} else {
 		newstructure.iflabel("")
 	}
-	newstructure.gettrackers(value["trackers"].([]interface{}))
+	newstructure.gettrackers(value["trackers"])
 	newstructure.prioconvert(value["prio"].(string))
 	newstructure.Blockperpiece = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64) / 16 / 1024 // https://libtorrent.org/manual-ref.html#fast-resume
 	newstructure.piecelenght = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64)
 	/*
-	pieces maps to a string whose length is a multiple of 20. It is to be subdivided into strings of length 20,
-	each of which is the SHA1 hash of the piece at the corresponding index.
-	http://www.bittorrent.org/beps/bep_0003.html
+		pieces maps to a string whose length is a multiple of 20. It is to be subdivided into strings of length 20,
+		each of which is the SHA1 hash of the piece at the corresponding index.
+		http://www.bittorrent.org/beps/bep_0003.html
 	*/
 	newstructure.npieces = int64(len(newstructure.torrentfile["info"].(map[string]interface{})["pieces"].(string))) / 20
 	newstructure.fillmissing()
