@@ -507,7 +507,7 @@ func main() {
 	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n\n", qbitdir, config)
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
-	fmt.Println("Started")
+	log.Println("Started")
 	totaljobs := len(resumefile) - 2
 	numjob := 1
 	var oldtags string
@@ -568,6 +568,7 @@ func main() {
 		}
 		cfg.SaveTo(config)
 	}
+	log.Println("Ended")
 	fmt.Println("\nPress Enter to exit")
 	fmt.Scanln()
 }
