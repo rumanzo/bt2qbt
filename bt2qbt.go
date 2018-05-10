@@ -380,7 +380,11 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		QbtqueuePosition: 1, QbtratioLimit: -2000, QbtseedStatus: 1, QbtseedingTimeLimit: -2, QbttempPathDisabled: 0,
 		Seed_mode: 0, Seeding_time: 0, Sequential_download: 0, Super_seeding: 0, Total_downloaded: 0, Total_uploaded: 0,
 		Upload_rate_limit: 0, Qbtname: "", with_label: *with_label, with_tags: *with_tags}
-	newstructure.torrentfilepath = *bitdir + key
+	if ok := filepath.IsAbs(key); ok {
+		newstructure.torrentfilepath = key
+	} else {
+		newstructure.torrentfilepath = *bitdir + key
+	}
 	if _, err = os.Stat(newstructure.torrentfilepath); os.IsNotExist(err) {
 		comChannel <- fmt.Sprintf("Can't find torrent file %v for %v", newstructure.torrentfilepath, key)
 		return err
@@ -434,7 +438,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		comChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", *qbitdir+newbasename+".fastresume")
 		return err
 	}
-	if err = copyfile(*bitdir+key, *qbitdir+newbasename+".torrent"); err != nil {
+	if err = copyfile(newstructure.torrentfilepath, *qbitdir+newbasename+".torrent"); err != nil {
 		comChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", *qbitdir+newbasename+".torrent")
 		return err
 	}
