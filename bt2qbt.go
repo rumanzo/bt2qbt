@@ -566,6 +566,7 @@ func main() {
 	for message := range errChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
 		vaserrors = true
+		numjob++
 	}
 	if with_tags == true {
 		cfg, err := ini.Load(config)
