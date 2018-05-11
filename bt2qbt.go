@@ -14,7 +14,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -210,17 +209,14 @@ func (newstructure *NewTorrentStructure) iflabel(label interface{}) {
 }
 
 func (newstructure *NewTorrentStructure) gettrackers(trackers interface{}) {
-	reg := regexp.MustCompile(`\s+`)
 	switch strct := trackers.(type) {
 	case []interface{}:
 		for _, st := range strct {
 			newstructure.gettrackers(st)
 		}
 	case string:
-		for _, str := range reg.Split(strct, -1) {
-			if len(str) != 0 {
-				newstructure.Trackers = append(newstructure.Trackers, []string{str})
-			}
+		for _, str := range strings.Fields(strct) {
+			newstructure.Trackers = append(newstructure.Trackers, []string{str})
 		}
 
 	}
