@@ -518,8 +518,10 @@ func main() {
 	var wg sync.WaitGroup
 	comChannel := make(chan string, totaljobs)
 	errChannel := make(chan string, totaljobs)
+	positionnum := 0
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
+			positionnum++
 			if with_tags == true {
 				for _, label := range value.(map[string]interface{})["labels"].([]interface{}) {
 					if len(label.(string)) > 0 {
@@ -530,7 +532,7 @@ func main() {
 				}
 			}
 			wg.Add(1)
-			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, errChannel, totaljobs, &wg)
+			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, errChannel, positionnum, &wg)
 		}
 	}
 	go func() {
