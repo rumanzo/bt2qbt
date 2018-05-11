@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -372,7 +373,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	defer wg.Done()
 	defer func() {
 		if r := recover(); r != nil {
-			errChannel <- fmt.Sprintf("Panic while processing torrent %v. Text panic: %v", key, r)
+			errChannel <- fmt.Sprintf("Panic while processing torrent %v:\n======\nReason: %v.\nText panic:\n%v\n======", key, r, string(debug.Stack()))
 		}
 	}()
 	var err error
