@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 )
 
 func ASCIIconvert(s string) (newstring string) {
@@ -367,7 +368,13 @@ func (newstructure *NewTorrentStructure) fillsavepaths() {
 	newstructure.QbtsavePath = newstructure.Save_path
 }
 
-func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, position int) error {
+func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, errChannel chan string, position int, wg *sync.WaitGroup) error {
+	defer wg.Done()
+	defer func() {
+		if r := recover(); r != nil {
+			errChannel <- fmt.Sprintf("Panic while processing torrent %v", key)
+		}
+	}()
 	var err error
 	newstructure := NewTorrentStructure{Active_time: 0, Added_time: 0, Announce_to_dht: 0, Announce_to_lsd: 0,
 		Announce_to_trackers: 0, Auto_managed: 0, Completed_time: 0, Download_rate_limit: -1,
@@ -382,12 +389,12 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 		newstructure.torrentfilepath = *bitdir + key
 	}
 	if _, err = os.Stat(newstructure.torrentfilepath); os.IsNotExist(err) {
-		comChannel <- fmt.Sprintf("Can't find torrent file %v for %v", newstructure.torrentfilepath, key)
+		errChannel <- fmt.Sprintf("Can't find torrent file %v for %v", newstructure.torrentfilepath, key)
 		return err
 	}
 	newstructure.torrentfile, err = decodetorrentfile(newstructure.torrentfilepath)
 	if err != nil {
-		comChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newstructure.torrentfilepath, key)
+		errChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newstructure.torrentfilepath, key)
 		return err
 	}
 	if _, ok := newstructure.torrentfile["info"].(map[string]interface{})["files"]; ok {
@@ -431,11 +438,11 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newbasename := newstructure.gethash()
 
 	if err = encodetorrentfile(*qbitdir+newbasename+".fastresume", &newstructure); err != nil {
-		comChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", *qbitdir+newbasename+".fastresume")
+		errChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", *qbitdir+newbasename+".fastresume")
 		return err
 	}
 	if err = copyfile(newstructure.torrentfilepath, *qbitdir+newbasename+".torrent"); err != nil {
-		comChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", *qbitdir+newbasename+".torrent")
+		errChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", *qbitdir+newbasename+".torrent")
 		return err
 	}
 	comChannel <- fmt.Sprintf("Sucessfully imported %v", key)
@@ -508,7 +515,9 @@ func main() {
 	numjob := 1
 	var oldtags string
 	var newtags []string
+	var wg sync.WaitGroup
 	comChannel := make(chan string, totaljobs)
+	errChannel:= make(chan string, totaljobs)
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			if with_tags == true {
@@ -520,15 +529,23 @@ func main() {
 					}
 				}
 			}
-			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, totaljobs)
+			wg.Add(1)
+			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, errChannel, totaljobs, &wg)
 		}
 	}
+	go func(){
+		wg.Wait()
+		close(comChannel)
+		close(errChannel)
+	}()
 	for message := range comChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
 		numjob++
-		if numjob-1 == totaljobs {
-			break
-		}
+	}
+	var vaserrors bool
+	for message := range errChannel {
+		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
+		vaserrors = true
 	}
 	if with_tags == true {
 		cfg, err := ini.Load(config)
@@ -564,7 +581,11 @@ func main() {
 		}
 		cfg.SaveTo(config)
 	}
+	fmt.Println()
 	log.Println("Ended")
+	if vaserrors {
+		log.Println("Not all torrents was processed")
+	}
 	fmt.Println("\nPress Enter to exit")
 	fmt.Scanln()
 }
