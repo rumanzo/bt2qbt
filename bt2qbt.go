@@ -16,8 +16,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 	"sync"
+	"time"
 )
 
 func ASCIIconvert(s string) (newstring string) {
@@ -372,7 +372,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	defer wg.Done()
 	defer func() {
 		if r := recover(); r != nil {
-			errChannel <- fmt.Sprintf("Panic while processing torrent %v", key)
+			errChannel <- fmt.Sprintf("Panic while processing torrent %v. Text panic: %v", key, r)
 		}
 	}()
 	var err error
@@ -517,7 +517,7 @@ func main() {
 	var newtags []string
 	var wg sync.WaitGroup
 	comChannel := make(chan string, totaljobs)
-	errChannel:= make(chan string, totaljobs)
+	errChannel := make(chan string, totaljobs)
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			if with_tags == true {
@@ -533,7 +533,7 @@ func main() {
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, errChannel, totaljobs, &wg)
 		}
 	}
-	go func(){
+	go func() {
 		wg.Wait()
 		close(comChannel)
 		close(errChannel)
