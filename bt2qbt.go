@@ -281,7 +281,8 @@ func (newstructure *NewTorrentStructure) fillsizes() {
 				mtime = fmtime(fullpath)
 			} else {
 				lenght, mtime = 0, 0
-				newstructure.sizeandprio = append(newstructure.sizeandprio, []int64{file.(map[string]interface{})["length"].(int64), 0})
+				newstructure.sizeandprio = append(newstructure.sizeandprio,
+					[]int64{file.(map[string]interface{})["length"].(int64), 0})
 			}
 			flenmtime := []int64{lenght, mtime}
 			filelists = append(filelists, flenmtime)
@@ -289,7 +290,8 @@ func (newstructure *NewTorrentStructure) fillsizes() {
 		newstructure.Filesizes = filelists
 	} else {
 		newstructure.filesizes = newstructure.torrentfile["info"].(map[string]interface{})["length"].(int64)
-		newstructure.Filesizes = [][]int64{{newstructure.torrentfile["info"].(map[string]interface{})["length"].(int64), fmtime(newstructure.path)}}
+		newstructure.Filesizes = [][]int64{{newstructure.torrentfile["info"].(map[string]interface{})["length"].(int64),
+			fmtime(newstructure.path)}}
 	}
 }
 
@@ -369,11 +371,14 @@ func (newstructure *NewTorrentStructure) fillsavepaths() {
 	newstructure.QbtsavePath = newstructure.Save_path
 }
 
-func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool, qbitdir *string, comChannel chan string, errChannel chan string, position int, wg *sync.WaitGroup) error {
+func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool,
+	qbitdir *string, comChannel chan string, errChannel chan string, position int, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	defer func() {
 		if r := recover(); r != nil {
-			errChannel <- fmt.Sprintf("Panic while processing torrent %v:\n======\nReason: %v.\nText panic:\n%v\n======", key, r, string(debug.Stack()))
+			errChannel <- fmt.Sprintf(
+				"Panic while processing torrent %v:\n======\nReason: %v.\nText panic:\n%v\n======",
+				key, r, string(debug.Stack()))
 		}
 	}()
 	var err error
@@ -427,8 +432,11 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	}
 	newstructure.gettrackers(value["trackers"])
 	newstructure.prioconvert(value["prio"].(string))
-	newstructure.Blockperpiece = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64) / 16 / 1024 // https://libtorrent.org/manual-ref.html#fast-resume
+
+	// https://libtorrent.org/manual-ref.html#fast-resume
+	newstructure.Blockperpiece = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64) / 16 / 1024
 	newstructure.piecelenght = newstructure.torrentfile["info"].(map[string]interface{})["piece length"].(int64)
+
 	/*
 		pieces maps to a string whose length is a multiple of 20. It is to be subdivided into strings of length 20,
 		each of which is the SHA1 hash of the piece at the corresponding index.
@@ -454,12 +462,18 @@ func main() {
 	var bitdir, qbitdir, config string
 	var with_label, with_tags bool = true, true
 	var without_label, without_tags bool
-	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\uTorrent\\"), "Source directory that contains resume.dat and torrents files")
-	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\uTorrent\\"), "Source directory that contains resume.dat and torrents files")
-	gnuflag.StringVar(&qbitdir, "destination", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
-	gnuflag.StringVar(&qbitdir, "d", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"), "Destination directory BT_backup (as default)")
-	gnuflag.StringVar(&config, "qconfig", (os.Getenv("APPDATA") + "\\qBittorrent\\qBittorrent.ini"), "qBittorrent config files (for write tags)")
-	gnuflag.StringVar(&config, "c", (os.Getenv("APPDATA") + "\\qBittorrent\\qBittorrent.ini"), "qBittorrent config files (for write tags)")
+	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\uTorrent\\"),
+		"Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\uTorrent\\"),
+		"Source directory that contains resume.dat and torrents files")
+	gnuflag.StringVar(&qbitdir, "destination", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"),
+		"Destination directory BT_backup (as default)")
+	gnuflag.StringVar(&qbitdir, "d", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"),
+		"Destination directory BT_backup (as default)")
+	gnuflag.StringVar(&config, "qconfig", (os.Getenv("APPDATA") + "\\qBittorrent\\qBittorrent.ini"),
+		"qBittorrent config files (for write tags)")
+	gnuflag.StringVar(&config, "c", (os.Getenv("APPDATA") + "\\qBittorrent\\qBittorrent.ini"),
+		"qBittorrent config files (for write tags)")
 	gnuflag.BoolVar(&without_label, "without-labels", false, "Do not export/import labels")
 	gnuflag.BoolVar(&without_tags, "without-tags", false, "Do not export/import tags")
 	gnuflag.Parse(true)
@@ -502,13 +516,15 @@ func main() {
 	}
 	if with_tags == true {
 		if _, err := os.Stat(config); os.IsNotExist(err) {
-			fmt.Println("Can not read qBittorrent config file. Try run and close qBittorrent if you have not done so already, or specify the path explicitly or do not import tags")
+			fmt.Println("Can not read qBittorrent config file. Try run and close qBittorrent if you have not done" +
+				" so already, or specify the path explicitly or do not import tags")
 			time.Sleep(30 * time.Second)
 			os.Exit(1)
 		}
 	}
 	color.Green("It will be performed processing from directory %v to directory %v\n", bitdir, qbitdir)
-	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n\n", qbitdir, config)
+	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n\n",
+		qbitdir, config)
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	log.Println("Started")
@@ -533,7 +549,8 @@ func main() {
 				}
 			}
 			wg.Add(1)
-			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel, errChannel, positionnum, &wg)
+			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel,
+				errChannel, positionnum, &wg)
 		}
 	}
 	go func() {
