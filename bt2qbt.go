@@ -19,17 +19,19 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"bytes"
 )
 
-func ASCIIconvert(s string) (newstring string) {
+func ASCIIconvert(s string) string {
+	var buffer bytes.Buffer
 	for _, c := range s {
 		if c > 127 {
-			newstring = fmt.Sprintf("%v\\x%x", newstring, c)
+			buffer.WriteString(`\x` + strconv.FormatUint(uint64(c), 16))
 		} else {
-			newstring = fmt.Sprintf("%v%v", newstring, string(c))
+			buffer.WriteString(string(c))
 		}
 	}
-	return
+	return buffer.String()
 }
 
 func checknotexists(s string, tags []string) (bool, string) {
