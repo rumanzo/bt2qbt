@@ -188,9 +188,9 @@ func (newstructure *NewTorrentStructure) ifcompletedon() {
 		newstructure.Unfinished = new([]interface{})
 	}
 }
-func (newstructure *NewTorrentStructure) iftags(labels []interface{}) {
+func (newstructure *NewTorrentStructure) iftags(labels interface{}) {
 	if newstructure.with_tags == true && labels != nil {
-		for _, label := range labels {
+		for _, label := range labels.([]interface{}) {
 			if label != nil {
 				newstructure.Qbttags = append(newstructure.Qbttags, label.(string))
 			}
@@ -426,7 +426,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	newstructure.Total_downloaded = value["downloaded"].(int64)
 	newstructure.Total_uploaded = value["uploaded"].(int64)
 	newstructure.Upload_rate_limit = value["upspeed"].(int64)
-	newstructure.iftags(value["labels"].([]interface{}))
+	newstructure.iftags(value["labels"])
 	if value["label"] != nil {
 		newstructure.iflabel(value["label"].(string))
 	} else {
@@ -542,10 +542,12 @@ func main() {
 		if key != ".fileguard" && key != "rec" {
 			positionnum++
 			if with_tags == true {
-				for _, label := range value.(map[string]interface{})["labels"].([]interface{}) {
-					if len(label.(string)) > 0 {
-						if ok, tag := checknotexists(ASCIIconvert(label.(string)), newtags); ok {
-							newtags = append(newtags, tag)
+				if labels, ok := value.(map[string]interface{})["labels"]; ok {
+					for _, label := range labels.([]interface{}) {
+						if len(label.(string)) > 0 {
+							if ok, tag := checknotexists(ASCIIconvert(label.(string)), newtags); ok {
+								newtags = append(newtags, tag)
+							}
 						}
 					}
 				}
