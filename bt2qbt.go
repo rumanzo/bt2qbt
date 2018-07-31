@@ -566,10 +566,10 @@ func main() {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
 		numjob++
 	}
-	var vaserrors bool
+	var waserrors bool
 	for message := range errChannel {
 		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
-		vaserrors = true
+		waserrors = true
 		numjob++
 	}
 	if with_tags == true {
@@ -608,7 +608,7 @@ func main() {
 	}
 	fmt.Println()
 	log.Println("Ended")
-	if vaserrors {
+	if waserrors {
 		log.Println("Not all torrents was processed")
 	}
 	fmt.Println("\nPress Enter to exit")
