@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -374,8 +375,11 @@ func (newstructure *NewTorrentStructure) fillsavepaths() {
 }
 
 func logic(key string, value map[string]interface{}, bitdir *string, with_label *bool, with_tags *bool,
-	qbitdir *string, comChannel chan string, errChannel chan string, position int, wg *sync.WaitGroup) error {
+	qbitdir *string, comChannel chan string, errChannel chan string, position int, wg *sync.WaitGroup, boundedChannel chan bool) error {
 	defer wg.Done()
+	defer func() {
+		<- boundedChannel
+	}()
 	defer func() {
 		if r := recover(); r != nil {
 			errChannel <- fmt.Sprintf(
@@ -537,6 +541,7 @@ func main() {
 	var wg sync.WaitGroup
 	comChannel := make(chan string, totaljobs)
 	errChannel := make(chan string, totaljobs)
+	boundedChannel := make(chan bool, runtime.GOMAXPROCS(0) * 2)
 	positionnum := 0
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
@@ -553,8 +558,9 @@ func main() {
 				}
 			}
 			wg.Add(1)
+			boundedChannel <- true
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel,
-				errChannel, positionnum, &wg)
+				errChannel, positionnum, &wg, boundedChannel)
 		}
 	}
 	go func() {
