@@ -3,7 +3,7 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: golang:1.10
+image: golang:1.11
 
 pipelines:
   default:
@@ -14,5 +14,5 @@ pipelines:
           - tar -cO --exclude-vcs --exclude=bitbucket-pipelines.yml . | tar -xv -C "${PACKAGE_PATH}"
           - cd "${PACKAGE_PATH}"
           - go get -v
-          - GOOS=windows GOARCH=386 go build -ldflags "-s -w" -v -o  bt2qbt_i386.exe
-          - GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -v -o  bt2qbt_amd64.exe
+          - GOOS=windows GOARCH=386 go build -ldflags "-s -w" -v -o  bt2qbt_v1.0_i386.exe
+          - GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -v -o  bt2qbt_v1.0_amd64.exe
