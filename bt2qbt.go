@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
@@ -20,7 +21,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"bytes"
 )
 
 func ASCIIconvert(s string) string {
@@ -378,7 +378,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 	qbitdir *string, comChannel chan string, errChannel chan string, position int, wg *sync.WaitGroup, boundedChannel chan bool) error {
 	defer wg.Done()
 	defer func() {
-		<- boundedChannel
+		<-boundedChannel
 	}()
 	defer func() {
 		if r := recover(); r != nil {
@@ -534,14 +534,14 @@ func main() {
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	log.Println("Started")
-	totaljobs := len(resumefile) - 2
+	totaljobs := len(resumefile)
 	numjob := 1
 	var oldtags string
 	var newtags []string
 	var wg sync.WaitGroup
 	comChannel := make(chan string, totaljobs)
 	errChannel := make(chan string, totaljobs)
-	boundedChannel := make(chan bool, runtime.GOMAXPROCS(0) * 2)
+	boundedChannel := make(chan bool, runtime.GOMAXPROCS(0)*2)
 	positionnum := 0
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
@@ -561,6 +561,8 @@ func main() {
 			boundedChannel <- true
 			go logic(key, value.(map[string]interface{}), &bitdir, &with_label, &with_tags, &qbitdir, comChannel,
 				errChannel, positionnum, &wg, boundedChannel)
+		} else {
+			totaljobs--
 		}
 	}
 	go func() {
