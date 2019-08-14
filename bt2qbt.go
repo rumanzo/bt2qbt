@@ -14,6 +14,7 @@ import (
 	"launchpad.net/gnuflag"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -468,17 +469,34 @@ func main() {
 	var bitdir, qbitdir, config string
 	var with_label, with_tags bool = true, true
 	var without_label, without_tags bool
-	gnuflag.StringVar(&bitdir, "source", (os.Getenv("APPDATA") + "\\uTorrent\\"),
+
+	sep := string(os.PathSeparator)
+	switch OS := runtime.GOOS; OS {
+	case "windows":
+		bitdir = os.Getenv("APPDATA") + sep + "uTorrent" + sep
+		config = os.Getenv("APPDATA") + sep + "qBittorrent" + sep + "qBittorrent.ini"
+		qbitdir = os.Getenv("LOCALAPPDATA") + sep + "qBittorrent" + sep + "BT_backup" + sep
+	case "darwin":
+		usr, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+		bitdir = usr.HomeDir + sep + "Library" + sep + "Application Support" + sep + "uTorrent" + sep
+		config = usr.HomeDir + sep + ".config" + sep + "qBittorrent" + sep + "qbittorrent.ini"
+		qbitdir = usr.HomeDir + sep + "Library" + sep + "Application Support" + sep + "QBittorrent" + sep + "BT_backup" + sep
+	}
+
+	gnuflag.StringVar(&bitdir, "source", bitdir,
 		"Source directory that contains resume.dat and torrents files")
-	gnuflag.StringVar(&bitdir, "s", (os.Getenv("APPDATA") + "\\uTorrent\\"),
+	gnuflag.StringVar(&bitdir, "s", bitdir,
 		"Source directory that contains resume.dat and torrents files")
-	gnuflag.StringVar(&qbitdir, "destination", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"),
+	gnuflag.StringVar(&qbitdir, "destination", qbitdir,
 		"Destination directory BT_backup (as default)")
-	gnuflag.StringVar(&qbitdir, "d", (os.Getenv("LOCALAPPDATA") + "\\qBittorrent\\BT_backup\\"),
+	gnuflag.StringVar(&qbitdir, "d", qbitdir,
 		"Destination directory BT_backup (as default)")
-	gnuflag.StringVar(&config, "qconfig", (os.Getenv("APPDATA") + "\\qBittorrent\\qBittorrent.ini"),
+	gnuflag.StringVar(&config, "qconfig", config,
 		"qBittorrent config files (for write tags)")
-	gnuflag.StringVar(&config, "c", (os.Getenv("APPDATA") + "\\qBittorrent\\qBittorrent.ini"),
+	gnuflag.StringVar(&config, "c", config,
 		"qBittorrent config files (for write tags)")
 	gnuflag.BoolVar(&without_label, "without-labels", false, "Do not export/import labels")
 	gnuflag.BoolVar(&without_tags, "without-tags", false, "Do not export/import tags")
