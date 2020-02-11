@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-ini/ini"
+	"github.com/juju/gnuflag"
 	"github.com/zeebo/bencode"
 	"io"
 	"io/ioutil"
-	"launchpad.net/gnuflag"
 	"log"
 	"os"
 	"os/user"
@@ -467,7 +467,7 @@ func logic(key string, value map[string]interface{}, bitdir *string, with_label 
 
 func main() {
 	var bitdir, qbitdir, config string
-	var with_label, with_tags bool = true, true
+	var with_label, with_tags = true, true
 	var without_label, without_tags bool
 
 	sep := string(os.PathSeparator)
