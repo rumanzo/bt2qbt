@@ -41,6 +41,13 @@ Usage of C:\Users\user\Downloads\bt2qbt_v1.0_amd64.exe:
     qBittorrent config files (for write tags)
 -d, --destination (= "C:\\Users\\user\\AppData\\Local\\qBittorrent\\BT_backup\\")
     Destination directory BT_backup (as default)
+--replace (= "")
+    Replace paths.
+        Delimiter for replaces - ;
+        Delimiter for from/to - ,
+        Example: "D:\films,/home/user/films;\,/"
+        If you use path separator different from you system, declare it mannually
+
 -s, --source (= "C:\\Users\\user\\AppData\\Roaming\\uTorrent\\")
     Source directory that contains resume.dat and torrents files
 --without-labels  (= false)
