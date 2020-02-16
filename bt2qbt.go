@@ -27,6 +27,11 @@ import (
 type Flags struct {
 	bitDir, qBitDir, config    string
 	withoutLabels, withoutTags bool
+	replace                    string
+}
+
+type Replace struct {
+	from, to string
 }
 
 type Channels struct {
@@ -95,6 +100,7 @@ type NewTorrentStructure struct {
 	torrentFileList     []string
 	numPieces           int64
 	pieceLenght         int64
+	replace             []Replace
 }
 
 func encodetorrentfile(path string, newstructure *NewTorrentStructure) error {
@@ -383,6 +389,11 @@ func (newstructure *NewTorrentStructure) fillsavepaths() {
 			newstructure.SavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		}
 	}
+	if len(newstructure.replace) != 0 {
+		for _, pattern := range newstructure.replace {
+			newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, pattern.from, pattern.to)
+		}
+	}
 	newstructure.QbtsavePath = newstructure.SavePath
 }
 
@@ -420,6 +431,17 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		chans.errChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newstructure.torrentFilePath, key)
 		return err
 	}
+
+	if flags.replace != "" {
+		for _, str := range strings.Split(flags.replace, ";") {
+			patterns := strings.Split(str, ",")
+			newstructure.replace = append(newstructure.replace, Replace{
+				from: patterns[0],
+				to:   patterns[1],
+			})
+		}
+	}
+
 	if _, ok := newstructure.torrentfile["info"].(map[string]interface{})["files"]; ok {
 		newstructure.hasFiles = true
 	} else {
@@ -507,7 +529,22 @@ func main() {
 		"qBittorrent config files (for write tags)")
 	gnuflag.BoolVar(&flags.withoutLabels, "without-labels", false, "Do not export/import labels")
 	gnuflag.BoolVar(&flags.withoutTags, "without-tags", false, "Do not export/import tags")
+	gnuflag.StringVar(&flags.replace, "replace", "", "Replace paths.\n	"+
+		"Delimiter for replaces - ;\n	"+
+		"Delimiter for from/to - ,\n	Example: \"D:\\films,/home/user/films;\\,/\"\n	"+
+		"If you use path separator different from you system, declare it mannually")
 	gnuflag.Parse(true)
+
+	if flags.replace != "" {
+		for _, str := range strings.Split(flags.replace, ";") {
+			patterns := strings.Split(str, ",")
+			if len(patterns) < 2 {
+				log.Println("Bad replace pattern")
+				time.Sleep(30 * time.Second)
+				os.Exit(1)
+			}
+		}
+	}
 
 	if flags.bitDir[len(flags.bitDir)-1] != os.PathSeparator {
 		flags.bitDir += string(os.PathSeparator)
