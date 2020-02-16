@@ -505,6 +505,14 @@ func main() {
 		flags.bitDir = os.Getenv("APPDATA") + sep + "uTorrent" + sep
 		flags.config = os.Getenv("APPDATA") + sep + "qBittorrent" + sep + "qBittorrent.ini"
 		flags.qBitDir = os.Getenv("LOCALAPPDATA") + sep + "qBittorrent" + sep + "BT_backup" + sep
+	case "linux":
+		usr, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+		flags.bitDir = "/mnt/uTorrent/"
+		flags.config = usr.HomeDir + sep + ".config" + sep + "qBittorrent" + sep + "qBittorrent.conf"
+		flags.qBitDir = usr.HomeDir + sep + ".local" + sep + "share" + sep + "data" + sep + "qBittorrent" + sep + "BT_backup" + sep
 	case "darwin":
 		usr, err := user.Current()
 		if err != nil {
