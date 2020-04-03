@@ -13,7 +13,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
@@ -36,13 +35,6 @@ type Channels struct {
 	comChannel     chan string
 	errChannel     chan string
 	boundedChannel chan bool
-}
-
-func (channels *Channels) MakeApiHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		channels.comChannel <- r.Host
-		io.WriteString(w, "Hello world!")
-	}
 }
 
 func encodetorrentfile(path string, newstructure *libtorrent.NewTorrentStructure) error {
@@ -217,10 +209,6 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	return nil
 }
 
-func IndexRouterHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello %", "s")
-}
-
 func openBrowser(url string) {
 	var err error
 
@@ -337,10 +325,6 @@ func main() {
 	chans := Channels{comChannel: make(chan string, totaljobs),
 		errChannel:     make(chan string, totaljobs),
 		boundedChannel: make(chan bool, runtime.GOMAXPROCS(0)*2)}
-	http.HandleFunc("/", chans.MakeApiHandler())
-	go http.ListenAndServe(":9000", nil)
-	openBrowser("http://localhost:9000")
-	fmt.Println(<-chans.comChannel)
 	color.Green("It will be performed processing from directory %v to directory %v\n", flags.bitDir, flags.qBitDir)
 	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n\n",
 		flags.qBitDir, flags.config)
