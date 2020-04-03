@@ -16,7 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strconv"
@@ -31,7 +31,8 @@ type Flags struct {
 	Config        string   `short:"c" long:"config" description:"Source directory that contains resume.dat and torrents files"`
 	WithoutLabels bool     `long:"without-labels" description:"Do not export/import labels"`
 	WithoutTags   bool     `long:"without-tags" description:"Do not export/import tags"`
-	Replace       []string `short:"r" long:"replace" description:"Replace paths.\n	Delimiter for from/to - ,\n	Example: \"D:\\films,/home/user/films;\\,/\"\n	If you use path separator different from you system, declare it mannually"`
+	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files"`
+	Replaces      []string `short:"r" long:"replace" description:"Replace paths.\n	Delimiter for from/to is comma - ,\n	Example: -r \"D:\\films,/home/user/films\" -r \"\\,/\"\n	If you use path separator different from you system, declare it mannually"`
 }
 
 type Channels struct {
@@ -132,14 +133,28 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		QbtQueuePosition: 1, QbtRatioLimit: -2000, QbtSeedStatus: 1, QbtSeedingTimeLimit: -2, QbttempPathDisabled: 0,
 		SeedMode: 0, SeedingTime: 0, SequentialDownload: 0, SuperSeeding: 0, TotalDownloaded: 0, TotalUploaded: 0,
 		UploadRateLimit: 0, QbtName: "", WithoutLabels: flags.WithoutLabels, WithoutTags: flags.WithoutTags}
-	if ok := filepath.IsAbs(key); ok {
-		newstructure.TorrentFilePath = key
+
+	if isAbs, _ := regexp.MatchString(`^[A-Z]:\\`, key); isAbs == true {
+		if runtime.GOOS == "windows" {
+			newstructure.TorrentFilePath = key
+		} else { // for unix system find in search paths
+			re := regexp.MustCompile(`\\`)
+			pathparts := re.FindAllString("\\", -1)
+			newstructure.TorrentFilePath = pathparts[len(pathparts)-1]
+		}
 	} else {
-		newstructure.TorrentFilePath = flags.BitDir + key
+		newstructure.TorrentFilePath = flags.BitDir + key // additional search required
 	}
 	if _, err = os.Stat(newstructure.TorrentFilePath); os.IsNotExist(err) {
+		for _, searchPath := range flags.SearchPaths {
+			if _, err = os.Stat(searchPath); err == nil {
+				newstructure.TorrentFilePath = searchPath + newstructure.TorrentFilePath
+				goto CONTINUE
+			}
+		}
 		chans.errChannel <- fmt.Sprintf("Can't find torrent file %v for %v", newstructure.TorrentFilePath, key)
 		return err
+	CONTINUE:
 	}
 	newstructure.TorrentFile, err = decodetorrentfile(newstructure.TorrentFilePath)
 	if err != nil {
@@ -147,8 +162,8 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		return err
 	}
 
-	if len(flags.Replace) != 0 {
-		for _, str := range flags.Replace {
+	if len(flags.Replaces) != 0 {
+		for _, str := range flags.Replaces {
 			patterns := strings.Split(str, ",")
 			newstructure.Replace = append(newstructure.Replace, replace.Replace{
 				From: patterns[0],
@@ -257,12 +272,18 @@ func main() {
 	}
 
 	_, err := goflags.Parse(&flags)
-	if err != nil {
-		os.Exit(0) // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
+	if _, err := goflags.Parse(&flags); err != nil { // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
+		if flagsErr, ok := err.(*goflags.Error); ok && flagsErr.Type == goflags.ErrHelp {
+			os.Exit(0)
+		} else {
+			log.Println(err)
+			time.Sleep(30 * time.Second)
+			os.Exit(1)
+		}
 	}
 
-	if len(flags.Replace) != 0 {
-		for _, str := range flags.Replace {
+	if len(flags.Replaces) != 0 {
+		for _, str := range flags.Replaces {
 			patterns := strings.Split(str, ",")
 			if len(patterns) < 2 {
 				log.Println("Bad replace pattern")
@@ -277,6 +298,11 @@ func main() {
 	}
 	if flags.QBitDir[len(flags.QBitDir)-1] != os.PathSeparator {
 		flags.QBitDir += string(os.PathSeparator)
+	}
+	for index, searchPath := range flags.SearchPaths {
+		if searchPath[len(searchPath)-1] != os.PathSeparator {
+			flags.SearchPaths[index] += string(os.PathSeparator)
+		}
 	}
 
 	if _, err := os.Stat(flags.BitDir); os.IsNotExist(err) {
