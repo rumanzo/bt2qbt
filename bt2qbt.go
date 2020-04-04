@@ -33,6 +33,7 @@ type Flags struct {
 	WithoutTags   bool     `long:"without-tags" description:"Do not export/import tags"`
 	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files"`
 	Replaces      []string `short:"r" long:"replace" description:"Replace paths.\n	Delimiter for from/to is comma - ,\n	Example: -r \"D:\\films,/home/user/films\" -r \"\\,/\"\n	If you use path separator different from you system, declare it mannually"`
+	PathSeparator string   `long:"sep" description:"Default path separator that will use in all paths"`
 }
 
 type Channels struct {
@@ -132,7 +133,8 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		LibTorrentVersion: "1.1.6.0", MaxConnections: 100, MaxUploads: 100, NumDownloaded: 0, NumIncomplete: 0,
 		QbtQueuePosition: 1, QbtRatioLimit: -2000, QbtSeedStatus: 1, QbtSeedingTimeLimit: -2, QbttempPathDisabled: 0,
 		SeedMode: 0, SeedingTime: 0, SequentialDownload: 0, SuperSeeding: 0, TotalDownloaded: 0, TotalUploaded: 0,
-		UploadRateLimit: 0, QbtName: "", WithoutLabels: flags.WithoutLabels, WithoutTags: flags.WithoutTags}
+		UploadRateLimit: 0, QbtName: "", WithoutLabels: flags.WithoutLabels, WithoutTags: flags.WithoutTags,
+		Separator: flags.PathSeparator}
 
 	if isAbs, _ := regexp.MatchString(`^[A-Z]:\\`, key); isAbs == true {
 		if runtime.GOOS == "windows" {
@@ -161,14 +163,12 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		return err
 	}
 
-	if len(flags.Replaces) != 0 {
-		for _, str := range flags.Replaces {
-			patterns := strings.Split(str, ",")
-			newstructure.Replace = append(newstructure.Replace, replace.Replace{
-				From: patterns[0],
-				To:   patterns[1],
-			})
-		}
+	for _, str := range flags.Replaces {
+		patterns := strings.Split(str, ",")
+		newstructure.Replace = append(newstructure.Replace, replace.Replace{
+			From: patterns[0],
+			To:   patterns[1],
+		})
 	}
 
 	if _, ok := newstructure.TorrentFile["info"].(map[string]interface{})["files"]; ok {
@@ -245,7 +245,7 @@ func openBrowser(url string) {
 }
 
 func main() {
-	flags := Flags{}
+	flags := Flags{PathSeparator: string(os.PathSeparator)}
 	sep := string(os.PathSeparator)
 	switch OS := runtime.GOOS; OS {
 	case "windows":

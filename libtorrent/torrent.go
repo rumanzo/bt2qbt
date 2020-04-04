@@ -7,73 +7,73 @@ import (
 	"github.com/zeebo/bencode"
 	"io"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type NewTorrentStructure struct {
-	ActiveTime          int64          `bencode:"active_time"`
-	AddedTime           int64          `bencode:"added_time"`
-	AnnounceToDht       int64          `bencode:"announce_to_dht"`
-	AnnounceToLsd       int64          `bencode:"announce_to_lsd"`
-	AnnounceToTrackers  int64          `bencode:"announce_to_trackers"`
-	AutoManaged         int64          `bencode:"auto_managed"`
-	BannedPeers         string         `bencode:"banned_peers"`
-	BannedPeers6        string         `bencode:"banned_peers6"`
-	BlockPerPiece       int64          `bencode:"blocks per piece"`
-	CompletedTime       int64          `bencode:"completed_time"`
-	DownloadRateLimit   int64          `bencode:"download_rate_limit"`
-	FileSizes           [][]int64      `bencode:"file sizes"`
-	FileFormat          string         `bencode:"file-format"`
-	FileVersion         int64          `bencode:"file-version"`
-	FilePriority        []int          `bencode:"file_priority"`
-	FinishedTime        int64          `bencode:"finished_time"`
-	InfoHash            string         `bencode:"info-hash"`
-	LastSeenComplete    int64          `bencode:"last_seen_complete"`
-	LibTorrentVersion   string         `bencode:"libtorrent-version"`
-	MaxConnections      int64          `bencode:"max_connections"`
-	MaxUploads          int64          `bencode:"max_uploads"`
-	NumDownloaded       int64          `bencode:"num_downloaded"`
-	NumIncomplete       int64          `bencode:"num_incomplete"`
-	MappedFiles         []string       `bencode:"mapped_files,omitempty"`
-	Paused              int64          `bencode:"paused"`
-	Peers               string         `bencode:"peers"`
-	Peers6              string         `bencode:"peers6"`
-	Pieces              []byte         `bencode:"pieces"`
-	QbthasRootFolder    int64          `bencode:"qBt-hasRootFolder"`
-	QbtCategory         string         `bencode:"qBt-category,omitempty"`
-	QbtName             string         `bencode:"qBt-name"`
-	QbtQueuePosition    int            `bencode:"qBt-queuePosition"`
-	QbtRatioLimit       int64          `bencode:"qBt-ratioLimit"`
-	QbtSavePath         string         `bencode:"qBt-savePath"`
-	QbtSeedStatus       int64          `bencode:"qBt-seedStatus"`
-	QbtSeedingTimeLimit int64          `bencode:"qBt-seedingTimeLimit"`
-	QbtTags             []string       `bencode:"qBt-tags"`
-	QbttempPathDisabled int64          `bencode:"qBt-tempPathDisabled"`
-	SavePath            string         `bencode:"save_path"`
-	SeedMode            int64          `bencode:"seed_mode"`
-	SeedingTime         int64          `bencode:"seeding_time"`
-	SequentialDownload  int64          `bencode:"sequential_download"`
-	SuperSeeding        int64          `bencode:"super_seeding"`
-	TotalDownloaded     int64          `bencode:"total_downloaded"`
-	TotalUploaded       int64          `bencode:"total_uploaded"`
-	Trackers            [][]string     `bencode:"trackers"`
-	UploadRateLimit     int64          `bencode:"upload_rate_limit"`
-	Unfinished          *[]interface{} `bencode:"unfinished,omitempty"`
-	WithoutLabels       bool
-	WithoutTags         bool
-	HasFiles            bool
-	TorrentFilePath     string
-	TorrentFile         map[string]interface{}
-	Path                string
-	fileSizes           int64
-	sizeAndPrio         [][]int64
-	torrentFileList     []string
-	NumPieces           int64
-	PieceLenght         int64
-	Replace             []replace.Replace
+	ActiveTime          int64                  `bencode:"active_time"`
+	AddedTime           int64                  `bencode:"added_time"`
+	AnnounceToDht       int64                  `bencode:"announce_to_dht"`
+	AnnounceToLsd       int64                  `bencode:"announce_to_lsd"`
+	AnnounceToTrackers  int64                  `bencode:"announce_to_trackers"`
+	AutoManaged         int64                  `bencode:"auto_managed"`
+	BannedPeers         string                 `bencode:"banned_peers"`
+	BannedPeers6        string                 `bencode:"banned_peers6"`
+	BlockPerPiece       int64                  `bencode:"blocks per piece"`
+	CompletedTime       int64                  `bencode:"completed_time"`
+	DownloadRateLimit   int64                  `bencode:"download_rate_limit"`
+	FileSizes           [][]int64              `bencode:"file sizes"`
+	FileFormat          string                 `bencode:"file-format"`
+	FileVersion         int64                  `bencode:"file-version"`
+	FilePriority        []int                  `bencode:"file_priority"`
+	FinishedTime        int64                  `bencode:"finished_time"`
+	InfoHash            string                 `bencode:"info-hash"`
+	LastSeenComplete    int64                  `bencode:"last_seen_complete"`
+	LibTorrentVersion   string                 `bencode:"libtorrent-version"`
+	MaxConnections      int64                  `bencode:"max_connections"`
+	MaxUploads          int64                  `bencode:"max_uploads"`
+	NumDownloaded       int64                  `bencode:"num_downloaded"`
+	NumIncomplete       int64                  `bencode:"num_incomplete"`
+	MappedFiles         []string               `bencode:"mapped_files,omitempty"`
+	Paused              int64                  `bencode:"paused"`
+	Peers               string                 `bencode:"peers"`
+	Peers6              string                 `bencode:"peers6"`
+	Pieces              []byte                 `bencode:"pieces"`
+	QbthasRootFolder    int64                  `bencode:"qBt-hasRootFolder"`
+	QbtCategory         string                 `bencode:"qBt-category,omitempty"`
+	QbtName             string                 `bencode:"qBt-name"`
+	QbtQueuePosition    int                    `bencode:"qBt-queuePosition"`
+	QbtRatioLimit       int64                  `bencode:"qBt-ratioLimit"`
+	QbtSavePath         string                 `bencode:"qBt-savePath"`
+	QbtSeedStatus       int64                  `bencode:"qBt-seedStatus"`
+	QbtSeedingTimeLimit int64                  `bencode:"qBt-seedingTimeLimit"`
+	QbtTags             []string               `bencode:"qBt-tags"`
+	QbttempPathDisabled int64                  `bencode:"qBt-tempPathDisabled"`
+	SavePath            string                 `bencode:"save_path"`
+	SeedMode            int64                  `bencode:"seed_mode"`
+	SeedingTime         int64                  `bencode:"seeding_time"`
+	SequentialDownload  int64                  `bencode:"sequential_download"`
+	SuperSeeding        int64                  `bencode:"super_seeding"`
+	TotalDownloaded     int64                  `bencode:"total_downloaded"`
+	TotalUploaded       int64                  `bencode:"total_uploaded"`
+	Trackers            [][]string             `bencode:"trackers"`
+	UploadRateLimit     int64                  `bencode:"upload_rate_limit"`
+	Unfinished          *[]interface{}         `bencode:"unfinished,omitempty"`
+	WithoutLabels       bool                   `bencode:"-"`
+	WithoutTags         bool                   `bencode:"-"`
+	HasFiles            bool                   `bencode:"-"`
+	TorrentFilePath     string                 `bencode:"-"`
+	TorrentFile         map[string]interface{} `bencode:"-"`
+	Path                string                 `bencode:"-"`
+	fileSizes           int64                  `bencode:"-"`
+	sizeAndPrio         [][]int64              `bencode:"-"`
+	torrentFileList     []string               `bencode:"-"`
+	NumPieces           int64                  `bencode:"-"`
+	PieceLenght         int64                  `bencode:"-"`
+	Replace             []replace.Replace      `bencode:"-"`
+	Separator           string                 `bencode:"-"`
 }
 
 func (newstructure *NewTorrentStructure) Started(started int64) {
@@ -184,9 +184,9 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 					filestrings = append(filestrings, f.(string))
 				}
 			}
-			filename := strings.Join(filestrings, string(os.PathSeparator))
+			filename := strings.Join(filestrings, newstructure.Separator)
 			newstructure.torrentFileList = append(newstructure.torrentFileList, filename)
-			fullpath := newstructure.Path + string(os.PathSeparator) + filename
+			fullpath := newstructure.Path + newstructure.Separator + filename
 			newstructure.fileSizes += file.(map[string]interface{})["length"].(int64)
 			if n := newstructure.FilePriority[num]; n != 0 {
 				lenght = file.(map[string]interface{})["length"].(int64)
@@ -260,14 +260,15 @@ func (newstructure *NewTorrentStructure) FillSavePaths() {
 		torrentname = newstructure.TorrentFile["info"].(map[string]interface{})["name"].(string)
 	}
 	origpath := newstructure.Path
-	_, lastdirname := filepath.Split(strings.Replace(origpath, string(os.PathSeparator), "/", -1))
+	dirpaths := strings.Split(origpath, "\\")
+	lastdirname := dirpaths[len(dirpaths)-1]
 	if newstructure.HasFiles {
 		if lastdirname == torrentname {
 			newstructure.QbthasRootFolder = 1
 			newstructure.SavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		} else {
 			newstructure.QbthasRootFolder = 0
-			newstructure.SavePath = newstructure.Path + string(os.PathSeparator)
+			newstructure.SavePath = newstructure.Path + newstructure.Separator
 			newstructure.MappedFiles = newstructure.torrentFileList
 		}
 	} else {
@@ -281,11 +282,17 @@ func (newstructure *NewTorrentStructure) FillSavePaths() {
 			newstructure.SavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		}
 	}
-	if len(newstructure.Replace) != 0 {
-		for _, pattern := range newstructure.Replace {
-			newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, pattern.From, pattern.To)
-		}
+	for _, pattern := range newstructure.Replace {
+		newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, pattern.From, pattern.To)
 	}
+	switch newstructure.Separator {
+	case "\\":
+		newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, "/", newstructure.Separator)
+	case "/":
+		newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, "\\", newstructure.Separator)
+
+	}
+
 	newstructure.QbtSavePath = newstructure.SavePath
 }
 
