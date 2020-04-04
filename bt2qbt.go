@@ -147,7 +147,7 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	}
 	if _, err = os.Stat(newstructure.TorrentFilePath); os.IsNotExist(err) {
 		for _, searchPath := range flags.SearchPaths {
-			if _, err = os.Stat(searchPath); err == nil {
+			if _, err = os.Stat(searchPath + newstructure.TorrentFilePath); err == nil {
 				newstructure.TorrentFilePath = searchPath + newstructure.TorrentFilePath
 				goto CONTINUE
 			}
