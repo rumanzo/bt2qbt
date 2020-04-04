@@ -138,8 +138,7 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		if runtime.GOOS == "windows" {
 			newstructure.TorrentFilePath = key
 		} else { // for unix system find in search paths
-			re := regexp.MustCompile(`\\`)
-			pathparts := re.FindAllString("\\", -1)
+			pathparts := strings.Split(key, "\\")
 			newstructure.TorrentFilePath = pathparts[len(pathparts)-1]
 		}
 	} else {
