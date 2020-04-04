@@ -31,7 +31,7 @@ type Flags struct {
 	Config        string   `short:"c" long:"config" description:"Source directory that contains resume.dat and torrents files"`
 	WithoutLabels bool     `long:"without-labels" description:"Do not export/import labels"`
 	WithoutTags   bool     `long:"without-tags" description:"Do not export/import tags"`
-	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files"`
+	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files\n	Example: --search='/mnt/olddisk/savedtorrents' --search='/mnt/olddisk/workstorrents'"`
 	Replaces      []string `short:"r" long:"replace" description:"Replace paths.\n	Delimiter for from/to is comma - ,\n	Example: -r \"D:\\films,/home/user/films\" -r \"\\,/\"\n	If you use path separator different from you system, declare it mannually"`
 	PathSeparator string   `long:"sep" description:"Default path separator that will use in all paths"`
 }
