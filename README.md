@@ -64,11 +64,12 @@ Application Options:
                         --search='/mnt/olddisk/workstorrents'
   -r, --replace=        Replace paths.
                         Delimiter for from/to is comma - ,
-                        Example: -r "D:\films,/home/user/films" -r "\,/"
-                        If you use path separator different from you system,
-                        declare it mannually
-      --sep=            Default path separator that will use in all paths
-                        (default: \)
+                        Example: -r "D:\films,/home/user/films" -r
+                        "D:\music,/home/user/music"
+
+      --sep=            Default path separator that will use in all paths. You
+                        may need use this flag if you migrating from windows to
+                        linux in some cases (default: \)
 
 Help Options:
   -h, --help            Show this help message
