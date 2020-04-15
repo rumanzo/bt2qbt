@@ -15,22 +15,19 @@ import (
 type NewTorrentStructure struct {
 	ActiveTime          int64                  `bencode:"active_time"`
 	AddedTime           int64                  `bencode:"added_time"`
-	AnnounceToDht       int64                  `bencode:"announce_to_dht"`
-	AnnounceToLsd       int64                  `bencode:"announce_to_lsd"`
-	AnnounceToTrackers  int64                  `bencode:"announce_to_trackers"`
+	Allocation          string                 `bencode:"allocation"`
 	AutoManaged         int64                  `bencode:"auto_managed"`
-	BannedPeers         string                 `bencode:"banned_peers"`
-	BannedPeers6        string                 `bencode:"banned_peers6"`
-	BlockPerPiece       int64                  `bencode:"blocks per piece"`
 	CompletedTime       int64                  `bencode:"completed_time"`
 	DownloadRateLimit   int64                  `bencode:"download_rate_limit"`
-	FileSizes           [][]int64              `bencode:"file sizes"`
 	FileFormat          string                 `bencode:"file-format"`
 	FileVersion         int64                  `bencode:"file-version"`
 	FilePriority        []int                  `bencode:"file_priority"`
 	FinishedTime        int64                  `bencode:"finished_time"`
+	HttpSeeds           []string               `bencode:"httpseeds"`
 	InfoHash            string                 `bencode:"info-hash"`
+	LastDownload        int64                  `bencode:"last_download"`
 	LastSeenComplete    int64                  `bencode:"last_seen_complete"`
+	LastUpload          int64                  `bencode:"last_upload"`
 	LibTorrentVersion   string                 `bencode:"libtorrent-version"`
 	MaxConnections      int64                  `bencode:"max_connections"`
 	MaxUploads          int64                  `bencode:"max_uploads"`
@@ -38,11 +35,10 @@ type NewTorrentStructure struct {
 	NumIncomplete       int64                  `bencode:"num_incomplete"`
 	MappedFiles         []string               `bencode:"mapped_files,omitempty"`
 	Paused              int64                  `bencode:"paused"`
-	Peers               string                 `bencode:"peers"`
-	Peers6              string                 `bencode:"peers6"`
+	PiecePriority       []byte                 `bencode:"piece_priority"`
 	Pieces              []byte                 `bencode:"pieces"`
-	QbthasRootFolder    int64                  `bencode:"qBt-hasRootFolder"`
 	QbtCategory         string                 `bencode:"qBt-category,omitempty"`
+	QbthasRootFolder    int64                  `bencode:"qBt-hasRootFolder"`
 	QbtName             string                 `bencode:"qBt-name"`
 	QbtQueuePosition    int                    `bencode:"qBt-queuePosition"`
 	QbtRatioLimit       int64                  `bencode:"qBt-ratioLimit"`
@@ -55,11 +51,13 @@ type NewTorrentStructure struct {
 	SeedMode            int64                  `bencode:"seed_mode"`
 	SeedingTime         int64                  `bencode:"seeding_time"`
 	SequentialDownload  int64                  `bencode:"sequential_download"`
+	StopWhenReady       int64                  `bencode:"stop_when_ready"`
 	SuperSeeding        int64                  `bencode:"super_seeding"`
 	TotalDownloaded     int64                  `bencode:"total_downloaded"`
 	TotalUploaded       int64                  `bencode:"total_uploaded"`
 	Trackers            [][]string             `bencode:"trackers"`
 	UploadRateLimit     int64                  `bencode:"upload_rate_limit"`
+	UrlList             int64                  `bencode:"url-list"`
 	Unfinished          *[]interface{}         `bencode:"unfinished,omitempty"`
 	WithoutLabels       bool                   `bencode:"-"`
 	WithoutTags         bool                   `bencode:"-"`
@@ -80,15 +78,9 @@ func (newstructure *NewTorrentStructure) Started(started int64) {
 	if started == 0 {
 		newstructure.Paused = 1
 		newstructure.AutoManaged = 0
-		newstructure.AnnounceToDht = 0
-		newstructure.AnnounceToLsd = 0
-		newstructure.AnnounceToTrackers = 0
 	} else {
 		newstructure.Paused = 0
 		newstructure.AutoManaged = 1
-		newstructure.AnnounceToDht = 1
-		newstructure.AnnounceToLsd = 1
-		newstructure.AnnounceToTrackers = 1
 	}
 }
 
@@ -166,6 +158,7 @@ func (newstructure *NewTorrentStructure) FillMissing() {
 			newstructure.Pieces = newstructure.FillNotHaveFiles("1")
 		}
 	}
+	newstructure.PiecePriority = newstructure.FillNotHaveFiles("1")
 }
 
 func (newstructure *NewTorrentStructure) FillSizes() {
@@ -200,11 +193,6 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 			flenmtime := []int64{lenght, mtime}
 			filelists = append(filelists, flenmtime)
 		}
-		newstructure.FileSizes = filelists
-	} else {
-		newstructure.fileSizes = newstructure.TorrentFile["info"].(map[string]interface{})["length"].(int64)
-		newstructure.FileSizes = [][]int64{{newstructure.TorrentFile["info"].(map[string]interface{})["length"].(int64),
-			fmtime(newstructure.Path)}}
 	}
 }
 
@@ -265,35 +253,35 @@ func (newstructure *NewTorrentStructure) FillSavePaths() {
 	if newstructure.HasFiles {
 		if lastdirname == torrentname {
 			newstructure.QbthasRootFolder = 1
-			newstructure.SavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newstructure.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		} else {
 			newstructure.QbthasRootFolder = 0
-			newstructure.SavePath = newstructure.Path + newstructure.Separator
+			newstructure.QbtSavePath = newstructure.Path + newstructure.Separator
 			newstructure.MappedFiles = newstructure.torrentFileList
 		}
 	} else {
 		if lastdirname == torrentname {
 			newstructure.QbthasRootFolder = 0
-			newstructure.SavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newstructure.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		} else {
 			newstructure.QbthasRootFolder = 0
 			newstructure.torrentFileList = append(newstructure.torrentFileList, lastdirname)
 			newstructure.MappedFiles = newstructure.torrentFileList
-			newstructure.SavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newstructure.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		}
 	}
 	for _, pattern := range newstructure.Replace {
-		newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, pattern.From, pattern.To)
+		newstructure.QbtSavePath = strings.ReplaceAll(newstructure.QbtSavePath, pattern.From, pattern.To)
 	}
 	switch newstructure.Separator {
 	case "\\":
-		newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, "/", newstructure.Separator)
+		newstructure.QbtSavePath = strings.ReplaceAll(newstructure.QbtSavePath, "/", newstructure.Separator)
 	case "/":
-		newstructure.SavePath = strings.ReplaceAll(newstructure.SavePath, "\\", newstructure.Separator)
+		newstructure.QbtSavePath = strings.ReplaceAll(newstructure.QbtSavePath, "\\", newstructure.Separator)
 
 	}
 
-	newstructure.QbtSavePath = newstructure.SavePath
+	newstructure.SavePath = strings.ReplaceAll(newstructure.QbtSavePath, "\\", "/")
 }
 
 func fmtime(path string) (mtime int64) {
