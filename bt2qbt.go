@@ -127,14 +127,42 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		}
 	}()
 	var err error
-	newstructure := libtorrent.NewTorrentStructure{ActiveTime: 0, AddedTime: 0, AnnounceToDht: 0, AnnounceToLsd: 0,
-		AnnounceToTrackers: 0, AutoManaged: 0, CompletedTime: 0, DownloadRateLimit: -1,
-		FileFormat: "libtorrent resume file", FileVersion: 1, FinishedTime: 0, LastSeenComplete: 0,
-		LibTorrentVersion: "1.1.6.0", MaxConnections: 100, MaxUploads: 100, NumDownloaded: 0, NumIncomplete: 0,
-		QbtQueuePosition: 1, QbtRatioLimit: -2000, QbtSeedStatus: 1, QbtSeedingTimeLimit: -2, QbttempPathDisabled: 0,
-		SeedMode: 0, SeedingTime: 0, SequentialDownload: 0, SuperSeeding: 0, TotalDownloaded: 0, TotalUploaded: 0,
-		UploadRateLimit: 0, QbtName: "", WithoutLabels: flags.WithoutLabels, WithoutTags: flags.WithoutTags,
-		Separator: flags.PathSeparator}
+	newstructure := libtorrent.NewTorrentStructure{
+		ActiveTime:          0,
+		AddedTime:           0,
+		Allocation:          "sparse",
+		AutoManaged:         0,
+		CompletedTime:       0,
+		DownloadRateLimit:   -1,
+		FileFormat:          "libtorrent resume file",
+		FileVersion:         1,
+		FinishedTime:        0,
+		LastDownload:        0,
+		LastSeenComplete:    0,
+		LastUpload:          0,
+		LibTorrentVersion:   "1.2.5.0",
+		MaxConnections:      100,
+		MaxUploads:          100,
+		NumDownloaded:       0,
+		NumIncomplete:       0,
+		QbtQueuePosition:    1,
+		QbtRatioLimit:       -2000,
+		QbtSeedStatus:       1,
+		QbtSeedingTimeLimit: -2,
+		QbttempPathDisabled: 0,
+		SeedMode:            0,
+		SeedingTime:         0,
+		SequentialDownload:  0,
+		SuperSeeding:        0,
+		StopWhenReady:       0,
+		TotalDownloaded:     0,
+		TotalUploaded:       0,
+		UploadRateLimit:     0,
+		QbtName:             "",
+		WithoutLabels:       flags.WithoutLabels,
+		WithoutTags:         flags.WithoutTags,
+		Separator:           flags.PathSeparator,
+	}
 
 	if isAbs, _ := regexp.MatchString(`^[A-Z]:\\`, key); isAbs == true {
 		if runtime.GOOS == "windows" {
@@ -202,7 +230,6 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	newstructure.PrioConvert(value["prio"].(string))
 
 	// https://libtorrent.org/manual-ref.html#fast-resume
-	newstructure.BlockPerPiece = newstructure.TorrentFile["info"].(map[string]interface{})["piece length"].(int64) / 16 / 1024
 	newstructure.PieceLenght = newstructure.TorrentFile["info"].(map[string]interface{})["piece length"].(int64)
 
 	/*
