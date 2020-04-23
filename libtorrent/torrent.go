@@ -158,7 +158,7 @@ func (newstructure *NewTorrentStructure) FillMissing() {
 			newstructure.Pieces = newstructure.FillNotHaveFiles("1")
 		}
 	}
-	newstructure.PiecePriority = newstructure.FillNotHaveFiles("1")
+	newstructure.PiecePriority = newstructure.Pieces
 }
 
 func (newstructure *NewTorrentStructure) FillSizes() {
