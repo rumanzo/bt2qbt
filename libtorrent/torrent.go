@@ -134,9 +134,9 @@ func (newstructure *NewTorrentStructure) PrioConvert(src string) {
 	for _, c := range []byte(src) {
 		if i := int(c); (i == 0) || (i == 128) { // if not selected
 			newprio = append(newprio, 0)
-		} else if (i == 4) || (i == 8) { // if low or normal prio
+		} else if (i >= 1) && (i <= 8) { // if low or normal prio
 			newprio = append(newprio, 1)
-		} else if i == 12 { // if high prio
+		} else if (i > 8) && (i <= 15) { // if high prio
 			newprio = append(newprio, 6)
 		} else {
 			newprio = append(newprio, 0)
