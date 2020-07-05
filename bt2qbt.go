@@ -278,7 +278,6 @@ func main() {
 		flags.QBitDir = usr.HomeDir + sep + "Library" + sep + "Application Support" + sep + "QBittorrent" + sep + "BT_backup" + sep
 	}
 
-	_, err := goflags.Parse(&flags)
 	if _, err := goflags.Parse(&flags); err != nil { // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
 		if flagsErr, ok := err.(*goflags.Error); ok && flagsErr.Type == goflags.ErrHelp {
 			os.Exit(0)
