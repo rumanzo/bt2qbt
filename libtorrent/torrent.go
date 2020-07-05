@@ -273,15 +273,22 @@ func (newstructure *NewTorrentStructure) FillSavePaths() {
 	for _, pattern := range newstructure.Replace {
 		newstructure.QbtSavePath = strings.ReplaceAll(newstructure.QbtSavePath, pattern.From, pattern.To)
 	}
+	var oldsep string
 	switch newstructure.Separator {
 	case "\\":
-		newstructure.QbtSavePath = strings.ReplaceAll(newstructure.QbtSavePath, "/", newstructure.Separator)
+		oldsep = "/"
 	case "/":
-		newstructure.QbtSavePath = strings.ReplaceAll(newstructure.QbtSavePath, "\\", newstructure.Separator)
-
+		oldsep = "\\"
 	}
-
+	newstructure.QbtSavePath = strings.ReplaceAll(newstructure.QbtSavePath, oldsep, newstructure.Separator)
 	newstructure.SavePath = strings.ReplaceAll(newstructure.QbtSavePath, "\\", "/")
+
+	for num, entry := range newstructure.MappedFiles {
+		newentry := strings.ReplaceAll(entry, oldsep, newstructure.Separator)
+		if entry != newentry {
+			newstructure.MappedFiles[num] = newentry
+		}
+	}
 }
 
 func fmtime(path string) (mtime int64) {
