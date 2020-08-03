@@ -18,7 +18,7 @@ Feature:
  - Multithreading
 
 > [!NOTE]
-> \* This torrents will not be done (0%) and will need force rehash
+> \* This torrents will not be done (0%) and will need force recheck (right click on torrent -> Force recheck)
 >
 > [!NOTE]
 > \* If you migrate from windows to linux and use replace function attention that multiple flags -r processing one by one
@@ -33,7 +33,7 @@ Feature:
 >\*\* The calculation of the completed parts is based only on the priority of the files in torrent
 
 > [!NOTE]
->\*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a rehash. Without rehash torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
+>\*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a recheck (right click on torrent -> Force recheck). Without recheck torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
 
 > [!IMPORTANT]
 > Don't forget before use make backup bittorrent\utorrent, qbittorrent folder. and config %APPDATA%/Roaming/qBittorrent/qBittorrent.ini. Close all this program before.
