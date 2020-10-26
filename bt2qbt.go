@@ -316,6 +316,8 @@ func main() {
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
+	flags.SearchPaths = append(flags.SearchPaths, flags.BitDir)
+
 	if _, err := os.Stat(flags.QBitDir); os.IsNotExist(err) {
 		log.Println("Can't find qBittorrent folder")
 		time.Sleep(30 * time.Second)
