@@ -163,7 +163,7 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		Separator:           flags.PathSeparator,
 	}
 
-	if isAbs, _ := regexp.MatchString(`^[A-Z]:\\`, key); isAbs == true {
+	if isAbs, _ := regexp.MatchString(`^([A-Z]:)?,\\`, key); isAbs == true {
 		if runtime.GOOS == "windows" {
 			newstructure.TorrentFilePath = key
 		} else { // for unix system find in search paths
