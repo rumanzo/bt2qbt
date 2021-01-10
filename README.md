@@ -46,7 +46,7 @@ Help (from cmd or powerwhell)
 
 ```
 Usage:
-  C:\Users\user\gomodsproects\bt2qbt\bt2qbt_v1.9_amd64.exe [OPTIONS]
+  C:\Users\user\Downloads\bt2qbt_v1.9_amd64.exe [OPTIONS]
 
 Application Options:
   -s, --source=         Source directory that contains resume.dat and torrents
