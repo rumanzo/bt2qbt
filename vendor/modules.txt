@@ -2,8 +2,8 @@
 github.com/fatih/color
 # github.com/go-ini/ini v1.52.0
 github.com/go-ini/ini
-# github.com/juju/gnuflag v0.0.0-20171113085948-2ce1bb71843d
-github.com/juju/gnuflag
+# github.com/jessevdk/go-flags v1.4.0
+github.com/jessevdk/go-flags
 # github.com/mattn/go-colorable v0.1.4
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.12
