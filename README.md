@@ -13,6 +13,7 @@ Feature:
  - Processing torrents with renamed files
  - Processing torrents with non-standard encodings (for example, cp1251)
  - Processing of torrents in the not ready state *
+ - Processing modified torrent names
  - Save date, metrics, status. **
  - Import of tags and labels
  - Multithreading
@@ -30,7 +31,7 @@ Feature:
 > \* If you migrate from windows to linux you may need to define path separathor with --sep flag
 
 > [!NOTE]
->\*\* The calculation of the completed parts is based only on the priority of the files in torrent
+>\*\* The calculation of the completed parts is based only on the priority of the files in torrent. Don't transfer global uTorrent/BitTorrent statistics.
 
 > [!NOTE]
 >\*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a recheck (right click on torrent -> Force recheck). Without recheck torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
@@ -44,7 +45,8 @@ Help:
 Help (from cmd or powerwhell)
 
 ```
-  C:\Users\user\Downloads\bt2qbt_v1.3_amd64.exe [OPTIONS]
+Usage:
+  C:\Users\user\gomodsproects\bt2qbt\bt2qbt_v1.9_amd64.exe [OPTIONS]
 
 Application Options:
   -s, --source=         Source directory that contains resume.dat and torrents
@@ -52,8 +54,7 @@ Application Options:
                         C:\Users\user\AppData\Roaming\uTorrent\)
   -d, --destination=    Destination directory BT_backup (as default) (default:
                         C:\Users\user\AppData\Local\qBittorrent\BT_backup\)
-  -c, --config=         Source directory that contains resume.dat and torrents
-                        files (default:
+  -c, --config=         qBittorrent config file (for write tags) (default:
                         C:\Users\user\AppData\Roaming\qBittorrent\qBittorren-
 
                         t.ini)
