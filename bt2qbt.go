@@ -27,7 +27,7 @@ import (
 type Flags struct {
 	BitDir        string   `short:"s" long:"source" description:"Source directory that contains resume.dat and torrents files"`
 	QBitDir       string   `short:"d" long:"destination" description:"Destination directory BT_backup (as default)"`
-	Config        string   `short:"c" long:"config" description:"Source directory that contains resume.dat and torrents files"`
+	Config        string   `short:"c" long:"config" description:"qBittorrent config file (for write tags)"`
 	WithoutLabels bool     `long:"without-labels" description:"Do not export/import labels"`
 	WithoutTags   bool     `long:"without-tags" description:"Do not export/import tags"`
 	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files\n	Example: --search='/mnt/olddisk/savedtorrents' --search='/mnt/olddisk/workstorrents'"`
