@@ -208,6 +208,10 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	} else {
 		newstructure.Path = value["path"].(string)
 	}
+	// if torrent name was renamed, add modified name
+	if value["caption"] != nil {
+		newstructure.QbtName = value["caption"].(string)
+	}
 	newstructure.ActiveTime = value["runtime"].(int64)
 	newstructure.AddedTime = value["added_on"].(int64)
 	newstructure.CompletedTime = value["completed_on"].(int64)
