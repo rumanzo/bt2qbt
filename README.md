@@ -42,7 +42,7 @@ Feature:
 Help:
 -------
 
-Help (from cmd or powerwhell)
+Help (from cmd or powershell)
 
 ```
 Usage:
