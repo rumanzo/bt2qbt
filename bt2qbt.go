@@ -220,7 +220,11 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	newstructure.QbtQueuePosition = position
 	newstructure.Started(value["started"].(int64))
 	newstructure.FinishedTime = int64(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
-	newstructure.TotalDownloaded = value["downloaded"].(int64)
+	if value["completed_on"].(int64) == 0 {
+		newstructure.TotalDownloaded = 0
+	} else {
+		newstructure.TotalDownloaded = value["downloaded"].(int64)
+	}
 	newstructure.TotalUploaded = value["uploaded"].(int64)
 	newstructure.UploadRateLimit = value["upspeed"].(int64)
 	newstructure.IfTags(value["labels"])
