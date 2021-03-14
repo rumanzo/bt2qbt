@@ -150,15 +150,16 @@ func (newstructure *NewTorrentStructure) FillMissing() {
 	newstructure.FillSizes()
 	newstructure.FillSavePaths()
 	if newstructure.Unfinished != nil {
-		newstructure.Pieces = newstructure.FillNotHaveFiles("0")
+		newstructure.Pieces = newstructure.FillWholePieces("0")
+		newstructure.PiecePriority = newstructure.FillPiecesParted()
 	} else {
 		if newstructure.HasFiles {
-			newstructure.Pieces = newstructure.FillHaveFiles()
+			newstructure.Pieces = newstructure.FillPiecesParted()
 		} else {
-			newstructure.Pieces = newstructure.FillNotHaveFiles("1")
+			newstructure.Pieces = newstructure.FillWholePieces("1")
 		}
+		newstructure.PiecePriority = newstructure.Pieces
 	}
-	newstructure.PiecePriority = newstructure.FillNotHaveFiles("1")
 }
 
 func (newstructure *NewTorrentStructure) FillSizes() {
@@ -196,7 +197,7 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 	}
 }
 
-func (newstructure *NewTorrentStructure) FillNotHaveFiles(chr string) []byte {
+func (newstructure *NewTorrentStructure) FillWholePieces(chr string) []byte {
 	var newpieces = make([]byte, 0, newstructure.NumPieces)
 	nchr, _ := strconv.Atoi(chr)
 	for i := int64(0); i < newstructure.NumPieces; i++ {
@@ -213,7 +214,7 @@ func (newstructure *NewTorrentStructure) GetHash() (hash string) {
 	return
 }
 
-func (newstructure *NewTorrentStructure) FillHaveFiles() []byte {
+func (newstructure *NewTorrentStructure) FillPiecesParted() []byte {
 	var newpieces = make([]byte, 0, newstructure.NumPieces)
 	var allocation [][]int64
 	chrone, _ := strconv.Atoi("1")
