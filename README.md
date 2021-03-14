@@ -82,7 +82,7 @@ Usage examples:
 
 - If you just run application, it will processing torrents from %APPDATA%\uTorrent\ to %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
 ```
-C:\Users\user\Downloads> .\bt2qbt_v1.3_amd64.exe
+C:\Users\user\Downloads> .\bt2qbt_v1.10_amd64.exe
 It will be performed processing from directory C:\Users\user\AppData\Roaming\uTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
 Check that the qBittorrent is turned off and the directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\ and config C:\Users\user\AppData\Roaming\qBittorrent\qBittorrent.ini is backed up.
 
@@ -98,7 +98,7 @@ Press Enter to exit
 
 - Run application from cmd or powershell with keys, if you want change source dir or destination dir, or export/import behavior
 ```
-C:\Users\user\Downloads> .\bt2qbt_v1.3_amd64.exe -s C:\Users\user\AppData\Roaming\BitTorrent\
+C:\Users\user\Downloads> .\bt2qbt_v1.10_amd64.exe -s C:\Users\user\AppData\Roaming\BitTorrent\
 It will be performed processing from directory C:\Users\user\AppData\Roaming\BitTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
 Check that the qBittorrent is turned off and the directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\ is backed up.
 
