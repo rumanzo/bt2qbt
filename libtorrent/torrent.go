@@ -151,7 +151,11 @@ func (newstructure *NewTorrentStructure) FillMissing() {
 	newstructure.FillSavePaths()
 	if newstructure.Unfinished != nil {
 		newstructure.Pieces = newstructure.FillWholePieces("0")
-		newstructure.PiecePriority = newstructure.FillPiecesParted()
+		if newstructure.HasFiles {
+			newstructure.PiecePriority = newstructure.FillPiecesParted()
+		} else {
+			newstructure.PiecePriority = newstructure.FillWholePieces("1")
+		}
 	} else {
 		if newstructure.HasFiles {
 			newstructure.Pieces = newstructure.FillPiecesParted()
