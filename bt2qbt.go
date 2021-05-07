@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 type Flags struct {
@@ -203,11 +204,16 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	} else {
 		newstructure.HasFiles = false
 	}
-	if value["path"].(string)[len(value["path"].(string))-1] == os.PathSeparator {
-		newstructure.Path = value["path"].(string)[:len(value["path"].(string))-1]
+
+	// remove separator from end
+	lastRune, lastRuneSize := utf8.DecodeLastRuneInString(value["path"].(string))
+	separatorRunes := []rune("/\\")
+	if lastRune == separatorRunes[0] || lastRune == separatorRunes[1] {
+		newstructure.Path = value["path"].(string)[:len(value["path"].(string))-lastRuneSize]
 	} else {
 		newstructure.Path = value["path"].(string)
 	}
+
 	// if torrent name was renamed, add modified name
 	if value["caption"] != nil {
 		newstructure.QbtName = value["caption"].(string)
