@@ -163,6 +163,7 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		WithoutLabels:       flags.WithoutLabels,
 		WithoutTags:         flags.WithoutTags,
 		Separator:           flags.PathSeparator,
+		Targets:             map[int64]string{},
 	}
 
 	if isAbs, _ := regexp.MatchString(`^([A-Za-z]:)?\\`, key); isAbs == true {
@@ -204,6 +205,12 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		newstructure.HasFiles = true
 	} else {
 		newstructure.HasFiles = false
+	}
+
+	if ok := value["targets"]; ok != nil {
+		for _, entry := range value["targets"].([]interface{}) {
+			newstructure.Targets[entry.([]interface{})[0].(int64)] = entry.([]interface{})[1].(string)
+		}
 	}
 
 	// remove separator from end
