@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 type Flags struct {
@@ -72,13 +73,14 @@ func ASCIIconvert(s string) string {
 	return buffer.String()
 }
 
-func checknotexists(s string, tags []string) (bool, string) {
-	for _, value := range tags {
+// return true and string if string exists in array, else false and string
+func checkexists(s string, arr []string) (bool, string) {
+	for _, value := range arr {
 		if value == s {
-			return false, s
+			return true, s
 		}
 	}
-	return true, s
+	return false, s
 }
 
 func decodetorrentfile(path string) (map[string]interface{}, error) {
@@ -203,11 +205,16 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	} else {
 		newstructure.HasFiles = false
 	}
-	if value["path"].(string)[len(value["path"].(string))-1] == os.PathSeparator {
-		newstructure.Path = value["path"].(string)[:len(value["path"].(string))-1]
+
+	// remove separator from end
+	lastRune, lastRuneSize := utf8.DecodeLastRuneInString(value["path"].(string))
+	separatorRunes := []rune("/\\")
+	if lastRune == separatorRunes[0] || lastRune == separatorRunes[1] {
+		newstructure.Path = value["path"].(string)[:len(value["path"].(string))-lastRuneSize]
 	} else {
 		newstructure.Path = value["path"].(string)
 	}
+
 	// if torrent name was renamed, add modified name
 	if value["caption"] != nil {
 		newstructure.QbtName = value["caption"].(string)
@@ -381,7 +388,7 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 				if labels, ok := value.(map[string]interface{})["labels"]; ok {
 					for _, label := range labels.([]interface{}) {
 						if len(label.(string)) > 0 {
-							if ok, tag := checknotexists(ASCIIconvert(label.(string)), newtags); ok {
+							if exists, tag := checkexists(ASCIIconvert(label.(string)), newtags); !exists {
 								newtags = append(newtags, tag)
 							}
 						}
@@ -434,7 +441,7 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 		if cfg.Section("BitTorrent").HasKey("Session\\Tags") {
 			oldtags = cfg.Section("BitTorrent").Key("Session\\Tags").String()
 			for _, tag := range strings.Split(oldtags, ", ") {
-				if ok, t := checknotexists(tag, newtags); ok {
+				if exists, t := checkexists(tag, newtags); !exists {
 					newtags = append(newtags, t)
 				}
 			}

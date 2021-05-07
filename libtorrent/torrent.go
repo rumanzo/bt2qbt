@@ -253,7 +253,12 @@ func (newstructure *NewTorrentStructure) FillSavePaths() {
 		torrentname = newstructure.TorrentFile["info"].(map[string]interface{})["name"].(string)
 	}
 	origpath := newstructure.Path
-	dirpaths := strings.Split(origpath, "\\")
+	var dirpaths []string
+	if contains := strings.Contains(origpath, "\\"); contains {
+		dirpaths = strings.Split(origpath, "\\")
+	} else {
+		dirpaths = strings.Split(origpath, "/")
+	}
 	lastdirname := dirpaths[len(dirpaths)-1]
 	if newstructure.HasFiles {
 		if lastdirname == torrentname {
