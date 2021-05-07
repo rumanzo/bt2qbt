@@ -38,6 +38,9 @@ Feature:
 
 > [!IMPORTANT]
 > Don't forget before use make backup bittorrent\utorrent, qbittorrent folder. and config %APPDATA%/Roaming/qBittorrent/qBittorrent.ini. Close all this program before.
+> 
+> [!IMPORTANT]
+> You must previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files will not handled
 
 Help:
 -------
@@ -46,7 +49,7 @@ Help (from cmd or powershell)
 
 ```
 Usage:
-  C:\Users\user\Downloads\bt2qbt_v1.9_amd64.exe [OPTIONS]
+  C:\Users\user\Downloads\bt2qbt.exe [OPTIONS]
 
 Application Options:
   -s, --source=         Source directory that contains resume.dat and torrents
@@ -82,9 +85,10 @@ Usage examples:
 
 - If you just run application, it will processing torrents from %APPDATA%\uTorrent\ to %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
 ```
-C:\Users\user\Downloads> .\bt2qbt_v1.10_amd64.exe
+C:\Users\user\Downloads> .\bt2qbt.exe
 It will be performed processing from directory C:\Users\user\AppData\Roaming\uTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
 Check that the qBittorrent is turned off and the directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\ and config C:\Users\user\AppData\Roaming\qBittorrent\qBittorrent.ini is backed up.
+Check that you previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent 
 
 
 Press Enter to start
@@ -98,9 +102,11 @@ Press Enter to exit
 
 - Run application from cmd or powershell with keys, if you want change source dir or destination dir, or export/import behavior
 ```
-C:\Users\user\Downloads> .\bt2qbt_v1.10_amd64.exe -s C:\Users\user\AppData\Roaming\BitTorrent\
+C:\Users\user\Downloads> .\bt2qbt.exe -s C:\Users\user\AppData\Roaming\BitTorrent\
 It will be performed processing from directory C:\Users\user\AppData\Roaming\BitTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
 Check that the qBittorrent is turned off and the directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\ is backed up.
+Check that you previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent 
+
 
 Press Enter to start
 Started
