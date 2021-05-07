@@ -363,8 +363,9 @@ func main() {
 		errChannel:     make(chan string, totaljobs),
 		boundedChannel: make(chan bool, runtime.GOMAXPROCS(0)*2)}
 	color.Green("It will be performed processing from directory %v to directory %v\n", flags.BitDir, flags.QBitDir)
-	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n\n",
+	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n",
 		flags.QBitDir, flags.Config)
+	color.HiRed("Check that you previously disable option \"Append .!ut/.!bt to incomplete files\" in preferences of uTorrent/Bittorrent \n\n")
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	log.Println("Started")
