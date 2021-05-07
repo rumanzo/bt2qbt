@@ -72,6 +72,7 @@ type NewTorrentStructure struct {
 	PieceLenght         int64                  `bencode:"-"`
 	Replace             []replace.Replace      `bencode:"-"`
 	Separator           string                 `bencode:"-"`
+	Targets             map[int64]string       `bencode:"-"`
 }
 
 func (newstructure *NewTorrentStructure) Started(started int64) {
@@ -173,12 +174,21 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 		for num, file := range newstructure.TorrentFile["info"].(map[string]interface{})["files"].([]interface{}) {
 			var lenght, mtime int64
 			var filestrings []string
-			if path, ok := file.(map[string]interface{})["path.utf-8"].([]interface{}); ok {
-				for _, f := range path {
-					filestrings = append(filestrings, f.(string))
-				}
+			var mappedPath []interface{}
+			if paths, ok := file.(map[string]interface{})["path.utf-8"].([]interface{}); ok {
+				mappedPath = paths
 			} else {
-				for _, f := range file.(map[string]interface{})["path"].([]interface{}) {
+				mappedPath = file.(map[string]interface{})["path"].([]interface{})
+			}
+
+			for n, f := range mappedPath {
+				if len(mappedPath)-1 == n && len(newstructure.Targets) > 0 {
+					for index, rewrittenFileName := range newstructure.Targets {
+						if index == int64(num) {
+							filestrings = append(filestrings, rewrittenFileName)
+						}
+					}
+				} else {
 					filestrings = append(filestrings, f.(string))
 				}
 			}
@@ -264,6 +274,15 @@ func (newstructure *NewTorrentStructure) FillSavePaths() {
 		if lastdirname == torrentname {
 			newstructure.QbthasRootFolder = 1
 			newstructure.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			if len(newstructure.Targets) > 0 {
+				for _, path := range newstructure.torrentFileList {
+					if len(path) > 0 {
+						newstructure.MappedFiles = append(newstructure.MappedFiles, lastdirname+newstructure.Separator+path)
+					} else {
+						newstructure.MappedFiles = append(newstructure.MappedFiles, path)
+					}
+				}
+			}
 		} else {
 			newstructure.QbthasRootFolder = 0
 			newstructure.QbtSavePath = newstructure.Path + newstructure.Separator
