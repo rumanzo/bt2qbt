@@ -3,7 +3,6 @@ package libtorrent
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"github.com/rumanzo/bt2qbt/replace"
 	"github.com/zeebo/bencode"
 	"io"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"time"
 )
-
 
 func (newstructure *NewTorrentStructure) Started(started int64) {
 	if started == 0 {
