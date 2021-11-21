@@ -12,68 +12,6 @@ import (
 	"time"
 )
 
-type NewTorrentStructure struct {
-	ActiveTime          int64                  `bencode:"active_time"`
-	AddedTime           int64                  `bencode:"added_time"`
-	Allocation          string                 `bencode:"allocation"`
-	AutoManaged         int64                  `bencode:"auto_managed"`
-	CompletedTime       int64                  `bencode:"completed_time"`
-	DownloadRateLimit   int64                  `bencode:"download_rate_limit"`
-	FileFormat          string                 `bencode:"file-format"`
-	FileVersion         int64                  `bencode:"file-version"`
-	FilePriority        []int                  `bencode:"file_priority"`
-	FinishedTime        int64                  `bencode:"finished_time"`
-	HttpSeeds           []string               `bencode:"httpseeds"`
-	InfoHash            string                 `bencode:"info-hash"`
-	LastDownload        int64                  `bencode:"last_download"`
-	LastSeenComplete    int64                  `bencode:"last_seen_complete"`
-	LastUpload          int64                  `bencode:"last_upload"`
-	LibTorrentVersion   string                 `bencode:"libtorrent-version"`
-	MaxConnections      int64                  `bencode:"max_connections"`
-	MaxUploads          int64                  `bencode:"max_uploads"`
-	NumDownloaded       int64                  `bencode:"num_downloaded"`
-	NumIncomplete       int64                  `bencode:"num_incomplete"`
-	MappedFiles         []string               `bencode:"mapped_files,omitempty"`
-	Paused              int64                  `bencode:"paused"`
-	PiecePriority       []byte                 `bencode:"piece_priority"`
-	Pieces              []byte                 `bencode:"pieces"`
-	QbtCategory         string                 `bencode:"qBt-category,omitempty"`
-	QbthasRootFolder    int64                  `bencode:"qBt-hasRootFolder"`
-	QbtName             string                 `bencode:"qBt-name"`
-	QbtQueuePosition    int                    `bencode:"qBt-queuePosition"`
-	QbtRatioLimit       int64                  `bencode:"qBt-ratioLimit"`
-	QbtSavePath         string                 `bencode:"qBt-savePath"`
-	QbtSeedStatus       int64                  `bencode:"qBt-seedStatus"`
-	QbtSeedingTimeLimit int64                  `bencode:"qBt-seedingTimeLimit"`
-	QbtTags             []string               `bencode:"qBt-tags"`
-	QbttempPathDisabled int64                  `bencode:"qBt-tempPathDisabled"`
-	SavePath            string                 `bencode:"save_path"`
-	SeedMode            int64                  `bencode:"seed_mode"`
-	SeedingTime         int64                  `bencode:"seeding_time"`
-	SequentialDownload  int64                  `bencode:"sequential_download"`
-	StopWhenReady       int64                  `bencode:"stop_when_ready"`
-	SuperSeeding        int64                  `bencode:"super_seeding"`
-	TotalDownloaded     int64                  `bencode:"total_downloaded"`
-	TotalUploaded       int64                  `bencode:"total_uploaded"`
-	Trackers            [][]string             `bencode:"trackers"`
-	UploadRateLimit     int64                  `bencode:"upload_rate_limit"`
-	UrlList             int64                  `bencode:"url-list"`
-	Unfinished          *[]interface{}         `bencode:"unfinished,omitempty"`
-	WithoutLabels       bool                   `bencode:"-"`
-	WithoutTags         bool                   `bencode:"-"`
-	HasFiles            bool                   `bencode:"-"`
-	TorrentFilePath     string                 `bencode:"-"`
-	TorrentFile         map[string]interface{} `bencode:"-"`
-	Path                string                 `bencode:"-"`
-	fileSizes           int64                  `bencode:"-"`
-	sizeAndPrio         [][]int64              `bencode:"-"`
-	torrentFileList     []string               `bencode:"-"`
-	NumPieces           int64                  `bencode:"-"`
-	PieceLenght         int64                  `bencode:"-"`
-	Replace             []replace.Replace      `bencode:"-"`
-	Separator           string                 `bencode:"-"`
-	Targets             map[int64]string       `bencode:"-"`
-}
 
 func (newstructure *NewTorrentStructure) Started(started int64) {
 	if started == 0 {
