@@ -9,6 +9,8 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
+	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
+	"github.com/zeebo/bencode"
 	"log"
 	"os"
 	"regexp"
@@ -39,37 +41,38 @@ func logic(key string, value map[string]interface{}, opts *options.Opts, chans *
 		}
 	}()
 	var err error
-	newstructure := libtorrent.NewTorrentStructure{Fastresume: qBittorrentStructures.QBittorrentFastresume{
-		ActiveTime:          0,
-		AddedTime:           0,
-		Allocation:          "sparse",
-		AutoManaged:         0,
-		CompletedTime:       0,
-		DownloadRateLimit:   -1,
-		FileFormat:          "libtorrent resume file",
-		FileVersion:         1,
-		FinishedTime:        0,
-		LastDownload:        0,
-		LastSeenComplete:    0,
-		LastUpload:          0,
-		LibTorrentVersion:   "1.2.5.0",
-		MaxConnections:      100,
-		MaxUploads:          100,
-		NumDownloaded:       0,
-		NumIncomplete:       0,
-		QbtRatioLimit:       -2000,
-		QbtSeedStatus:       1,
-		QbtSeedingTimeLimit: -2,
-		SeedMode:            0,
-		SeedingTime:         0,
-		SequentialDownload:  0,
-		SuperSeeding:        0,
-		StopWhenReady:       0,
-		TotalDownloaded:     0,
-		TotalUploaded:       0,
-		UploadRateLimit:     0,
-		QbtName:             "",
-	},
+	newstructure := libtorrent.NewTorrentStructure{
+		Fastresume: qBittorrentStructures.QBittorrentFastresume{
+			ActiveTime:          0,
+			AddedTime:           0,
+			Allocation:          "sparse",
+			AutoManaged:         0,
+			CompletedTime:       0,
+			DownloadRateLimit:   -1,
+			FileFormat:          "libtorrent resume file",
+			FileVersion:         1,
+			FinishedTime:        0,
+			LastDownload:        0,
+			LastSeenComplete:    0,
+			LastUpload:          0,
+			LibTorrentVersion:   "1.2.5.0",
+			MaxConnections:      100,
+			MaxUploads:          100,
+			NumDownloaded:       0,
+			NumIncomplete:       0,
+			QbtRatioLimit:       -2000,
+			QbtSeedStatus:       1,
+			QbtSeedingTimeLimit: -2,
+			SeedMode:            0,
+			SeedingTime:         0,
+			SequentialDownload:  0,
+			SuperSeeding:        0,
+			StopWhenReady:       0,
+			TotalDownloaded:     0,
+			TotalUploaded:       0,
+			UploadRateLimit:     0,
+			QbtName:             "",
+		},
 		WithoutLabels: opts.WithoutLabels,
 		WithoutTags:   opts.WithoutTags,
 		Separator:     opts.PathSeparator,
@@ -225,6 +228,19 @@ func transferTorrents(chans Channels, opts *options.Opts, resumefile map[string]
 	var wg sync.WaitGroup
 
 	positionnum := 0
+
+	// hate utorrent for heterogeneous resume.dat scheme
+	if _, ok := resumefile[".fileguard"]; ok {
+		delete(resumefile, ".fileguard")
+	}
+	if _, ok := resumefile[".rec"]; ok {
+		delete(resumefile, ".fileguard")
+	}
+	b, _ := bencode.EncodeBytes(resumefile)
+	ut := []utorrentStructs.ResumeItem{}
+	bencode.DecodeBytes(b, &ut)
+	fmt.Println(ut)
+
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			positionnum++
