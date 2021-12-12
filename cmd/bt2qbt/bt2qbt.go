@@ -13,6 +13,7 @@ import (
 	"github.com/zeebo/bencode"
 	"log"
 	"os"
+	"path"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -189,21 +190,21 @@ func logic(key string, value map[string]interface{}, opts *options.Opts, chans *
 func main() {
 	opts := options.MakeOpts()
 
-	resumefilepath := opts.BitDir + "resume.dat"
-	if _, err := os.Stat(resumefilepath); os.IsNotExist(err) {
+	resumeFilePath := path.Join(opts.BitDir, "resume.dat")
+	if _, err := os.Stat(resumeFilePath); os.IsNotExist(err) {
 		log.Println("Can't find uTorrent\\Bittorrent resume file")
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
-	resumefile, err := helpers.DecodeTorrentFile(resumefilepath)
+	resumeFile, err := helpers.DecodeTorrentFile(resumeFilePath)
 	if err != nil {
 		log.Println("Can't decode uTorrent\\Bittorrent resume file")
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
-	totaljobs := len(resumefile)
-	chans := Channels{comChannel: make(chan string, totaljobs),
-		errChannel:     make(chan string, totaljobs),
+	totalJobs := len(resumeFile)
+	chans := Channels{comChannel: make(chan string, totalJobs),
+		errChannel:     make(chan string, totalJobs),
 		boundedChannel: make(chan bool, runtime.GOMAXPROCS(0)*2)}
 
 	color.Green("It will be performed processing from directory %v to directory %v\n", opts.BitDir, opts.QBitDir)
@@ -214,14 +215,14 @@ func main() {
 	fmt.Scanln()
 	log.Println("Started")
 
-	transferTorrents(chans, opts, resumefile, totaljobs)
+	transferTorrents(chans, opts, resumeFile, totalJobs)
 
 	fmt.Println("\nPress Enter to exit")
 	fmt.Scanln()
 
 }
 
-func transferTorrents(chans Channels, opts *options.Opts, resumefile map[string]interface{}, totaljobs int) {
+func transferTorrents(chans Channels, opts *options.Opts, resumeFile map[string]interface{}, totalJobs int) {
 	numjob := 1
 	var oldtags string
 	var newtags []string
@@ -230,18 +231,14 @@ func transferTorrents(chans Channels, opts *options.Opts, resumefile map[string]
 	positionnum := 0
 
 	// hate utorrent for heterogeneous resume.dat scheme
-	if _, ok := resumefile[".fileguard"]; ok {
-		delete(resumefile, ".fileguard")
-	}
-	if _, ok := resumefile[".rec"]; ok {
-		delete(resumefile, ".fileguard")
-	}
-	b, _ := bencode.EncodeBytes(resumefile)
+	delete(resumeFile, ".fileguard")
+	delete(resumeFile, ".fileguard")
+	b, _ := bencode.EncodeBytes(resumeFile)
 	ut := []utorrentStructs.ResumeItem{}
 	bencode.DecodeBytes(b, &ut)
 	fmt.Println(ut)
 
-	for key, value := range resumefile {
+	for key, value := range resumeFile {
 		if key != ".fileguard" && key != "rec" {
 			positionnum++
 			if opts.WithoutTags == false {
@@ -259,7 +256,7 @@ func transferTorrents(chans Channels, opts *options.Opts, resumefile map[string]
 			chans.boundedChannel <- true
 			go logic(key, value.(map[string]interface{}), opts, &chans, positionnum, &wg)
 		} else {
-			totaljobs--
+			totalJobs--
 		}
 	}
 	go func() {
@@ -268,12 +265,12 @@ func transferTorrents(chans Channels, opts *options.Opts, resumefile map[string]
 		close(chans.errChannel)
 	}()
 	for message := range chans.comChannel {
-		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
+		fmt.Printf("%v/%v %v \n", numjob, totalJobs, message)
 		numjob++
 	}
 	var waserrors bool
 	for message := range chans.errChannel {
-		fmt.Printf("%v/%v %v \n", numjob, totaljobs, message)
+		fmt.Printf("%v/%v %v \n", numjob, totalJobs, message)
 		waserrors = true
 		numjob++
 	}
