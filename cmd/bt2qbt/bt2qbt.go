@@ -1,24 +1,23 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/color"
 	"github.com/go-ini/ini"
 	goflags "github.com/jessevdk/go-flags"
+	"github.com/rumanzo/bt2qbt/internal/libtorrent"
 	"github.com/rumanzo/bt2qbt/internal/replace"
-	"github.com/rumanzo/bt2qbt/libtorrent"
+	"github.com/rumanzo/bt2qbt/pkg/helpers"
+	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
+	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"regexp"
 	"runtime"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -42,79 +41,6 @@ type Channels struct {
 	boundedChannel chan bool
 }
 
-func encodetorrentfile(path string, newstructure *libtorrent.NewTorrentStructure) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Create(path)
-	}
-
-	file, err := os.OpenFile(path, os.O_WRONLY, 0666)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	bufferedWriter := bufio.NewWriter(file)
-	enc := bencode.NewEncoder(bufferedWriter)
-	if err := enc.Encode(newstructure); err != nil {
-		return err
-	}
-	bufferedWriter.Flush()
-	return nil
-}
-
-func ASCIIconvert(s string) string {
-	var buffer bytes.Buffer
-	for _, c := range s {
-		if c > 127 {
-			buffer.WriteString(`\x` + strconv.FormatUint(uint64(c), 16))
-		} else {
-			buffer.WriteString(string(c))
-		}
-	}
-	return buffer.String()
-}
-
-// return true and string if string exists in array, else false and string
-func checkexists(s string, arr []string) (bool, string) {
-	for _, value := range arr {
-		if value == s {
-			return true, s
-		}
-	}
-	return false, s
-}
-
-func decodetorrentfile(path string) (map[string]interface{}, error) {
-	dat, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var torrent map[string]interface{}
-	if err := bencode.DecodeBytes(dat, &torrent); err != nil {
-		return nil, err
-	}
-	return torrent, nil
-}
-
-func copyfile(src string, dst string) error {
-	originalFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer originalFile.Close()
-	newFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer newFile.Close()
-	if _, err := io.Copy(newFile, originalFile); err != nil {
-		return err
-	}
-	if err := newFile.Sync(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func logic(key string, value map[string]interface{}, flags *Flags, chans *Channels, position int, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	defer func() {
@@ -128,7 +54,7 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		}
 	}()
 	var err error
-	newstructure := libtorrent.NewTorrentStructure{
+	newstructure := libtorrent.NewTorrentStructure{Fastresume: qBittorrentStructures.QBittorrentFastresume{
 		ActiveTime:          0,
 		AddedTime:           0,
 		Allocation:          "sparse",
@@ -146,11 +72,9 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		MaxUploads:          100,
 		NumDownloaded:       0,
 		NumIncomplete:       0,
-		QbtQueuePosition:    1,
 		QbtRatioLimit:       -2000,
 		QbtSeedStatus:       1,
 		QbtSeedingTimeLimit: -2,
-		QbttempPathDisabled: 0,
 		SeedMode:            0,
 		SeedingTime:         0,
 		SequentialDownload:  0,
@@ -160,10 +84,11 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		TotalUploaded:       0,
 		UploadRateLimit:     0,
 		QbtName:             "",
-		WithoutLabels:       flags.WithoutLabels,
-		WithoutTags:         flags.WithoutTags,
-		Separator:           flags.PathSeparator,
-		Targets:             map[int64]string{},
+	},
+		WithoutLabels: flags.WithoutLabels,
+		WithoutTags:   flags.WithoutTags,
+		Separator:     flags.PathSeparator,
+		Targets:       map[int64]string{},
 	}
 
 	if isAbs, _ := regexp.MatchString(`^([A-Za-z]:)?\\`, key); isAbs == true {
@@ -187,7 +112,7 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		return err
 	CONTINUE:
 	}
-	newstructure.TorrentFile, err = decodetorrentfile(newstructure.TorrentFilePath)
+	newstructure.TorrentFile, err = helpers.DecodeTorrentFile(newstructure.TorrentFilePath)
 	if err != nil {
 		chans.errChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newstructure.TorrentFilePath, key)
 		return err
@@ -224,23 +149,22 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 
 	// if torrent name was renamed, add modified name
 	if value["caption"] != nil {
-		newstructure.QbtName = value["caption"].(string)
+		newstructure.Fastresume.QbtName = value["caption"].(string)
 	}
-	newstructure.ActiveTime = value["runtime"].(int64)
-	newstructure.AddedTime = value["added_on"].(int64)
-	newstructure.CompletedTime = value["completed_on"].(int64)
-	newstructure.InfoHash = value["info"].(string)
-	newstructure.SeedingTime = value["runtime"].(int64)
-	newstructure.QbtQueuePosition = position
+	newstructure.Fastresume.ActiveTime = value["runtime"].(int64)
+	newstructure.Fastresume.AddedTime = value["added_on"].(int64)
+	newstructure.Fastresume.CompletedTime = value["completed_on"].(int64)
+	//newstructure.Fastresume.InfoHash = value["info"].(string) //todo
+	newstructure.Fastresume.SeedingTime = value["runtime"].(int64)
 	newstructure.Started(value["started"].(int64))
-	newstructure.FinishedTime = int64(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
+	newstructure.Fastresume.FinishedTime = int64(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
 	if value["completed_on"].(int64) == 0 {
-		newstructure.TotalDownloaded = 0
+		newstructure.Fastresume.TotalDownloaded = 0
 	} else {
-		newstructure.TotalDownloaded = value["downloaded"].(int64)
+		newstructure.Fastresume.TotalDownloaded = value["downloaded"].(int64)
 	}
-	newstructure.TotalUploaded = value["uploaded"].(int64)
-	newstructure.UploadRateLimit = value["upspeed"].(int64)
+	newstructure.Fastresume.TotalUploaded = value["uploaded"].(int64)
+	newstructure.Fastresume.UploadRateLimit = value["upspeed"].(int64)
 	newstructure.IfTags(value["labels"])
 	if value["label"] != nil {
 		newstructure.IfLabel(value["label"].(string))
@@ -262,11 +186,11 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	newstructure.FillMissing()
 	newbasename := newstructure.GetHash()
 
-	if err = encodetorrentfile(flags.QBitDir+newbasename+".fastresume", &newstructure); err != nil {
+	if err = libtorrent.EncodeTorrentFile(flags.QBitDir+newbasename+".fastresume", &newstructure); err != nil {
 		chans.errChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", flags.QBitDir+newbasename+".fastresume")
 		return err
 	}
-	if err = copyfile(newstructure.TorrentFilePath, flags.QBitDir+newbasename+".torrent"); err != nil {
+	if err = helpers.CopyFile(newstructure.TorrentFilePath, flags.QBitDir+newbasename+".torrent"); err != nil {
 		chans.errChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", flags.QBitDir+newbasename+".torrent")
 		return err
 	}
@@ -275,6 +199,22 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 }
 
 func main() {
+	utdecoded := map[string]utorrentStructs.ResumeItem{}
+	r, err := os.OpenFile(`C:\Users\rumanzo\AppData\Roaming\uTorrent\resume_edited.dat`, os.O_RDONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	if err != nil {
+		panic(err)
+	}
+	dec := bencode.NewDecoder(r)
+	dec.SetFailOnUnorderedKeys(false)
+	err = dec.Decode(&utdecoded)
+	if err != nil {
+		panic(err)
+	}
+	spew.Dump(utdecoded)
+	os.Exit(0)
 	flags := Flags{PathSeparator: string(os.PathSeparator)}
 	sep := string(os.PathSeparator)
 	switch OS := runtime.GOOS; OS {
@@ -351,7 +291,7 @@ func main() {
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
-	resumefile, err := decodetorrentfile(resumefilepath)
+	resumefile, err := helpers.DecodeTorrentFile(resumefilepath)
 	if err != nil {
 		log.Println("Can't decode uTorrent\\Bittorrent resume file")
 		time.Sleep(30 * time.Second)
@@ -396,7 +336,7 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 				if labels, ok := value.(map[string]interface{})["labels"]; ok {
 					for _, label := range labels.([]interface{}) {
 						if len(label.(string)) > 0 {
-							if exists, tag := checkexists(ASCIIconvert(label.(string)), newtags); !exists {
+							if exists, tag := helpers.CheckExists(helpers.ASCIIConvert(label.(string)), newtags); !exists {
 								newtags = append(newtags, tag)
 							}
 						}
@@ -449,7 +389,7 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 		if cfg.Section("BitTorrent").HasKey("Session\\Tags") {
 			oldtags = cfg.Section("BitTorrent").Key("Session\\Tags").String()
 			for _, tag := range strings.Split(oldtags, ", ") {
-				if exists, t := checkexists(tag, newtags); !exists {
+				if exists, t := helpers.CheckExists(tag, newtags); !exists {
 					newtags = append(newtags, t)
 				}
 			}

@@ -15,6 +15,7 @@ type TorrentInfo struct {
 	Length       int64            `bencode:"length,omitempty"`
 	Md5sum       string           `bencode:"md5sum,omitempty"`
 	Name         string           `bencode:"name"`
+	NameUTF8     string           `bencode:"name.utf-8"`
 	PieceLength  int64            `bencode:"piece length"`
 	Pieces       []byte           `bencode:"pieces"`
 	Private      uint8            `bencode:"private"`
@@ -22,9 +23,10 @@ type TorrentInfo struct {
 }
 
 type TorrentFile struct {
-	Length int64    `bencode:"Length"`
-	Md5sum string   `bencode:"md5sum,omitempty"`
-	Path   []string `bencode:"path"`
+	Length   int64    `bencode:"Length"`
+	Md5sum   string   `bencode:"md5sum,omitempty"`
+	Path     []string `bencode:"path"`
+	PathUTF8 []string `bencode:"path.utf-8"`
 }
 
 type TorrentProfile struct {

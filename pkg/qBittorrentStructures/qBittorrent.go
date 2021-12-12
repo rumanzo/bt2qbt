@@ -41,7 +41,7 @@ type QBittorrentFastresume struct {
 	PiecePriority             []byte                          `bencode:"piece_priority"` // string of bytes. Each byte is interpreted as an integer and is the priority of that piece.
 	Pieces                    []byte                          `bencode:"pieces"`         // A string with piece flags, one character per piece. Bit 1 means we have that piece. Bit 2 means we have verified that this piece is correct. This only applies when the torrent is in seed_mode.
 	QBtCategory               string                          `bencode:"qBt-category"`
-	QBtContentLayout          string                          `bencode:"qBt-contentLayout"`
+	QBtContentLayout          string                          `bencode:"qBt-contentLayout"` // Original, Subfolder, NoSubfolder
 	QBtFirstLastPiecePriority string                          `bencode:"qBt-firstLastPiecePriority"`
 	QbtName                   string                          `bencode:"qBt-name"`
 	QbtRatioLimit             int64                           `bencode:"qBt-ratioLimit"`
