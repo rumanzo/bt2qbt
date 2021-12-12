@@ -2,19 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/color"
 	"github.com/go-ini/ini"
-	goflags "github.com/jessevdk/go-flags"
 	"github.com/rumanzo/bt2qbt/internal/libtorrent"
+	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
-	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
-	"github.com/zeebo/bencode"
 	"log"
 	"os"
-	"os/user"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -24,24 +20,13 @@ import (
 	"unicode/utf8"
 )
 
-type Flags struct {
-	BitDir        string   `short:"s" long:"source" description:"Source directory that contains resume.dat and torrents files"`
-	QBitDir       string   `short:"d" long:"destination" description:"Destination directory BT_backup (as default)"`
-	Config        string   `short:"c" long:"config" description:"qBittorrent config file (for write tags)"`
-	WithoutLabels bool     `long:"without-labels" description:"Do not export/import labels"`
-	WithoutTags   bool     `long:"without-tags" description:"Do not export/import tags"`
-	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files\n	Example: --search='/mnt/olddisk/savedtorrents' --search='/mnt/olddisk/workstorrents'"`
-	Replaces      []string `short:"r" long:"replace" description:"Replace paths.\n	Delimiter for from/to is comma - ,\n	Example: -r \"D:\\films,/home/user/films\" -r \"D:\\music,/home/user/music\"\n"`
-	PathSeparator string   `long:"sep" description:"Default path separator that will use in all paths. You may need use this flag if you migrating from windows to linux in some cases"`
-}
-
 type Channels struct {
 	comChannel     chan string
 	errChannel     chan string
 	boundedChannel chan bool
 }
 
-func logic(key string, value map[string]interface{}, flags *Flags, chans *Channels, position int, wg *sync.WaitGroup) error {
+func logic(key string, value map[string]interface{}, opts *options.Opts, chans *Channels, position int, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	defer func() {
 		<-chans.boundedChannel
@@ -85,9 +70,9 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		UploadRateLimit:     0,
 		QbtName:             "",
 	},
-		WithoutLabels: flags.WithoutLabels,
-		WithoutTags:   flags.WithoutTags,
-		Separator:     flags.PathSeparator,
+		WithoutLabels: opts.WithoutLabels,
+		WithoutTags:   opts.WithoutTags,
+		Separator:     opts.PathSeparator,
 		Targets:       map[int64]string{},
 	}
 
@@ -99,10 +84,10 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 			newstructure.TorrentFilePath = pathparts[len(pathparts)-1]
 		}
 	} else {
-		newstructure.TorrentFilePath = flags.BitDir + key // additional search required
+		newstructure.TorrentFilePath = opts.BitDir + key // additional search required
 	}
 	if _, err = os.Stat(newstructure.TorrentFilePath); os.IsNotExist(err) {
-		for _, searchPath := range flags.SearchPaths {
+		for _, searchPath := range opts.SearchPaths {
 			if _, err = os.Stat(searchPath + newstructure.TorrentFilePath); err == nil {
 				newstructure.TorrentFilePath = searchPath + newstructure.TorrentFilePath
 				goto CONTINUE
@@ -118,7 +103,7 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 		return err
 	}
 
-	for _, str := range flags.Replaces {
+	for _, str := range opts.Replaces {
 		patterns := strings.Split(str, ",")
 		newstructure.Replace = append(newstructure.Replace, replace.Replace{
 			From: patterns[0],
@@ -186,12 +171,12 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 	newstructure.FillMissing()
 	newbasename := newstructure.GetHash()
 
-	if err = libtorrent.EncodeTorrentFile(flags.QBitDir+newbasename+".fastresume", &newstructure); err != nil {
-		chans.errChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", flags.QBitDir+newbasename+".fastresume")
+	if err = libtorrent.EncodeTorrentFile(opts.QBitDir+newbasename+".fastresume", &newstructure); err != nil {
+		chans.errChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", opts.QBitDir+newbasename+".fastresume")
 		return err
 	}
-	if err = helpers.CopyFile(newstructure.TorrentFilePath, flags.QBitDir+newbasename+".torrent"); err != nil {
-		chans.errChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", flags.QBitDir+newbasename+".torrent")
+	if err = helpers.CopyFile(newstructure.TorrentFilePath, opts.QBitDir+newbasename+".torrent"); err != nil {
+		chans.errChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", opts.QBitDir+newbasename+".torrent")
 		return err
 	}
 	chans.comChannel <- fmt.Sprintf("Sucessfully imported %v", key)
@@ -199,93 +184,9 @@ func logic(key string, value map[string]interface{}, flags *Flags, chans *Channe
 }
 
 func main() {
-	utdecoded := map[string]utorrentStructs.ResumeItem{}
-	r, err := os.OpenFile(`C:\Users\rumanzo\AppData\Roaming\uTorrent\resume_edited.dat`, os.O_RDONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	if err != nil {
-		panic(err)
-	}
-	dec := bencode.NewDecoder(r)
-	dec.SetFailOnUnorderedKeys(false)
-	err = dec.Decode(&utdecoded)
-	if err != nil {
-		panic(err)
-	}
-	spew.Dump(utdecoded)
-	os.Exit(0)
-	flags := Flags{PathSeparator: string(os.PathSeparator)}
-	sep := string(os.PathSeparator)
-	switch OS := runtime.GOOS; OS {
-	case "windows":
-		flags.BitDir = os.Getenv("APPDATA") + sep + "uTorrent" + sep
-		flags.Config = os.Getenv("APPDATA") + sep + "qBittorrent" + sep + "qBittorrent.ini"
-		flags.QBitDir = os.Getenv("LOCALAPPDATA") + sep + "qBittorrent" + sep + "BT_backup" + sep
-	case "linux":
-		usr, err := user.Current()
-		if err != nil {
-			panic(err)
-		}
-		flags.BitDir = "/mnt/uTorrent/"
-		flags.Config = usr.HomeDir + sep + ".config" + sep + "qBittorrent" + sep + "qBittorrent.conf"
-		flags.QBitDir = usr.HomeDir + sep + ".local" + sep + "share" + sep + "data" + sep + "qBittorrent" + sep + "BT_backup" + sep
-	case "darwin":
-		usr, err := user.Current()
-		if err != nil {
-			panic(err)
-		}
-		flags.BitDir = usr.HomeDir + sep + "Library" + sep + "Application Support" + sep + "uTorrent" + sep
-		flags.Config = usr.HomeDir + sep + ".config" + sep + "qBittorrent" + sep + "qbittorrent.ini"
-		flags.QBitDir = usr.HomeDir + sep + "Library" + sep + "Application Support" + sep + "QBittorrent" + sep + "BT_backup" + sep
-	}
+	opts := options.MakeOpts()
 
-	if _, err := goflags.Parse(&flags); err != nil { // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
-		if flagsErr, ok := err.(*goflags.Error); ok && flagsErr.Type == goflags.ErrHelp {
-			os.Exit(0)
-		} else {
-			log.Println(err)
-			time.Sleep(30 * time.Second)
-			os.Exit(1)
-		}
-	}
-
-	if len(flags.Replaces) != 0 {
-		for _, str := range flags.Replaces {
-			patterns := strings.Split(str, ",")
-			if len(patterns) < 2 {
-				log.Println("Bad replace pattern")
-				time.Sleep(30 * time.Second)
-				os.Exit(1)
-			}
-		}
-	}
-
-	if flags.BitDir[len(flags.BitDir)-1] != os.PathSeparator {
-		flags.BitDir += string(os.PathSeparator)
-	}
-	if flags.QBitDir[len(flags.QBitDir)-1] != os.PathSeparator {
-		flags.QBitDir += string(os.PathSeparator)
-	}
-	for index, searchPath := range flags.SearchPaths {
-		if searchPath[len(searchPath)-1] != os.PathSeparator {
-			flags.SearchPaths[index] += string(os.PathSeparator)
-		}
-	}
-
-	if _, err := os.Stat(flags.BitDir); os.IsNotExist(err) {
-		log.Println("Can't find uTorrent\\Bittorrent folder")
-		time.Sleep(30 * time.Second)
-		os.Exit(1)
-	}
-	flags.SearchPaths = append(flags.SearchPaths, flags.BitDir)
-
-	if _, err := os.Stat(flags.QBitDir); os.IsNotExist(err) {
-		log.Println("Can't find qBittorrent folder")
-		time.Sleep(30 * time.Second)
-		os.Exit(1)
-	}
-	resumefilepath := flags.BitDir + "resume.dat"
+	resumefilepath := opts.BitDir + "resume.dat"
 	if _, err := os.Stat(resumefilepath); os.IsNotExist(err) {
 		log.Println("Can't find uTorrent\\Bittorrent resume file")
 		time.Sleep(30 * time.Second)
@@ -297,32 +198,27 @@ func main() {
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
-	if flags.WithoutTags == false {
-		if _, err := os.Stat(flags.Config); os.IsNotExist(err) {
-			fmt.Println("Can not read qBittorrent config file. Try run and close qBittorrent if you have not done" +
-				" so already, or specify the path explicitly or do not import tags")
-			time.Sleep(30 * time.Second)
-			os.Exit(1)
-		}
-	}
 	totaljobs := len(resumefile)
 	chans := Channels{comChannel: make(chan string, totaljobs),
 		errChannel:     make(chan string, totaljobs),
 		boundedChannel: make(chan bool, runtime.GOMAXPROCS(0)*2)}
-	color.Green("It will be performed processing from directory %v to directory %v\n", flags.BitDir, flags.QBitDir)
+
+	color.Green("It will be performed processing from directory %v to directory %v\n", opts.BitDir, opts.QBitDir)
 	color.HiRed("Check that the qBittorrent is turned off and the directory %v and config %v is backed up.\n",
-		flags.QBitDir, flags.Config)
+		opts.QBitDir, opts.Config)
 	color.HiRed("Check that you previously disable option \"Append .!ut/.!bt to incomplete files\" in preferences of uTorrent/Bittorrent \n\n")
 	fmt.Println("Press Enter to start")
 	fmt.Scanln()
 	log.Println("Started")
-	transfertorrents(chans, flags, resumefile, totaljobs)
+
+	transferTorrents(chans, opts, resumefile, totaljobs)
+
 	fmt.Println("\nPress Enter to exit")
 	fmt.Scanln()
 
 }
 
-func transfertorrents(chans Channels, flags Flags, resumefile map[string]interface{}, totaljobs int) {
+func transferTorrents(chans Channels, opts *options.Opts, resumefile map[string]interface{}, totaljobs int) {
 	numjob := 1
 	var oldtags string
 	var newtags []string
@@ -332,7 +228,7 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 	for key, value := range resumefile {
 		if key != ".fileguard" && key != "rec" {
 			positionnum++
-			if flags.WithoutTags == false {
+			if opts.WithoutTags == false {
 				if labels, ok := value.(map[string]interface{})["labels"]; ok {
 					for _, label := range labels.([]interface{}) {
 						if len(label.(string)) > 0 {
@@ -345,7 +241,7 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 			}
 			wg.Add(1)
 			chans.boundedChannel <- true
-			go logic(key, value.(map[string]interface{}), &flags, &chans, positionnum, &wg)
+			go logic(key, value.(map[string]interface{}), opts, &chans, positionnum, &wg)
 		} else {
 			totaljobs--
 		}
@@ -365,8 +261,8 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 		waserrors = true
 		numjob++
 	}
-	if flags.WithoutTags == false {
-		cfg, err := ini.Load(flags.Config)
+	if opts.WithoutTags == false {
+		cfg, err := ini.Load(opts.Config)
 		ini.PrettyFormat = false
 		ini.PrettySection = false
 		if err != nil {
@@ -397,7 +293,7 @@ func transfertorrents(chans Channels, flags Flags, resumefile map[string]interfa
 		} else {
 			cfg.Section("BitTorrent").NewKey("Session\\Tags", strings.Join(newtags, ", "))
 		}
-		cfg.SaveTo(flags.Config)
+		cfg.SaveTo(opts.Config)
 	}
 	fmt.Println()
 	log.Println("Ended")
