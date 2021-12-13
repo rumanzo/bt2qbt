@@ -74,17 +74,19 @@ func TestOptionsArgs(t *testing.T) {
 	}
 
 	for _, testCase := range cases {
-		opts := options.PrepareOpts()
-		if _, err := flags.ParseArgs(opts, testCase.Args); err != nil { // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
-			if flagsErr, ok := err.(*flags.Error); !(ok && flagsErr.Type == flags.ErrHelp) && !testCase.MustFail {
-				t.Fatalf("%s:\nUnexpected error: %v", testCase.Name, err)
+		t.Run(testCase.Name, func(t *testing.T) {
+			opts := options.PrepareOpts()
+			if _, err := flags.ParseArgs(opts, testCase.Args); err != nil { // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
+				if flagsErr, ok := err.(*flags.Error); !(ok && flagsErr.Type == flags.ErrHelp) && !testCase.MustFail {
+					t.Fatalf("Unexpected error: %v", err)
+				}
 			}
-		}
-		if testCase.Expected != nil {
-			if !reflect.DeepEqual(testCase.Expected, opts) && !testCase.MustFail {
-				t.Fatalf("%s:\nUnexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.Name, opts, testCase.Expected)
+			if testCase.Expected != nil {
+				if !reflect.DeepEqual(testCase.Expected, opts) && !testCase.MustFail {
+					t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", opts, testCase.Expected)
+				}
 			}
-		}
+		})
 	}
 }
 
@@ -123,19 +125,21 @@ func TestOptionsHandle(t *testing.T) {
 	}
 
 	for _, testCase := range cases {
-		options.HandleOpts(testCase.Opts)
-		if testCase.Expected != nil {
-			if !reflect.DeepEqual(testCase.Expected, testCase.Opts) && !testCase.MustFail {
-				t.Fatalf("%s:\nUnexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.Name, testCase.Opts, testCase.Expected)
+		t.Run(testCase.Name, func(t *testing.T) {
+			options.HandleOpts(testCase.Opts)
+			if testCase.Expected != nil {
+				if !reflect.DeepEqual(testCase.Expected, testCase.Opts) && !testCase.MustFail {
+					t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.Opts, testCase.Expected)
+				}
 			}
-		}
+		})
 	}
 }
 
 func TestOptionsChecks(t *testing.T) {
 	cases := []TestArgsCase{
 		{
-			Name: "Must fail don't exists folders/files test",
+			Name: "Must fail don't exists folders or files",
 			Opts: &options.Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
@@ -148,7 +152,7 @@ func TestOptionsChecks(t *testing.T) {
 			MustFail: true,
 		},
 		{
-			Name: "Check exists folders/files test",
+			Name: "Check exists folders or files",
 			Opts: &options.Opts{
 				BitDir:  "./data",
 				QBitDir: "./data",
@@ -157,7 +161,7 @@ func TestOptionsChecks(t *testing.T) {
 			MustFail: false,
 		},
 		{
-			Name: "Must fail don't exists folders/files test",
+			Name: "Must fail do not exists folders or files test",
 			Opts: &options.Opts{
 				BitDir:      "/dir",
 				QBitDir:     "/dir",
@@ -168,7 +172,7 @@ func TestOptionsChecks(t *testing.T) {
 			MustFail: true,
 		},
 		{
-			Name: "Must fail don't exists config test",
+			Name: "Must fail do not exists config test",
 			Opts: &options.Opts{
 				BitDir:  "./data",
 				QBitDir: "./data",
@@ -177,20 +181,22 @@ func TestOptionsChecks(t *testing.T) {
 			MustFail: true,
 		},
 		{
-			Name: "Must fail don't exists qbitdir test",
+			Name: "Must fail do not exists qbitdir test",
 			Opts: &options.Opts{
 				BitDir:      "./data",
 				QBitDir:     "/dir",
 				WithoutTags: true,
 			},
-			MustFail: false,
+			MustFail: true,
 		},
 	}
 
 	for _, testCase := range cases {
-		err := options.OptsCheck(testCase.Opts)
-		if err != nil && !testCase.MustFail {
-			t.Errorf("%s:\nUnexpected error: %v\n", testCase.Name, err)
-		}
+		t.Run(testCase.Name, func(t *testing.T) {
+			err := options.OptsCheck(testCase.Opts)
+			if err != nil && !testCase.MustFail {
+				t.Errorf("Unexpected error: %v\n", err)
+			}
+		})
 	}
 }
