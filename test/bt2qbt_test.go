@@ -114,7 +114,7 @@ func TestOptionsHandle(t *testing.T) {
 				PathSeparator: "/",
 				SearchPaths:   []string{"/dir5", "/dir6/"},
 			},
-			MustFail: false,
+			MustFail: true,
 			Expected: &options.Opts{
 				BitDir:        "/bitdir",
 				QBitDir:       "/qbitdir",
