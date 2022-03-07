@@ -18,8 +18,8 @@ import (
 )
 
 type NewTorrentStructure struct {
-	Fastresume      qBittorrentStructures.QBittorrentFastresume
-	ResumeItem      utorrentStructs.ResumeItem
+	Fastresume      *qBittorrentStructures.QBittorrentFastresume
+	ResumeItem      *utorrentStructs.ResumeItem
 	WithoutLabels   bool                       `bencode:"-"`
 	WithoutTags     bool                       `bencode:"-"`
 	HasFiles        bool                       `bencode:"-"`
@@ -34,6 +34,46 @@ type NewTorrentStructure struct {
 	Replace         []replace.Replace          `bencode:"-"`
 	Separator       string                     `bencode:"-"`
 	Targets         map[int64]string           `bencode:"-"`
+}
+
+func CreateEmptyNewTorrentStructure() NewTorrentStructure {
+	var newstructure = NewTorrentStructure{
+		Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+			ActiveTime:          0,
+			AddedTime:           0,
+			Allocation:          "sparse",
+			AutoManaged:         0,
+			CompletedTime:       0,
+			DownloadRateLimit:   -1,
+			FileFormat:          "libtorrent resume file",
+			FileVersion:         1,
+			FinishedTime:        0,
+			LastDownload:        0,
+			LastSeenComplete:    0,
+			LastUpload:          0,
+			LibTorrentVersion:   "1.2.5.0",
+			MaxConnections:      100,
+			MaxUploads:          100,
+			NumDownloaded:       0,
+			NumIncomplete:       0,
+			QbtRatioLimit:       -2000,
+			QbtSeedStatus:       1,
+			QbtSeedingTimeLimit: -2,
+			SeedMode:            0,
+			SeedingTime:         0,
+			SequentialDownload:  0,
+			SuperSeeding:        0,
+			StopWhenReady:       0,
+			TotalDownloaded:     0,
+			TotalUploaded:       0,
+			UploadRateLimit:     0,
+			QbtName:             "",
+		},
+		TorrentFile: &torrentStructures.Torrent{},
+		ResumeItem:  &utorrentStructs.ResumeItem{},
+		Targets:     map[int64]string{},
+	}
+	return newstructure
 }
 
 func (newstructure *NewTorrentStructure) IfCompletedOn() {
