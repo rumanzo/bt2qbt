@@ -40,16 +40,15 @@ func CheckExists(s string, arr []string) (bool, string) {
 	return false, s
 }
 
-func DecodeTorrentFile(path string) (map[string]interface{}, error) {
+func DecodeTorrentFile(path string, decodeTo interface{}) error {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var torrent map[string]interface{}
-	if err := bencode.DecodeBytes(dat, &torrent); err != nil {
-		return nil, err
+	if err := bencode.DecodeBytes(dat, &decodeTo); err != nil {
+		return err
 	}
-	return torrent, nil
+	return nil
 }
 
 func CopyFile(src string, dst string) error {

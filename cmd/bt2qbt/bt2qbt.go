@@ -9,18 +9,19 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
+	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 )
 
 type Channels struct {
@@ -29,7 +30,7 @@ type Channels struct {
 	boundedChannel chan bool
 }
 
-func logic(key string, value map[string]interface{}, opts *options.Opts, chans *Channels, position int, wg *sync.WaitGroup) error {
+func logic(key string, resumeItem *utorrentStructs.ResumeItem, opts *options.Opts, chans *Channels, position int, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	defer func() {
 		<-chans.boundedChannel
@@ -52,6 +53,7 @@ func logic(key string, value map[string]interface{}, opts *options.Opts, chans *
 			DownloadRateLimit:   -1,
 			FileFormat:          "libtorrent resume file",
 			FileVersion:         1,
+			FilePriority:        []int64{},
 			FinishedTime:        0,
 			LastDownload:        0,
 			LastSeenComplete:    0,
@@ -74,6 +76,7 @@ func logic(key string, value map[string]interface{}, opts *options.Opts, chans *
 			UploadRateLimit:     0,
 			QbtName:             "",
 		},
+		TorrentFile:   &torrentStructures.Torrent{},
 		WithoutLabels: opts.WithoutLabels,
 		WithoutTags:   opts.WithoutTags,
 		Separator:     opts.PathSeparator,
@@ -88,7 +91,7 @@ func logic(key string, value map[string]interface{}, opts *options.Opts, chans *
 			newstructure.TorrentFilePath = pathparts[len(pathparts)-1]
 		}
 	} else {
-		newstructure.TorrentFilePath = opts.BitDir + key // additional search required
+		newstructure.TorrentFilePath = filepath.Join(opts.BitDir, key) // additional search required
 	}
 	if _, err = os.Stat(newstructure.TorrentFilePath); os.IsNotExist(err) {
 		for _, searchPath := range opts.SearchPaths {
@@ -101,7 +104,7 @@ func logic(key string, value map[string]interface{}, opts *options.Opts, chans *
 		return err
 	CONTINUE:
 	}
-	newstructure.TorrentFile, err = helpers.DecodeTorrentFile(newstructure.TorrentFilePath)
+	err = helpers.DecodeTorrentFile(newstructure.TorrentFilePath, newstructure.TorrentFile)
 	if err != nil {
 		chans.errChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newstructure.TorrentFilePath, key)
 		return err
@@ -115,63 +118,63 @@ func logic(key string, value map[string]interface{}, opts *options.Opts, chans *
 		})
 	}
 
-	if _, ok := newstructure.TorrentFile["info"].(map[string]interface{})["files"]; ok {
+	if len(newstructure.TorrentFile.Info.Files) > 0 {
 		newstructure.HasFiles = true
 	} else {
 		newstructure.HasFiles = false
 	}
 
-	if ok := value["targets"]; ok != nil {
-		for _, entry := range value["targets"].([]interface{}) {
-			newstructure.Targets[entry.([]interface{})[0].(int64)] = entry.([]interface{})[1].(string)
+	if ok := resumeItem.Targets; ok != nil {
+		for _, entry := range resumeItem.Targets {
+			newstructure.Targets[entry[0].(int64)] = entry[1].(string)
 		}
 	}
 
-	// remove separator from end
-	lastRune, lastRuneSize := utf8.DecodeLastRuneInString(value["path"].(string))
-	separatorRunes := []rune("/\\")
-	if lastRune == separatorRunes[0] || lastRune == separatorRunes[1] {
-		newstructure.Path = value["path"].(string)[:len(value["path"].(string))-lastRuneSize]
-	} else {
-		newstructure.Path = value["path"].(string)
-	}
+	newstructure.Path = resumeItem.Path
 
 	// if torrent name was renamed, add modified name
-	if value["caption"] != nil {
-		newstructure.Fastresume.QbtName = value["caption"].(string)
+	if resumeItem.Caption != "" {
+		newstructure.Fastresume.QbtName = resumeItem.Caption
 	}
-	newstructure.Fastresume.ActiveTime = value["runtime"].(int64)
-	newstructure.Fastresume.AddedTime = value["added_on"].(int64)
-	newstructure.Fastresume.CompletedTime = value["completed_on"].(int64)
+	newstructure.Fastresume.ActiveTime = resumeItem.Runtime
+	newstructure.Fastresume.AddedTime = resumeItem.AddedOn
+	newstructure.Fastresume.CompletedTime = resumeItem.CompletedOn
 	//newstructure.Fastresume.InfoHash = value["info"].(string) //todo
-	newstructure.Fastresume.SeedingTime = value["runtime"].(int64)
-	newstructure.Started(value["started"].(int64))
-	newstructure.Fastresume.FinishedTime = int64(time.Since(time.Unix(value["completed_on"].(int64), 0)).Minutes())
-	if value["completed_on"].(int64) == 0 {
+	newstructure.Fastresume.SeedingTime = resumeItem.Runtime
+	if resumeItem.Started == 0 {
+		newstructure.Fastresume.Paused = 1
+		newstructure.Fastresume.AutoManaged = 0
+	} else {
+		newstructure.Fastresume.Paused = 0
+		newstructure.Fastresume.AutoManaged = 1
+	}
+
+	newstructure.Fastresume.FinishedTime = int64(time.Since(time.Unix(resumeItem.CompletedOn, 0)).Minutes())
+	if resumeItem.CompletedOn == 0 {
 		newstructure.Fastresume.TotalDownloaded = 0
 	} else {
-		newstructure.Fastresume.TotalDownloaded = value["downloaded"].(int64)
+		newstructure.Fastresume.TotalDownloaded = resumeItem.Downloaded
 	}
-	newstructure.Fastresume.TotalUploaded = value["uploaded"].(int64)
-	newstructure.Fastresume.UploadRateLimit = value["upspeed"].(int64)
-	newstructure.IfTags(value["labels"])
-	if value["label"] != nil {
-		newstructure.IfLabel(value["label"].(string))
+	newstructure.Fastresume.TotalUploaded = resumeItem.Uploaded
+	newstructure.Fastresume.UploadRateLimit = resumeItem.UpSpeed
+	newstructure.IfTags(resumeItem.Labels)
+	if resumeItem.Label != "" {
+		newstructure.IfLabel(resumeItem.Label)
 	} else {
 		newstructure.IfLabel("")
 	}
-	newstructure.GetTrackers(value["trackers"])
-	newstructure.PrioConvert(value["prio"].(string))
+	newstructure.GetTrackers(resumeItem.Trackers)
+	newstructure.PrioConvert(resumeItem.Prio)
 
 	// https://libtorrent.org/manual-ref.html#fast-resume
-	newstructure.PieceLenght = newstructure.TorrentFile["info"].(map[string]interface{})["piece length"].(int64)
+	newstructure.PieceLenght = newstructure.TorrentFile.Info.PieceLength
 
 	/*
 		pieces maps to a string whose length is a multiple of 20. It is to be subdivided into strings of length 20,
 		each of which is the SHA1 hash of the piece at the corresponding index.
 		http://www.bittorrent.org/beps/bep_0003.html
 	*/
-	newstructure.NumPieces = int64(len(newstructure.TorrentFile["info"].(map[string]interface{})["pieces"].(string))) / 20
+	newstructure.NumPieces = int64(len(newstructure.TorrentFile.Info.Pieces)) / 20
 	newstructure.FillMissing()
 	newbasename := newstructure.GetHash()
 
@@ -196,7 +199,8 @@ func main() {
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}
-	resumeFile, err := helpers.DecodeTorrentFile(resumeFilePath)
+	resumeFile := map[string]interface{}{}
+	err := helpers.DecodeTorrentFile(resumeFilePath, resumeFile)
 	if err != nil {
 		log.Println("Can't decode uTorrent\\Bittorrent resume file")
 		time.Sleep(30 * time.Second)
@@ -232,29 +236,24 @@ func transferTorrents(chans Channels, opts *options.Opts, resumeFile map[string]
 
 	// hate utorrent for heterogeneous resume.dat scheme
 	delete(resumeFile, ".fileguard")
-	delete(resumeFile, ".fileguard")
+	delete(resumeFile, "rec")
 	b, _ := bencode.EncodeBytes(resumeFile)
-	ut := []utorrentStructs.ResumeItem{}
-	bencode.DecodeBytes(b, &ut)
-	fmt.Println(ut)
+	resumeItems := map[string]*utorrentStructs.ResumeItem{}
+	bencode.DecodeBytes(b, &resumeItems)
 
-	for key, value := range resumeFile {
-		if key != ".fileguard" && key != "rec" {
-			positionnum++
-			if opts.WithoutTags == false {
-				if labels, ok := value.(map[string]interface{})["labels"]; ok {
-					for _, label := range labels.([]interface{}) {
-						if len(label.(string)) > 0 {
-							if exists, tag := helpers.CheckExists(helpers.ASCIIConvert(label.(string)), newtags); !exists {
-								newtags = append(newtags, tag)
-							}
-						}
+	for key, resumeItem := range resumeItems {
+		positionnum++
+		if opts.WithoutTags == false {
+			if resumeItem.Labels != nil {
+				for _, label := range resumeItem.Labels {
+					if exists, tag := helpers.CheckExists(helpers.ASCIIConvert(label), newtags); !exists {
+						newtags = append(newtags, tag)
 					}
 				}
 			}
 			wg.Add(1)
 			chans.boundedChannel <- true
-			go logic(key, value.(map[string]interface{}), opts, &chans, positionnum, &wg)
+			go logic(key, resumeItem, opts, &chans, positionnum, &wg)
 		} else {
 			totalJobs--
 		}

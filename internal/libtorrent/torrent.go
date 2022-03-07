@@ -7,6 +7,8 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
+	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
+	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
 	"io"
 	"os"
@@ -17,30 +19,21 @@ import (
 
 type NewTorrentStructure struct {
 	Fastresume      qBittorrentStructures.QBittorrentFastresume
-	WithoutLabels   bool                   `bencode:"-"`
-	WithoutTags     bool                   `bencode:"-"`
-	HasFiles        bool                   `bencode:"-"`
-	TorrentFilePath string                 `bencode:"-"`
-	TorrentFile     map[string]interface{} `bencode:"-"`
-	Path            string                 `bencode:"-"`
-	fileSizes       int64                  `bencode:"-"`
-	sizeAndPrio     [][]int64              `bencode:"-"`
-	torrentFileList []string               `bencode:"-"`
-	NumPieces       int64                  `bencode:"-"`
-	PieceLenght     int64                  `bencode:"-"`
-	Replace         []replace.Replace      `bencode:"-"`
-	Separator       string                 `bencode:"-"`
-	Targets         map[int64]string       `bencode:"-"`
-}
-
-func (newstructure *NewTorrentStructure) Started(started int64) {
-	if started == 0 {
-		newstructure.Fastresume.Paused = 1
-		newstructure.Fastresume.AutoManaged = 0
-	} else {
-		newstructure.Fastresume.Paused = 0
-		newstructure.Fastresume.AutoManaged = 1
-	}
+	ResumeItem      utorrentStructs.ResumeItem
+	WithoutLabels   bool                       `bencode:"-"`
+	WithoutTags     bool                       `bencode:"-"`
+	HasFiles        bool                       `bencode:"-"`
+	TorrentFilePath string                     `bencode:"-"`
+	TorrentFile     *torrentStructures.Torrent `bencode:"-"`
+	Path            string                     `bencode:"-"`
+	fileSizes       int64                      `bencode:"-"`
+	sizeAndPrio     [][]int64                  `bencode:"-"`
+	torrentFileList []string                   `bencode:"-"`
+	NumPieces       int64                      `bencode:"-"`
+	PieceLenght     int64                      `bencode:"-"`
+	Replace         []replace.Replace          `bencode:"-"`
+	Separator       string                     `bencode:"-"`
+	Targets         map[int64]string           `bencode:"-"`
 }
 
 func (newstructure *NewTorrentStructure) IfCompletedOn() {
@@ -50,25 +43,20 @@ func (newstructure *NewTorrentStructure) IfCompletedOn() {
 		newstructure.Fastresume.Unfinished = new([]interface{})
 	}
 }
-func (newstructure *NewTorrentStructure) IfTags(labels interface{}) {
+func (newstructure *NewTorrentStructure) IfTags(labels []string) {
 	if newstructure.WithoutTags == false && labels != nil {
-		for _, label := range labels.([]interface{}) {
-			if label != nil {
-				newstructure.Fastresume.QbtTags = append(newstructure.Fastresume.QbtTags, label.(string))
+		for _, label := range labels {
+			if label != "" {
+				newstructure.Fastresume.QbtTags = append(newstructure.Fastresume.QbtTags, label)
 			}
 		}
 	} else {
 		newstructure.Fastresume.QbtTags = []string{}
 	}
 }
-func (newstructure *NewTorrentStructure) IfLabel(label interface{}) {
+func (newstructure *NewTorrentStructure) IfLabel(label string) {
 	if newstructure.WithoutLabels == false {
-		switch label.(type) {
-		case nil:
-			newstructure.Fastresume.QBtCategory = ""
-		case string:
-			newstructure.Fastresume.QBtCategory = label.(string)
-		}
+		newstructure.Fastresume.QBtCategory = label
 	} else {
 		newstructure.Fastresume.QBtCategory = ""
 	}
@@ -88,9 +76,9 @@ func (newstructure *NewTorrentStructure) GetTrackers(trackers interface{}) {
 	}
 }
 
-func (newstructure *NewTorrentStructure) PrioConvert(src string) {
+func (newstructure *NewTorrentStructure) PrioConvert(src []byte) {
 	var newprio []int64
-	for _, c := range []byte(src) {
+	for _, c := range src {
 		if i := int(c); (i == 0) || (i == 128) { // if not selected
 			newprio = append(newprio, 0)
 		} else if (i >= 1) && (i <= 8) { // if low or normal prio
@@ -129,14 +117,14 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 	newstructure.fileSizes = 0
 	if newstructure.HasFiles {
 		var filelists [][]int64
-		for num, file := range newstructure.TorrentFile["info"].(map[string]interface{})["files"].([]interface{}) {
+		for num, file := range newstructure.TorrentFile.Info.Files {
 			var lenght, mtime int64
 			var filestrings []string
-			var mappedPath []interface{}
-			if paths, ok := file.(map[string]interface{})["path.utf-8"].([]interface{}); ok {
-				mappedPath = paths
+			var mappedPath []string
+			if file.PathUTF8 != nil {
+				mappedPath = file.PathUTF8
 			} else {
-				mappedPath = file.(map[string]interface{})["path"].([]interface{})
+				mappedPath = file.Path
 			}
 
 			for n, f := range mappedPath {
@@ -147,21 +135,21 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 						}
 					}
 				} else {
-					filestrings = append(filestrings, f.(string))
+					filestrings = append(filestrings, f)
 				}
 			}
 			filename := strings.Join(filestrings, newstructure.Separator)
 			newstructure.torrentFileList = append(newstructure.torrentFileList, filename)
 			fullpath := newstructure.Path + newstructure.Separator + filename
-			newstructure.fileSizes += file.(map[string]interface{})["length"].(int64)
+			newstructure.fileSizes += file.Length
 			if n := newstructure.Fastresume.FilePriority[num]; n != 0 {
-				lenght = file.(map[string]interface{})["length"].(int64)
+				lenght = file.Length
 				newstructure.sizeAndPrio = append(newstructure.sizeAndPrio, []int64{lenght, 1})
 				mtime = helpers.Fmtime(fullpath)
 			} else {
 				lenght, mtime = 0, 0
 				newstructure.sizeAndPrio = append(newstructure.sizeAndPrio,
-					[]int64{file.(map[string]interface{})["length"].(int64), 0})
+					[]int64{file.Length, 0})
 			}
 			flenmtime := []int64{lenght, mtime}
 			filelists = append(filelists, flenmtime)
@@ -179,7 +167,7 @@ func (newstructure *NewTorrentStructure) FillWholePieces(chr string) []byte {
 }
 
 func (newstructure *NewTorrentStructure) GetHash() (hash string) {
-	torinfo, _ := bencode.EncodeString(newstructure.TorrentFile["info"].(map[string]interface{}))
+	torinfo, _ := bencode.EncodeString(newstructure.TorrentFile.Info)
 	h := sha1.New()
 	io.WriteString(h, torinfo)
 	hash = hex.EncodeToString(h.Sum(nil))
@@ -215,10 +203,10 @@ func (newstructure *NewTorrentStructure) FillPiecesParted() []byte {
 
 func (newstructure *NewTorrentStructure) FillSavePaths() {
 	var torrentname string
-	if name, ok := newstructure.TorrentFile["info"].(map[string]interface{})["name.utf-8"].(string); ok {
-		torrentname = name
+	if newstructure.TorrentFile.Info.NameUTF8 != "" {
+		torrentname = newstructure.TorrentFile.Info.NameUTF8
 	} else {
-		torrentname = newstructure.TorrentFile["info"].(map[string]interface{})["name"].(string)
+		torrentname = newstructure.TorrentFile.Info.Name
 	}
 	origpath := newstructure.Path
 	var dirpaths []string
