@@ -15,11 +15,11 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
-	"time"
 )
 
-func ProcessResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *options.Opts, chans *Channels, wg *sync.WaitGroup) error {
+func HandleResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *options.Opts, chans *Channels, wg *sync.WaitGroup) error {
 
+	//panic recover
 	defer wg.Done()
 	defer func() {
 		<-chans.BoundedChannel
@@ -31,118 +31,51 @@ func ProcessResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts 
 				key, r, string(debug.Stack()))
 		}
 	}()
+
+	// preparing structures for work with
 	var err error
-	newstructure := libtorrent.CreateEmptyNewTorrentStructure()
-	newstructure.ResumeItem = resumeItem
-
-	if isAbs, _ := regexp.MatchString(`^([A-Za-z]:)?\\`, key); isAbs == true {
-		if runtime.GOOS == "windows" {
-			newstructure.TorrentFilePath = key
-		} else { // for unix system find in search paths
-			pathparts := strings.Split(key, "\\")
-			newstructure.TorrentFilePath = pathparts[len(pathparts)-1]
-		}
-	} else {
-		newstructure.TorrentFilePath = filepath.Join(opts.BitDir, key) // additional search required
-	}
-	if _, err = os.Stat(newstructure.TorrentFilePath); os.IsNotExist(err) {
-		for _, searchPath := range opts.SearchPaths {
-			if _, err = os.Stat(searchPath + newstructure.TorrentFilePath); err == nil {
-				newstructure.TorrentFilePath = searchPath + newstructure.TorrentFilePath
-				goto CONTINUE
-			}
-		}
-		chans.ErrChannel <- fmt.Sprintf("Can't find torrent file %v for %v", newstructure.TorrentFilePath, key)
-		return err
-	CONTINUE:
-	}
-	err = helpers.DecodeTorrentFile(newstructure.TorrentFilePath, newstructure.TorrentFile)
-	if err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newstructure.TorrentFilePath, key)
-		return err
-	}
-
+	newStructure := libtorrent.CreateEmptyNewTorrentStructure()
+	newStructure.WithoutTags = opts.WithoutTags
+	newStructure.WithoutLabels = opts.WithoutLabels
+	newStructure.ResumeItem = resumeItem
 	for _, str := range opts.Replaces {
 		patterns := strings.Split(str, ",")
-		newstructure.Replace = append(newstructure.Replace, replace.Replace{
+		newStructure.Replace = append(newStructure.Replace, replace.Replace{
 			From: patterns[0],
 			To:   patterns[1],
 		})
 	}
 
-	if len(newstructure.TorrentFile.Info.Files) > 0 {
-		newstructure.HasFiles = true
-	} else {
-		newstructure.HasFiles = false
+	handleTorrentFilePath(newStructure, key, opts)
+
+	err = findTorrentFile(newStructure, opts.SearchPaths)
+	if err != nil {
+		chans.ErrChannel <- err.Error()
+		return err
 	}
 
-	if ok := newstructure.ResumeItem.Targets; ok != nil {
-		for _, entry := range newstructure.ResumeItem.Targets {
-			newstructure.Targets[entry[0].(int64)] = entry[1].(string)
-		}
+	err = helpers.DecodeTorrentFile(newStructure.TorrentFilePath, newStructure.TorrentFile)
+	if err != nil {
+		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newStructure.TorrentFilePath, key)
+		return err
 	}
 
-	newstructure.Path = newstructure.ResumeItem.Path
+	newStructure.HandleStructures()
 
-	// if torrent name was renamed, add modified name
-	if newstructure.ResumeItem.Caption != "" {
-		newstructure.Fastresume.QbtName = newstructure.ResumeItem.Caption
-	}
-	newstructure.Fastresume.ActiveTime = newstructure.ResumeItem.Runtime
-	newstructure.Fastresume.AddedTime = newstructure.ResumeItem.AddedOn
-	newstructure.Fastresume.CompletedTime = newstructure.ResumeItem.CompletedOn
-	//newstructure.Fastresume.InfoHash = value["info"].(string) //todo
-	newstructure.Fastresume.SeedingTime = newstructure.ResumeItem.Runtime
-	if newstructure.ResumeItem.Started == 0 {
-		newstructure.Fastresume.Paused = 1
-		newstructure.Fastresume.AutoManaged = 0
-	} else {
-		newstructure.Fastresume.Paused = 0
-		newstructure.Fastresume.AutoManaged = 1
-	}
-
-	newstructure.Fastresume.FinishedTime = int64(time.Since(time.Unix(newstructure.ResumeItem.CompletedOn, 0)).Minutes())
-	if newstructure.ResumeItem.CompletedOn == 0 {
-		newstructure.Fastresume.TotalDownloaded = 0
-	} else {
-		newstructure.Fastresume.TotalDownloaded = newstructure.ResumeItem.Downloaded
-	}
-	newstructure.Fastresume.TotalUploaded = newstructure.ResumeItem.Uploaded
-	newstructure.Fastresume.UploadRateLimit = newstructure.ResumeItem.UpSpeed
-	newstructure.IfTags(newstructure.ResumeItem.Labels)
-	if newstructure.ResumeItem.Label != "" {
-		newstructure.IfLabel(newstructure.ResumeItem.Label)
-	} else {
-		newstructure.IfLabel("")
-	}
-	newstructure.GetTrackers(newstructure.ResumeItem.Trackers)
-	newstructure.PrioConvert(newstructure.ResumeItem.Prio)
-
-	// https://libtorrent.org/manual-ref.html#fast-resume
-	newstructure.PieceLenght = newstructure.TorrentFile.Info.PieceLength
-
-	/*
-		pieces maps to a string whose length is a multiple of 20. It is to be subdivided into strings of length 20,
-		each of which is the SHA1 hash of the piece at the corresponding index.
-		http://www.bittorrent.org/beps/bep_0003.html
-	*/
-	newstructure.NumPieces = int64(len(newstructure.TorrentFile.Info.Pieces)) / 20
-	newstructure.FillMissing()
-	newbasename := newstructure.GetHash()
-
-	if err = libtorrent.EncodeTorrentFile(opts.QBitDir+newbasename+".fastresume", &newstructure); err != nil {
+	newbasename := newStructure.GetHash()
+	if err = helpers.EncodeTorrentFile(filepath.Join(opts.QBitDir, newbasename+".fastresume"), &newStructure); err != nil {
 		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", opts.QBitDir+newbasename+".fastresume")
 		return err
 	}
-	if err = helpers.CopyFile(newstructure.TorrentFilePath, opts.QBitDir+newbasename+".torrent"); err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", opts.QBitDir+newbasename+".torrent")
+	if err = helpers.CopyFile(newStructure.TorrentFilePath, filepath.Join(opts.QBitDir, newbasename+".torrent")); err != nil {
+		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", filepath.Join(opts.QBitDir, newbasename+".torrent"))
 		return err
 	}
 	chans.ComChannel <- fmt.Sprintf("Sucessfully imported %v", key)
 	return nil
 }
 
-func TransferTorrents(opts *options.Opts, resumeItems map[string]*utorrentStructs.ResumeItem) {
+func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStructs.ResumeItem) {
 	totalJobs := len(resumeItems)
 	chans := Channels{ComChannel: make(chan string, totalJobs),
 		ErrChannel:     make(chan string, totalJobs),
@@ -165,7 +98,7 @@ func TransferTorrents(opts *options.Opts, resumeItems map[string]*utorrentStruct
 			}
 			wg.Add(1)
 			chans.BoundedChannel <- true
-			go ProcessResumeItem(key, resumeItem, opts, &chans, &wg)
+			go HandleResumeItem(key, resumeItem, opts, &chans, &wg)
 		} else {
 			totalJobs--
 		}
@@ -193,4 +126,33 @@ func TransferTorrents(opts *options.Opts, resumeItems map[string]*utorrentStruct
 	if waserrors {
 		log.Println("Not all torrents was processed")
 	}
+}
+
+// check if resume key is absolute path. It means that we should search torrent file using this absolute path
+// notice that torrent file name always known
+func handleTorrentFilePath(newStructure libtorrent.NewTorrentStructure, key string, opts *options.Opts) {
+	if isAbs, _ := regexp.MatchString(`^([A-Za-z]:)?\\\\?`, key); isAbs == true {
+		if runtime.GOOS == "windows" {
+			newStructure.TorrentFilePath = key
+			newStructure.TorrentFileName = filepath.Base(key)
+		} else { // for unix system find in search paths, we just get basename of torrent file
+			newStructure.TorrentFileName = filepath.Base(key)
+		}
+	} else {
+		newStructure.TorrentFilePath = filepath.Join(opts.BitDir, key) // additional search required
+		newStructure.TorrentFileName = key
+	}
+}
+
+// if we can find torrent file, we start check another locations from options search paths
+func findTorrentFile(newStructure libtorrent.NewTorrentStructure, searchPaths []string) error {
+	if _, err := os.Stat(newStructure.TorrentFilePath); os.IsNotExist(err) {
+		for _, searchPath := range searchPaths {
+			if _, err = os.Stat(filepath.Join(searchPath, newStructure.TorrentFileName)); err == nil {
+				newStructure.TorrentFilePath = filepath.Join(searchPath, newStructure.TorrentFileName)
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("Can't locate torrent file %v", newStructure.TorrentFileName)
 }

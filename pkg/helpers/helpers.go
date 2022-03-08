@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"bufio"
 	"bytes"
 	"github.com/zeebo/bencode"
 	"io"
@@ -48,6 +49,25 @@ func DecodeTorrentFile(path string, decodeTo interface{}) error {
 	if err := bencode.DecodeBytes(dat, &decodeTo); err != nil {
 		return err
 	}
+	return nil
+}
+
+func EncodeTorrentFile(path string, content interface{}) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.Create(path)
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	bufferedWriter := bufio.NewWriter(file)
+	enc := bencode.NewEncoder(bufferedWriter)
+	if err := enc.Encode(content); err != nil {
+		return err
+	}
+	bufferedWriter.Flush()
 	return nil
 }
 

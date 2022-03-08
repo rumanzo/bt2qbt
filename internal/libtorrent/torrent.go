@@ -1,7 +1,6 @@
 package libtorrent
 
 import (
-	"bufio"
 	"crypto/sha1"
 	"encoding/hex"
 	"github.com/rumanzo/bt2qbt/internal/replace"
@@ -10,30 +9,29 @@ import (
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
+	"hash"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type NewTorrentStructure struct {
-	Fastresume      *qBittorrentStructures.QBittorrentFastresume
-	ResumeItem      *utorrentStructs.ResumeItem
-	WithoutLabels   bool                       `bencode:"-"`
-	WithoutTags     bool                       `bencode:"-"`
-	HasFiles        bool                       `bencode:"-"`
-	TorrentFilePath string                     `bencode:"-"`
-	TorrentFile     *torrentStructures.Torrent `bencode:"-"`
-	Path            string                     `bencode:"-"`
-	fileSizes       int64                      `bencode:"-"`
-	sizeAndPrio     [][]int64                  `bencode:"-"`
-	torrentFileList []string                   `bencode:"-"`
-	NumPieces       int64                      `bencode:"-"`
-	PieceLenght     int64                      `bencode:"-"`
-	Replace         []replace.Replace          `bencode:"-"`
-	Separator       string                     `bencode:"-"`
-	Targets         map[int64]string           `bencode:"-"`
+	Fastresume      *qBittorrentStructures.QBittorrentFastresume `bencode:"-"`
+	ResumeItem      *utorrentStructs.ResumeItem                  `bencode:"-"`
+	TorrentFile     *torrentStructures.Torrent                   `bencode:"-"`
+	WithoutLabels   bool                                         `bencode:"-"`
+	WithoutTags     bool                                         `bencode:"-"`
+	TorrentFilePath string                                       `bencode:"-"`
+	TorrentFileName string                                       `bencode:"-"`
+	fileSizes       int64                                        `bencode:"-"`
+	sizeAndPrio     [][]int64                                    `bencode:"-"`
+	torrentFileList []string                                     `bencode:"-"`
+	NumPieces       int64                                        `bencode:"-"`
+	PieceLenght     int64                                        `bencode:"-"`
+	Replace         []replace.Replace                            `bencode:"-"`
+	Separator       string                                       `bencode:"-"`
+	Targets         map[int64]string                             `bencode:"-"`
 }
 
 func CreateEmptyNewTorrentStructure() NewTorrentStructure {
@@ -76,47 +74,74 @@ func CreateEmptyNewTorrentStructure() NewTorrentStructure {
 	return newstructure
 }
 
-func (newstructure *NewTorrentStructure) IfCompletedOn() {
-	if newstructure.Fastresume.CompletedTime != 0 {
-		newstructure.Fastresume.LastSeenComplete = time.Now().Unix()
-	} else {
-		newstructure.Fastresume.Unfinished = new([]interface{})
+func (newStructure *NewTorrentStructure) HandleCaption() {
+	if newStructure.ResumeItem.Caption != "" {
+		newStructure.Fastresume.QbtName = newStructure.ResumeItem.Caption
 	}
 }
-func (newstructure *NewTorrentStructure) IfTags(labels []string) {
-	if newstructure.WithoutTags == false && labels != nil {
-		for _, label := range labels {
+
+func (newStructure *NewTorrentStructure) HandleState() {
+	if newStructure.ResumeItem.Started == 0 {
+		newStructure.Fastresume.Paused = 1
+		newStructure.Fastresume.AutoManaged = 0
+	} else {
+		newStructure.Fastresume.Paused = 0
+		newStructure.Fastresume.AutoManaged = 1
+	}
+
+}
+
+func (newStructure *NewTorrentStructure) HandleTotalDownloaded() {
+	if newStructure.ResumeItem.CompletedOn == 0 {
+		newStructure.Fastresume.TotalDownloaded = 0
+	} else {
+		newStructure.Fastresume.TotalDownloaded = newStructure.ResumeItem.Downloaded
+	}
+}
+
+func (newStructure *NewTorrentStructure) HandleCompleted() {
+	if newStructure.Fastresume.CompletedTime != 0 {
+		newStructure.Fastresume.LastSeenComplete = time.Now().Unix()
+	} else {
+		newStructure.Fastresume.Unfinished = new([]interface{})
+	}
+
+}
+
+func (newStructure *NewTorrentStructure) HandleTags() {
+	if newStructure.WithoutTags == false && newStructure.ResumeItem.Labels != nil {
+		for _, label := range newStructure.ResumeItem.Labels {
 			if label != "" {
-				newstructure.Fastresume.QbtTags = append(newstructure.Fastresume.QbtTags, label)
+				newStructure.Fastresume.QbtTags = append(newStructure.Fastresume.QbtTags, label)
 			}
 		}
 	} else {
-		newstructure.Fastresume.QbtTags = []string{}
+		newStructure.Fastresume.QbtTags = []string{}
 	}
 }
-func (newstructure *NewTorrentStructure) IfLabel(label string) {
-	if newstructure.WithoutLabels == false {
-		newstructure.Fastresume.QBtCategory = label
+func (newStructure *NewTorrentStructure) HandleLabels() {
+	if newStructure.WithoutLabels == false {
+		newStructure.Fastresume.QBtCategory = newStructure.ResumeItem.Label
 	} else {
-		newstructure.Fastresume.QBtCategory = ""
+		newStructure.Fastresume.QBtCategory = ""
 	}
 }
 
-func (newstructure *NewTorrentStructure) GetTrackers(trackers interface{}) {
+func (newStructure *NewTorrentStructure) GetTrackers(trackers interface{}) {
 	switch strct := trackers.(type) {
 	case []interface{}:
 		for _, st := range strct {
-			newstructure.GetTrackers(st)
+			newStructure.GetTrackers(st)
 		}
 	case string:
 		for _, str := range strings.Fields(strct) {
-			newstructure.Fastresume.Trackers = append(newstructure.Fastresume.Trackers, []string{str})
+			newStructure.Fastresume.Trackers = append(newStructure.Fastresume.Trackers, []string{str})
 		}
 
 	}
 }
 
-func (newstructure *NewTorrentStructure) PrioConvert(src []byte) {
+func (newStructure *NewTorrentStructure) PrioConvert(src []byte) {
 	var newprio []int64
 	for _, c := range src {
 		if i := int(c); (i == 0) || (i == 128) { // if not selected
@@ -129,35 +154,32 @@ func (newstructure *NewTorrentStructure) PrioConvert(src []byte) {
 			newprio = append(newprio, 0)
 		}
 	}
-	newstructure.Fastresume.FilePriority = newprio
+	newStructure.Fastresume.FilePriority = newprio
 }
 
-func (newstructure *NewTorrentStructure) FillMissing() {
-	newstructure.IfCompletedOn()
-	newstructure.FillSizes()
-	newstructure.FillSavePaths()
-	if newstructure.Fastresume.Unfinished != nil {
-		newstructure.Fastresume.Pieces = newstructure.FillWholePieces("0")
-		if newstructure.HasFiles {
-			newstructure.Fastresume.PiecePriority = newstructure.FillPiecesParted()
+func (newStructure *NewTorrentStructure) HandlePieces() {
+	if newStructure.Fastresume.Unfinished != nil {
+		newStructure.Fastresume.Pieces = newStructure.FillWholePieces("0")
+		if len(newStructure.TorrentFile.Info.Files) > 0 {
+			newStructure.Fastresume.PiecePriority = newStructure.FillPiecesParted()
 		} else {
-			newstructure.Fastresume.PiecePriority = newstructure.FillWholePieces("1")
+			newStructure.Fastresume.PiecePriority = newStructure.FillWholePieces("1")
 		}
 	} else {
-		if newstructure.HasFiles {
-			newstructure.Fastresume.Pieces = newstructure.FillPiecesParted()
+		if len(newStructure.TorrentFile.Info.Files) > 0 {
+			newStructure.Fastresume.Pieces = newStructure.FillPiecesParted()
 		} else {
-			newstructure.Fastresume.Pieces = newstructure.FillWholePieces("1")
+			newStructure.Fastresume.Pieces = newStructure.FillWholePieces("1")
 		}
-		newstructure.Fastresume.PiecePriority = newstructure.Fastresume.Pieces
+		newStructure.Fastresume.PiecePriority = newStructure.Fastresume.Pieces
 	}
 }
 
-func (newstructure *NewTorrentStructure) FillSizes() {
-	newstructure.fileSizes = 0
-	if newstructure.HasFiles {
+func (newStructure *NewTorrentStructure) HandleSizes() {
+	newStructure.fileSizes = 0
+	if len(newStructure.TorrentFile.Info.Files) > 0 {
 		var filelists [][]int64
-		for num, file := range newstructure.TorrentFile.Info.Files {
+		for num, file := range newStructure.TorrentFile.Info.Files {
 			var lenght, mtime int64
 			var filestrings []string
 			var mappedPath []string
@@ -168,8 +190,8 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 			}
 
 			for n, f := range mappedPath {
-				if len(mappedPath)-1 == n && len(newstructure.Targets) > 0 {
-					for index, rewrittenFileName := range newstructure.Targets {
+				if len(mappedPath)-1 == n && len(newStructure.Targets) > 0 {
+					for index, rewrittenFileName := range newStructure.Targets {
 						if index == int64(num) {
 							filestrings = append(filestrings, rewrittenFileName)
 						}
@@ -178,17 +200,17 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 					filestrings = append(filestrings, f)
 				}
 			}
-			filename := strings.Join(filestrings, newstructure.Separator)
-			newstructure.torrentFileList = append(newstructure.torrentFileList, filename)
-			fullpath := newstructure.Path + newstructure.Separator + filename
-			newstructure.fileSizes += file.Length
-			if n := newstructure.Fastresume.FilePriority[num]; n != 0 {
+			filename := strings.Join(filestrings, newStructure.Separator)
+			newStructure.torrentFileList = append(newStructure.torrentFileList, filename)
+			fullpath := newStructure.ResumeItem.Path + newStructure.Separator + filename
+			newStructure.fileSizes += file.Length
+			if n := newStructure.Fastresume.FilePriority[num]; n != 0 {
 				lenght = file.Length
-				newstructure.sizeAndPrio = append(newstructure.sizeAndPrio, []int64{lenght, 1})
+				newStructure.sizeAndPrio = append(newStructure.sizeAndPrio, []int64{lenght, 1})
 				mtime = helpers.Fmtime(fullpath)
 			} else {
 				lenght, mtime = 0, 0
-				newstructure.sizeAndPrio = append(newstructure.sizeAndPrio,
+				newStructure.sizeAndPrio = append(newStructure.sizeAndPrio,
 					[]int64{file.Length, 0})
 			}
 			flenmtime := []int64{lenght, mtime}
@@ -197,38 +219,43 @@ func (newstructure *NewTorrentStructure) FillSizes() {
 	}
 }
 
-func (newstructure *NewTorrentStructure) FillWholePieces(chr string) []byte {
-	var newpieces = make([]byte, 0, newstructure.NumPieces)
+func (newStructure *NewTorrentStructure) FillWholePieces(chr string) []byte {
+	var newpieces = make([]byte, 0, newStructure.NumPieces)
 	nchr, _ := strconv.Atoi(chr)
-	for i := int64(0); i < newstructure.NumPieces; i++ {
+	for i := int64(0); i < newStructure.NumPieces; i++ {
 		newpieces = append(newpieces, byte(nchr))
 	}
 	return newpieces
 }
 
-func (newstructure *NewTorrentStructure) GetHash() (hash string) {
-	torinfo, _ := bencode.EncodeString(newstructure.TorrentFile.Info)
-	h := sha1.New()
+func (newStructure *NewTorrentStructure) GetSha1() (h hash.Hash) {
+	torinfo, _ := bencode.EncodeString(newStructure.TorrentFile.Info)
+	h = sha1.New()
 	io.WriteString(h, torinfo)
+	return
+}
+
+func (newStructure *NewTorrentStructure) GetHash() (hash string) {
+	h := newStructure.GetSha1()
 	hash = hex.EncodeToString(h.Sum(nil))
 	return
 }
 
-func (newstructure *NewTorrentStructure) FillPiecesParted() []byte {
-	var newpieces = make([]byte, 0, newstructure.NumPieces)
+func (newStructure *NewTorrentStructure) FillPiecesParted() []byte {
+	var newpieces = make([]byte, 0, newStructure.NumPieces)
 	var allocation [][]int64
 	chrone, _ := strconv.Atoi("1")
 	chrzero, _ := strconv.Atoi("0")
 	offset := int64(0)
-	for _, pair := range newstructure.sizeAndPrio {
+	for _, pair := range newStructure.sizeAndPrio {
 		allocation = append(allocation, []int64{offset + 1, offset + pair[0], pair[1]})
 		offset = offset + pair[0]
 	}
-	for i := int64(0); i < newstructure.NumPieces; i++ {
+	for i := int64(0); i < newStructure.NumPieces; i++ {
 		belongs := false
-		first, last := i*newstructure.PieceLenght, (i+1)*newstructure.PieceLenght
+		first, last := i*newStructure.PieceLenght, (i+1)*newStructure.PieceLenght
 		for _, trio := range allocation {
-			if (first >= trio[0]-newstructure.PieceLenght && last <= trio[1]+newstructure.PieceLenght) && trio[2] == 1 {
+			if (first >= trio[0]-newStructure.PieceLenght && last <= trio[1]+newStructure.PieceLenght) && trio[2] == 1 {
 				belongs = true
 			}
 		}
@@ -241,14 +268,14 @@ func (newstructure *NewTorrentStructure) FillPiecesParted() []byte {
 	return newpieces
 }
 
-func (newstructure *NewTorrentStructure) FillSavePaths() {
+func (newStructure *NewTorrentStructure) HandleSavePaths() {
 	var torrentname string
-	if newstructure.TorrentFile.Info.NameUTF8 != "" {
-		torrentname = newstructure.TorrentFile.Info.NameUTF8
+	if newStructure.TorrentFile.Info.NameUTF8 != "" {
+		torrentname = newStructure.TorrentFile.Info.NameUTF8
 	} else {
-		torrentname = newstructure.TorrentFile.Info.Name
+		torrentname = newStructure.TorrentFile.Info.Name
 	}
-	origpath := newstructure.Path
+	origpath := newStructure.ResumeItem.Path
 	var dirpaths []string
 	if contains := strings.Contains(origpath, "\\"); contains {
 		dirpaths = strings.Split(origpath, "\\")
@@ -256,71 +283,52 @@ func (newstructure *NewTorrentStructure) FillSavePaths() {
 		dirpaths = strings.Split(origpath, "/")
 	}
 	lastdirname := dirpaths[len(dirpaths)-1]
-	if newstructure.HasFiles {
+	if len(newStructure.TorrentFile.Info.Files) > 0 {
 		if lastdirname == torrentname {
-			newstructure.Fastresume.QBtContentLayout = "Original"
-			newstructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
-			if len(newstructure.Targets) > 0 {
-				for _, path := range newstructure.torrentFileList {
+			newStructure.Fastresume.QBtContentLayout = "Original"
+			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			if len(newStructure.Targets) > 0 {
+				for _, path := range newStructure.torrentFileList {
 					if len(path) > 0 {
-						newstructure.Fastresume.MappedFiles = append(newstructure.Fastresume.MappedFiles, lastdirname+newstructure.Separator+path)
+						newStructure.Fastresume.MappedFiles = append(newStructure.Fastresume.MappedFiles, lastdirname+newStructure.Separator+path)
 					} else {
-						newstructure.Fastresume.MappedFiles = append(newstructure.Fastresume.MappedFiles, path)
+						newStructure.Fastresume.MappedFiles = append(newStructure.Fastresume.MappedFiles, path)
 					}
 				}
 			}
 		} else {
-			newstructure.Fastresume.QBtContentLayout = "NoSubfolder"
-			newstructure.Fastresume.QbtSavePath = newstructure.Path + newstructure.Separator
-			newstructure.Fastresume.MappedFiles = newstructure.torrentFileList
+			newStructure.Fastresume.QBtContentLayout = "NoSubfolder"
+			newStructure.Fastresume.QbtSavePath = newStructure.ResumeItem.Path + newStructure.Separator
+			newStructure.Fastresume.MappedFiles = newStructure.torrentFileList
 		}
 	} else {
 		if lastdirname == torrentname {
-			newstructure.Fastresume.QBtContentLayout = "NoSubfolder"
-			newstructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newStructure.Fastresume.QBtContentLayout = "NoSubfolder"
+			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		} else {
-			newstructure.Fastresume.QBtContentLayout = "NoSubfolder"
-			newstructure.torrentFileList = append(newstructure.torrentFileList, lastdirname)
-			newstructure.Fastresume.MappedFiles = newstructure.torrentFileList
-			newstructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newStructure.Fastresume.QBtContentLayout = "NoSubfolder"
+			newStructure.torrentFileList = append(newStructure.torrentFileList, lastdirname)
+			newStructure.Fastresume.MappedFiles = newStructure.torrentFileList
+			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		}
 	}
-	for _, pattern := range newstructure.Replace {
-		newstructure.Fastresume.QbtSavePath = strings.ReplaceAll(newstructure.Fastresume.QbtSavePath, pattern.From, pattern.To)
+	for _, pattern := range newStructure.Replace {
+		newStructure.Fastresume.QbtSavePath = strings.ReplaceAll(newStructure.Fastresume.QbtSavePath, pattern.From, pattern.To)
 	}
 	var oldsep string
-	switch newstructure.Separator {
+	switch newStructure.Separator {
 	case "\\":
 		oldsep = "/"
 	case "/":
 		oldsep = "\\"
 	}
-	newstructure.Fastresume.QbtSavePath = strings.ReplaceAll(newstructure.Fastresume.QbtSavePath, oldsep, newstructure.Separator)
-	newstructure.Fastresume.SavePath = strings.ReplaceAll(newstructure.Fastresume.QbtSavePath, "\\", "/")
+	newStructure.Fastresume.QbtSavePath = strings.ReplaceAll(newStructure.Fastresume.QbtSavePath, oldsep, newStructure.Separator)
+	newStructure.Fastresume.SavePath = strings.ReplaceAll(newStructure.Fastresume.QbtSavePath, "\\", "/")
 
-	for num, entry := range newstructure.Fastresume.MappedFiles {
-		newentry := strings.ReplaceAll(entry, oldsep, newstructure.Separator)
+	for num, entry := range newStructure.Fastresume.MappedFiles {
+		newentry := strings.ReplaceAll(entry, oldsep, newStructure.Separator)
 		if entry != newentry {
-			newstructure.Fastresume.MappedFiles[num] = newentry
+			newStructure.Fastresume.MappedFiles[num] = newentry
 		}
 	}
-}
-
-func EncodeTorrentFile(path string, newstructure *NewTorrentStructure) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Create(path)
-	}
-
-	file, err := os.OpenFile(path, os.O_WRONLY, 0666)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	bufferedWriter := bufio.NewWriter(file)
-	enc := bencode.NewEncoder(bufferedWriter)
-	if err := enc.Encode(newstructure); err != nil {
-		return err
-	}
-	bufferedWriter.Flush()
-	return nil
 }

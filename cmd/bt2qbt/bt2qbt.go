@@ -50,7 +50,7 @@ func main() {
 	fmt.Scanln()
 	log.Println("Started")
 
-	transfer.TransferTorrents(opts, resumeItems)
+	transfer.HandleResumeItems(opts, resumeItems)
 
 	fmt.Println("\nPress Enter to exit")
 	fmt.Scanln()

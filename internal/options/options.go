@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"os/user"
-	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -27,25 +27,25 @@ func PrepareOpts() *Opts {
 	opts := &Opts{PathSeparator: string(os.PathSeparator)}
 	switch OS := runtime.GOOS; OS {
 	case "windows":
-		opts.BitDir = path.Join(os.Getenv("APPDATA"), "uTorrent")
-		opts.Config = path.Join(os.Getenv("APPDATA"), "qBittorrent", "qBittorrent.ini")
-		opts.QBitDir = path.Join(os.Getenv("LOCALAPPDATA"), "qBittorrent", "BT_backup")
+		opts.BitDir = filepath.Join(os.Getenv("APPDATA"), "uTorrent")
+		opts.Config = filepath.Join(os.Getenv("APPDATA"), "qBittorrent", "qBittorrent.ini")
+		opts.QBitDir = filepath.Join(os.Getenv("LOCALAPPDATA"), "qBittorrent", "BT_backup")
 	case "linux":
 		usr, err := user.Current()
 		if err != nil {
 			panic(err)
 		}
 		opts.BitDir = "/mnt/uTorrent/"
-		opts.Config = path.Join(usr.HomeDir, ".config", "qBittorrent", "qBittorrent.conf")
-		opts.QBitDir = path.Join(usr.HomeDir, ".local", "share", "data", "qBittorrent", "BT_backup")
+		opts.Config = filepath.Join(usr.HomeDir, ".config", "qBittorrent", "qBittorrent.conf")
+		opts.QBitDir = filepath.Join(usr.HomeDir, ".local", "share", "data", "qBittorrent", "BT_backup")
 	case "darwin":
 		usr, err := user.Current()
 		if err != nil {
 			panic(err)
 		}
-		opts.BitDir = path.Join(usr.HomeDir, "Library", "Application Support", "uTorrent")
-		opts.Config = path.Join(usr.HomeDir, ".config", "qBittorrent", "qbittorrent.ini")
-		opts.QBitDir = path.Join(usr.HomeDir, "Library", "Application Support", "QBittorrent", "BT_backup")
+		opts.BitDir = filepath.Join(usr.HomeDir, "Library", "Application Support", "uTorrent")
+		opts.Config = filepath.Join(usr.HomeDir, ".config", "qBittorrent", "qbittorrent.ini")
+		opts.QBitDir = filepath.Join(usr.HomeDir, "Library", "Application Support", "QBittorrent", "BT_backup")
 	}
 	return opts
 }
@@ -89,6 +89,11 @@ func OptsCheck(opts *Opts) error {
 		if _, err := os.Stat(opts.Config); os.IsNotExist(err) {
 			return fmt.Errorf("Can not read qBittorrent config file. Try run and close qBittorrent if you have not done" +
 				" so already, or specify the path explicitly or do not import tags")
+		}
+	}
+	if runtime.GOOS == "linux" {
+		if opts.SearchPaths == nil {
+			return fmt.Errorf("On linux systems you must define search path for torrents")
 		}
 	}
 	return nil
