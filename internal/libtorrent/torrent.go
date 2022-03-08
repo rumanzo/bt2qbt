@@ -24,7 +24,6 @@ type NewTorrentStructure struct {
 	WithoutTags     bool                                         `bencode:"-"`
 	TorrentFilePath string                                       `bencode:"-"`
 	TorrentFileName string                                       `bencode:"-"`
-	fileSizes       int64                                        `bencode:"-"`
 	sizeAndPrio     [][]int64                                    `bencode:"-"`
 	torrentFileList []string                                     `bencode:"-"`
 	NumPieces       int64                                        `bencode:"-"`
@@ -176,7 +175,6 @@ func (newStructure *NewTorrentStructure) HandlePieces() {
 }
 
 func (newStructure *NewTorrentStructure) HandleSizes() {
-	newStructure.fileSizes = 0
 	if len(newStructure.TorrentFile.Info.Files) > 0 {
 		var filelists [][]int64
 		for num, file := range newStructure.TorrentFile.Info.Files {
@@ -203,7 +201,6 @@ func (newStructure *NewTorrentStructure) HandleSizes() {
 			filename := strings.Join(filestrings, newStructure.Separator)
 			newStructure.torrentFileList = append(newStructure.torrentFileList, filename)
 			fullpath := newStructure.ResumeItem.Path + newStructure.Separator + filename
-			newStructure.fileSizes += file.Length
 			if n := newStructure.Fastresume.FilePriority[num]; n != 0 {
 				lenght = file.Length
 				newStructure.sizeAndPrio = append(newStructure.sizeAndPrio, []int64{lenght, 1})

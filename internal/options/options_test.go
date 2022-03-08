@@ -1,37 +1,36 @@
-package test
+package options
 
 import (
 	"github.com/jessevdk/go-flags"
-	"github.com/rumanzo/bt2qbt/internal/options"
 	"reflect"
 	"testing"
 )
 
 type TestArgsCase struct {
-	Name     string
-	Args     []string
-	Opts     *options.Opts
-	ErrMsg   string
-	MustFail bool
-	Expected *options.Opts
+	name     string
+	args     []string
+	opts     *Opts
+	errMsg   string
+	mustFail bool
+	expected *Opts
 }
 
 func TestOptionsArgs(t *testing.T) {
 	cases := []TestArgsCase{
 		{
-			Name:     "Must fail test",
-			Args:     []string{""},
-			MustFail: true,
-			Expected: &options.Opts{},
+			name:     "Must fail test",
+			args:     []string{""},
+			mustFail: true,
+			expected: &Opts{},
 		},
 		{
-			Name:     "Parse without expected args test",
-			Args:     []string{""},
-			MustFail: false,
+			name:     "Parse without expected args test",
+			args:     []string{""},
+			mustFail: false,
 		},
 		{
-			Name: "Parse short args test",
-			Args: []string{
+			name: "Parse short args test",
+			args: []string{
 				"-s", "/dir",
 				"-d", "/dir",
 				"-c", "/dir/q.conf",
@@ -39,8 +38,8 @@ func TestOptionsArgs(t *testing.T) {
 				"--sep", "/",
 				"-t", "/dir5", "-t", "/dir6/",
 				"--without-tags"},
-			MustFail: false,
-			Expected: &options.Opts{
+			mustFail: false,
+			expected: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
 				Config:        "/dir/q.conf",
@@ -51,8 +50,8 @@ func TestOptionsArgs(t *testing.T) {
 			},
 		},
 		{
-			Name: "Parse long args test",
-			Args: []string{
+			name: "Parse long args test",
+			args: []string{
 				"--source", "/dir",
 				"--destination", "/dir",
 				"--config", "/dir/q.conf",
@@ -60,8 +59,8 @@ func TestOptionsArgs(t *testing.T) {
 				"--sep", "/",
 				"--search", "/dir5", "-t", "/dir6/",
 				"--without-tags"},
-			MustFail: false,
-			Expected: &options.Opts{
+			mustFail: false,
+			expected: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
 				Config:        "/dir/q.conf",
@@ -74,16 +73,16 @@ func TestOptionsArgs(t *testing.T) {
 	}
 
 	for _, testCase := range cases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			opts := options.PrepareOpts()
-			if _, err := flags.ParseArgs(opts, testCase.Args); err != nil { // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
-				if flagsErr, ok := err.(*flags.Error); !(ok && flagsErr.Type == flags.ErrHelp) && !testCase.MustFail {
+		t.Run(testCase.name, func(t *testing.T) {
+			opts := PrepareOpts()
+			if _, err := flags.ParseArgs(opts, testCase.args); err != nil { // https://godoc.org/github.com/jessevdk/go-flags#ErrorType
+				if flagsErr, ok := err.(*flags.Error); !(ok && flagsErr.Type == flags.ErrHelp) && !testCase.mustFail {
 					t.Fatalf("Unexpected error: %v", err)
 				}
 			}
-			if testCase.Expected != nil {
-				if !reflect.DeepEqual(testCase.Expected, opts) && !testCase.MustFail {
-					t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", opts, testCase.Expected)
+			if testCase.expected != nil {
+				if !reflect.DeepEqual(testCase.expected, opts) && !testCase.mustFail {
+					t.Fatalf("Unexpected error: opts isn't equoptions:\n Got: %#v\n Expect %#v\n", opts, testCase.expected)
 				}
 			}
 		})
@@ -93,8 +92,8 @@ func TestOptionsArgs(t *testing.T) {
 func TestOptionsHandle(t *testing.T) {
 	cases := []TestArgsCase{
 		{
-			Name: "Must fail test",
-			Opts: &options.Opts{
+			name: "Must fail test",
+			opts: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
 				Config:        "/dir/q.conf",
@@ -103,19 +102,19 @@ func TestOptionsHandle(t *testing.T) {
 				SearchPaths:   []string{"/dir5", "/dir6/"},
 				WithoutTags:   true,
 			},
-			MustFail: true,
-			Expected: &options.Opts{},
+			mustFail: true,
+			expected: &Opts{},
 		},
 		{
-			Name: "Must fail test",
-			Opts: &options.Opts{
+			name: "Must fail test",
+			opts: &Opts{
 				BitDir:        "/bitdir",
 				QBitDir:       "/qbitdir",
 				PathSeparator: "/",
 				SearchPaths:   []string{"/dir5", "/dir6/"},
 			},
-			MustFail: true,
-			Expected: &options.Opts{
+			mustFail: true,
+			expected: &Opts{
 				BitDir:        "/bitdir",
 				QBitDir:       "/qbitdir",
 				PathSeparator: "/",
@@ -125,11 +124,11 @@ func TestOptionsHandle(t *testing.T) {
 	}
 
 	for _, testCase := range cases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			options.HandleOpts(testCase.Opts)
-			if testCase.Expected != nil {
-				if !reflect.DeepEqual(testCase.Expected, testCase.Opts) && !testCase.MustFail {
-					t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.Opts, testCase.Expected)
+		t.Run(testCase.name, func(t *testing.T) {
+			HandleOpts(testCase.opts)
+			if testCase.expected != nil {
+				if !reflect.DeepEqual(testCase.expected, testCase.opts) && !testCase.mustFail {
+					t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.opts, testCase.expected)
 				}
 			}
 		})
@@ -139,8 +138,8 @@ func TestOptionsHandle(t *testing.T) {
 func TestOptionsChecks(t *testing.T) {
 	cases := []TestArgsCase{
 		{
-			Name: "Must fail don't exists folders or files",
-			Opts: &options.Opts{
+			name: "Must fail don't exists folders or files",
+			opts: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
 				Config:        "/dir/q.conf",
@@ -149,52 +148,52 @@ func TestOptionsChecks(t *testing.T) {
 				SearchPaths:   []string{"/dir5", "/dir6/"},
 				WithoutTags:   true,
 			},
-			MustFail: true,
+			mustFail: true,
 		},
 		{
-			Name: "Check exists folders or files",
-			Opts: &options.Opts{
-				BitDir:  "./data",
-				QBitDir: "./data",
-				Config:  "./data/testfileset.torrent",
+			name: "Check exists folders or files",
+			opts: &Opts{
+				BitDir:  "../../test/data",
+				QBitDir: "../../test/data",
+				Config:  "../../test/data/testfileset.torrent",
 			},
-			MustFail: false,
+			mustFail: false,
 		},
 		{
-			Name: "Must fail do not exists folders or files test",
-			Opts: &options.Opts{
+			name: "Must fail do not exists folders or files test",
+			opts: &Opts{
 				BitDir:      "/dir",
 				QBitDir:     "/dir",
 				Config:      "/dir/q.conf",
 				Replaces:    []string{"dir1,dir2,dir4", "dir4"},
 				SearchPaths: []string{"/dir5", "/dir6/"},
 			},
-			MustFail: true,
+			mustFail: true,
 		},
 		{
-			Name: "Must fail do not exists config test",
-			Opts: &options.Opts{
-				BitDir:  "./data",
-				QBitDir: "./data",
+			name: "Must fail do not exists config test",
+			opts: &Opts{
+				BitDir:  "../../test/data",
+				QBitDir: "../../test/data",
 				Config:  "/dir/q.conf",
 			},
-			MustFail: true,
+			mustFail: true,
 		},
 		{
-			Name: "Must fail do not exists qbitdir test",
-			Opts: &options.Opts{
-				BitDir:      "./data",
+			name: "Must fail do not exists qbitdir test",
+			opts: &Opts{
+				BitDir:      "../../test/data",
 				QBitDir:     "/dir",
 				WithoutTags: true,
 			},
-			MustFail: true,
+			mustFail: true,
 		},
 	}
 
 	for _, testCase := range cases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			err := options.OptsCheck(testCase.Opts)
-			if err != nil && !testCase.MustFail {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := OptsCheck(testCase.opts)
+			if err != nil && !testCase.mustFail {
 				t.Errorf("Unexpected error: %v\n", err)
 			}
 		})
