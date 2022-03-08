@@ -17,16 +17,8 @@ func (newStructure *NewTorrentStructure) HandleStructures() {
 	newStructure.Fastresume.ActiveTime = newStructure.ResumeItem.Runtime
 	newStructure.Fastresume.AddedTime = newStructure.ResumeItem.AddedOn
 	newStructure.Fastresume.CompletedTime = newStructure.ResumeItem.CompletedOn
-	newStructure.Fastresume.Info = newStructure.TorrentFile.Info
-
-	// todo
-	//torinfo, _ := bencode.EncodeString(newStructure.TorrentFile.Info)
-	//h := sha1.New()
-	//io.WriteString(h, torinfo)
-	//h.Sum(nil)
-	//
-	//newStructure.Fastresume.InfoHash = torinfo
-
+	//newStructure.Fastresume.Info = newStructure.TorrentFile.Info
+	newStructure.Fastresume.InfoHash = newStructure.ResumeItem.Info
 	newStructure.Fastresume.SeedingTime = newStructure.ResumeItem.Runtime
 	newStructure.HandleState()
 	newStructure.Fastresume.FinishedTime = int64(time.Since(time.Unix(newStructure.ResumeItem.CompletedOn, 0)).Minutes())

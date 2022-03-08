@@ -5,6 +5,7 @@ type ResumeItem struct {
 	Caption          string          `bencode:"caption,omitempty"`
 	CompletedOn      int64           `bencode:"completed_on"`
 	Downloaded       int64           `bencode:"downloaded"`
+	Info             string          `bencode:"info"`
 	Label            string          `bencode:"label,omitempty"`
 	Labels           []string        `bencode:"labels,omitempty"`
 	LastSeenComplete int64           `bencode:"last_seen_complete"`

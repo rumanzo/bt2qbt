@@ -63,8 +63,8 @@ func HandleResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *
 	newStructure.HandleStructures()
 
 	newBaseName := newStructure.GetHash()
-	if err = helpers.EncodeTorrentFile(filepath.Join(opts.QBitDir, newBaseName+".fastresume"), &newStructure); err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v", opts.QBitDir+newBaseName+".fastresume")
+	if err = helpers.EncodeTorrentFile(filepath.Join(opts.QBitDir, newBaseName+".fastresume"), newStructure.Fastresume); err != nil {
+		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v. With error: %v", filepath.Join(opts.QBitDir, newBaseName+".fastresume"), err)
 		return err
 	}
 	if err = helpers.CopyFile(newStructure.TorrentFilePath, filepath.Join(opts.QBitDir, newBaseName+".torrent")); err != nil {

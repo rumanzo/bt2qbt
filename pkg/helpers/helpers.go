@@ -53,21 +53,34 @@ func DecodeTorrentFile(path string, decodeTo interface{}) error {
 }
 
 func EncodeTorrentFile(path string, content interface{}) error {
+	var err error
+	var file *os.File
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Create(path)
+		file, err = os.Create(path)
+		if err != nil {
+			panic(err)
+			return err
+		}
+		defer file.Close()
+	} else {
+		file, err = os.OpenFile(path, os.O_WRONLY, 0666)
+		if err != nil {
+			return err
+			panic(err)
+		}
+		defer file.Close()
 	}
 
-	file, err := os.OpenFile(path, os.O_WRONLY, 0666)
-	if err != nil {
+	bufferedWriter := bufio.NewWriter(file)
+
+	enc := bencode.NewEncoder(bufferedWriter)
+	if err = enc.Encode(content); err != nil {
 		return err
 	}
-	defer file.Close()
-	bufferedWriter := bufio.NewWriter(file)
-	enc := bencode.NewEncoder(bufferedWriter)
+	err = bufferedWriter.Flush()
 	if err := enc.Encode(content); err != nil {
 		return err
 	}
-	bufferedWriter.Flush()
 	return nil
 }
 
