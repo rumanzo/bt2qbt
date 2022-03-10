@@ -9,7 +9,6 @@ import (
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
-	"hash"
 	"io"
 	"strconv"
 	"strings"
@@ -20,6 +19,7 @@ type NewTorrentStructure struct {
 	Fastresume      *qBittorrentStructures.QBittorrentFastresume `bencode:"-"`
 	ResumeItem      *utorrentStructs.ResumeItem                  `bencode:"-"`
 	TorrentFile     *torrentStructures.Torrent                   `bencode:"-"`
+	TorrentFileRaw  map[string]interface{}                       `bencode:"-"`
 	WithoutLabels   bool                                         `bencode:"-"`
 	WithoutTags     bool                                         `bencode:"-"`
 	TorrentFilePath string                                       `bencode:"-"`
@@ -66,9 +66,10 @@ func CreateEmptyNewTorrentStructure() NewTorrentStructure {
 			UploadRateLimit:     0,
 			QbtName:             "",
 		},
-		TorrentFile: &torrentStructures.Torrent{},
-		ResumeItem:  &utorrentStructs.ResumeItem{},
-		Targets:     map[int64]string{},
+		TorrentFile:    &torrentStructures.Torrent{},
+		TorrentFileRaw: map[string]interface{}{},
+		ResumeItem:     &utorrentStructs.ResumeItem{},
+		Targets:        map[int64]string{},
 	}
 	return newstructure
 }
@@ -225,15 +226,10 @@ func (newStructure *NewTorrentStructure) FillWholePieces(chr string) []byte {
 	return newpieces
 }
 
-func (newStructure *NewTorrentStructure) GetSha1() (h hash.Hash) {
-	torinfo, _ := bencode.EncodeString(newStructure.TorrentFile.Info)
-	h = sha1.New()
-	io.WriteString(h, torinfo)
-	return
-}
-
 func (newStructure *NewTorrentStructure) GetHash() (hash string) {
-	h := newStructure.GetSha1()
+	torinfo, _ := bencode.EncodeString(newStructure.TorrentFileRaw["info"])
+	h := sha1.New()
+	io.WriteString(h, torinfo)
 	hash = hex.EncodeToString(h.Sum(nil))
 	return
 }

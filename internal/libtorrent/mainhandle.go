@@ -17,7 +17,7 @@ func (newStructure *NewTorrentStructure) HandleStructures() {
 	newStructure.Fastresume.ActiveTime = newStructure.ResumeItem.Runtime
 	newStructure.Fastresume.AddedTime = newStructure.ResumeItem.AddedOn
 	newStructure.Fastresume.CompletedTime = newStructure.ResumeItem.CompletedOn
-	//newStructure.Fastresume.Info = newStructure.TorrentFile.Info
+	newStructure.Fastresume.Info = newStructure.TorrentFile.Info
 	newStructure.Fastresume.InfoHash = newStructure.ResumeItem.Info
 	newStructure.Fastresume.SeedingTime = newStructure.ResumeItem.Runtime
 	newStructure.HandleState()

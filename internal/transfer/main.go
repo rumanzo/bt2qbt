@@ -54,7 +54,15 @@ func HandleResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *
 		return err
 	}
 
+	// struct for work with
 	err = helpers.DecodeTorrentFile(newStructure.TorrentFilePath, newStructure.TorrentFile)
+	if err != nil {
+		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newStructure.TorrentFilePath, key)
+		return err
+	}
+
+	// because hash of info very important it will be better to use interface for get hash
+	err = helpers.DecodeTorrentFile(newStructure.TorrentFilePath, &newStructure.TorrentFileRaw)
 	if err != nil {
 		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newStructure.TorrentFilePath, key)
 		return err
