@@ -17,20 +17,20 @@ func TestSearchPaths(t *testing.T) {
 	}
 	cases := []SearchPathCase{
 		{
-			name: "Find relative torrent directly",
+			name: "001 Find relative torrent directly",
 			newTorrentStructure: libtorrent.NewTorrentStructure{
 				TorrentFilePath: "../../test/data/testfileset.torrent",
 			},
 		},
 		{
-			name:     "Find relative torrent directly. mustFail",
+			name:     "002 Find relative torrent directly. mustFail",
 			mustFail: true,
 			newTorrentStructure: libtorrent.NewTorrentStructure{
 				TorrentFilePath: "../../test/data/testfileset_not_existing.torrent",
 			},
 		},
 		{
-			name: "Find relative torrent with search paths",
+			name: "003 Find relative torrent with search paths",
 			newTorrentStructure: libtorrent.NewTorrentStructure{
 				TorrentFilePath: "",
 				TorrentFileName: "testfileset.torrent",
@@ -38,7 +38,7 @@ func TestSearchPaths(t *testing.T) {
 			SearchPaths: []string{"/not-exists", "../../test/data"},
 		},
 		{
-			name:     "Find relative not existing torrent with search paths. mustFail",
+			name:     "004 Find relative not existing torrent with search paths. mustFail",
 			mustFail: true,
 			newTorrentStructure: libtorrent.NewTorrentStructure{
 				TorrentFilePath: "",
@@ -71,7 +71,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 
 	cases := []SearchPathCase{
 		{
-			name:                "Check absolute windows path with two start backslash",
+			name:                "001 Check absolute windows path with two start backslash",
 			key:                 "C:\\\\temp\\t.torrent",
 			newTorrentStructure: &libtorrent.NewTorrentStructure{},
 			expected: &libtorrent.NewTorrentStructure{
@@ -81,7 +81,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			opts: &options.Opts{},
 		},
 		{
-			name:                "Check absolute windows path with two start backslash. Mustfail",
+			name:                "002 Check absolute windows path with two start backslash. Mustfail",
 			key:                 "C:\\\\temp\\t.torrent",
 			mustFail:            true,
 			newTorrentStructure: &libtorrent.NewTorrentStructure{},
@@ -92,7 +92,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			opts: &options.Opts{},
 		},
 		{
-			name:                "Check absolute windows path with one start backslash",
+			name:                "003 Check absolute windows path with one start backslash",
 			key:                 "C:\\temp\\t.torrent",
 			newTorrentStructure: &libtorrent.NewTorrentStructure{},
 			expected: &libtorrent.NewTorrentStructure{
@@ -102,7 +102,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			opts: &options.Opts{},
 		},
 		{
-			name:                "Check absolute windows path with slashes",
+			name:                "004 Check absolute windows path with slashes",
 			key:                 "C:/temp/t.torrent",
 			newTorrentStructure: &libtorrent.NewTorrentStructure{},
 			expected: &libtorrent.NewTorrentStructure{
@@ -112,7 +112,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			opts: &options.Opts{},
 		},
 		{
-			name:                "Check absolute windows share path",
+			name:                "005 Check absolute windows share path",
 			key:                 "\\temp\\t.torrent",
 			newTorrentStructure: &libtorrent.NewTorrentStructure{},
 			expected: &libtorrent.NewTorrentStructure{
@@ -122,7 +122,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			opts: &options.Opts{},
 		},
 		{
-			name:                "Check relative paths (torrent name)",
+			name:                "006 Check relative paths (torrent name)",
 			key:                 "t.torrent",
 			newTorrentStructure: &libtorrent.NewTorrentStructure{},
 			expected: &libtorrent.NewTorrentStructure{

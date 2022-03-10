@@ -1,27 +1,35 @@
 package torrentStructures
 
 type Torrent struct {
-	Announce     string       `bencode:"announce"`
-	Comment      string       `bencode:"comment"`
-	CreatedBy    string       `bencode:"created by"`
-	CreationDate int64        `bencode:"creation date"`
-	Info         *TorrentInfo `bencode:"info"`
-	Publisher    string       `bencode:"publisher,omitempty"`
-	PublisherUrl string       `bencode:"publisher-url,omitempty"`
+	Announce     string           `bencode:"announce"`
+	Comment      string           `bencode:"comment"`
+	CreatedBy    string           `bencode:"created by"`
+	CreationDate int64            `bencode:"creation date"`
+	Info         *TorrentInfo     `bencode:"info"`
+	Publisher    string           `bencode:"publisher,omitempty"`
+	PublisherUrl string           `bencode:"publisher-url,omitempty"`
+	PieceLayers  *map[byte][]byte `bencode:"piece layers"`
 }
 
 type TorrentInfo struct {
-	FileDuration []int64           `bencode:"file-duration,omitempty"`
-	FileMedia    []int64           `bencode:"file-media,omitempty"`
-	Files        []*TorrentFile    `bencode:"files,omitempty"`
-	Length       int64             `bencode:"length,omitempty"`
-	Md5sum       string            `bencode:"md5sum,omitempty"`
-	Name         string            `bencode:"name,omitempty"`
-	NameUTF8     string            `bencode:"name.utf-8,omitempty"`
-	PieceLength  int64             `bencode:"piece length,omitempty"`
-	Pieces       []byte            `bencode:"pieces,omitempty"`
-	Private      uint8             `bencode:"private,omitempty"`
-	Profiles     []*TorrentProfile `bencode:"profiles,omitempty"`
+	FileDuration []int64                       `bencode:"file-duration,omitempty"`
+	FileMedia    []int64                       `bencode:"file-media,omitempty"`
+	Files        []*TorrentFile                `bencode:"files,omitempty"`
+	FileTree     map[string]*[]TorrentFileTree `bencode:"file tree,omitempty"`
+	Length       int64                         `bencode:"length,omitempty"`
+	MetaVersion  int64                         `bencode:"meta version,omitempty"`
+	Md5sum       string                        `bencode:"md5sum,omitempty"`
+	Name         string                        `bencode:"name,omitempty"`
+	NameUTF8     string                        `bencode:"name.utf-8,omitempty"`
+	PieceLength  int64                         `bencode:"piece length,omitempty"`
+	Pieces       []byte                        `bencode:"pieces,omitempty"`
+	Private      uint8                         `bencode:"private,omitempty"`
+	Profiles     []*TorrentProfile             `bencode:"profiles,omitempty"`
+}
+
+type TorrentFileTree struct {
+	Length     int64  `bencode:"length,omitempty"`
+	PiecesRoot []byte `bencode:"pieces root"`
 }
 
 type TorrentFile struct {

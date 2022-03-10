@@ -1,22 +1,25 @@
 # bt2qbt
+
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
+
 - [bt2qbt](#bt2qbt)
-	- [Feature](#user-content-feature)
-	- [Help](#user-content-help)
-	- [Usage examples](#user-content-usage-examples)
-	- [Known issuses](#user-content-known-issuses)
-	
+    - [Feature](#user-content-feature)
+    - [Help](#user-content-help)
+    - [Usage examples](#user-content-usage-examples)
+    - [Known issuses](#user-content-known-issuses)
+
 Feature:
 ---------
- - Processing all torrents
- - Processing torrents with subdirectories and without subdirectories
- - Processing torrents with renamed files
- - Processing torrents with non-standard encodings (for example, cp1251)
- - Processing of torrents in the not ready state *
- - Processing modified torrent names
- - Save date, metrics, status. **
- - Import of tags and labels
- - Multithreading
+
+- Processing all torrents
+- Processing torrents with subdirectories and without subdirectories
+- Processing torrents with renamed files
+- Processing torrents with non-standard encodings (for example, cp1251)
+- Processing of torrents in the not ready state *
+- Processing modified torrent names
+- Save date, metrics, status. **
+- Import of tags and labels
+- Multithreading
 
 > [!NOTE]
 > \* This torrents will not be done (0%) and will need force recheck (right click on torrent -> Force recheck)
@@ -31,14 +34,14 @@ Feature:
 > \* If you migrate from windows to linux you may need to define path separathor with --sep flag
 
 > [!NOTE]
->\*\* The calculation of the completed parts is based only on the priority of the files in torrent. Don't transfer global uTorrent/BitTorrent statistics.
+> \*\* The calculation of the completed parts is based only on the priority of the files in torrent. Don't transfer global uTorrent/BitTorrent statistics.
 
 > [!NOTE]
->\*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a recheck (right click on torrent -> Force recheck). Without recheck torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
+> \*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a recheck (right click on torrent -> Force recheck). Without recheck torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
 
 > [!IMPORTANT]
 > Don't forget before use make backup bittorrent\utorrent, qbittorrent folder. and config %APPDATA%/Roaming/qBittorrent/qBittorrent.ini. Close all this program before.
-> 
+>
 > [!IMPORTANT]
 > You must previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files will not handled
 
@@ -83,7 +86,9 @@ Help Options:
 Usage examples:
 ----------------
 
-- If you just run application, it will processing torrents from %APPDATA%\uTorrent\ to %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
+- If you just run application, it will processing torrents from %APPDATA%\uTorrent\ to
+  %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
+
 ```
 C:\Users\user\Downloads> .\bt2qbt.exe
 It will be performed processing from directory C:\Users\user\AppData\Roaming\uTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
@@ -100,7 +105,9 @@ Started
 Press Enter to exit
 ```
 
-- Run application from cmd or powershell with keys, if you want change source dir or destination dir, or export/import behavior
+- Run application from cmd or powershell with keys, if you want change source dir or destination dir, or export/import
+  behavior
+
 ```
 C:\Users\user\Downloads> .\bt2qbt.exe -s C:\Users\user\AppData\Roaming\BitTorrent\
 It will be performed processing from directory C:\Users\user\AppData\Roaming\BitTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
@@ -120,6 +127,8 @@ Started
 
 Press Enter to exit
 ```
+
 Known issuses:
 ---------------
- - Unknown
+
+- Unknown

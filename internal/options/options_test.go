@@ -92,7 +92,7 @@ func TestOptionsArgs(t *testing.T) {
 func TestOptionsHandle(t *testing.T) {
 	cases := []TestArgsCase{
 		{
-			name: "Must fail test",
+			name: "001 Must fail test",
 			opts: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
@@ -106,7 +106,7 @@ func TestOptionsHandle(t *testing.T) {
 			expected: &Opts{},
 		},
 		{
-			name: "Must fail test",
+			name: "002 Must fail test",
 			opts: &Opts{
 				BitDir:        "/bitdir",
 				QBitDir:       "/qbitdir",
@@ -138,7 +138,7 @@ func TestOptionsHandle(t *testing.T) {
 func TestOptionsChecks(t *testing.T) {
 	cases := []TestArgsCase{
 		{
-			name: "Must fail don't exists folders or files",
+			name: "001 Must fail don't exists folders or files",
 			opts: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
@@ -151,7 +151,7 @@ func TestOptionsChecks(t *testing.T) {
 			mustFail: true,
 		},
 		{
-			name: "Check exists folders or files",
+			name: "002 Check exists folders or files",
 			opts: &Opts{
 				BitDir:  "../../test/data",
 				QBitDir: "../../test/data",
@@ -160,7 +160,7 @@ func TestOptionsChecks(t *testing.T) {
 			mustFail: false,
 		},
 		{
-			name: "Must fail do not exists folders or files test",
+			name: "003 Must fail do not exists folders or files test",
 			opts: &Opts{
 				BitDir:      "/dir",
 				QBitDir:     "/dir",
@@ -171,7 +171,7 @@ func TestOptionsChecks(t *testing.T) {
 			mustFail: true,
 		},
 		{
-			name: "Must fail do not exists config test",
+			name: "004 Must fail do not exists config test",
 			opts: &Opts{
 				BitDir:  "../../test/data",
 				QBitDir: "../../test/data",
@@ -180,7 +180,7 @@ func TestOptionsChecks(t *testing.T) {
 			mustFail: true,
 		},
 		{
-			name: "Must fail do not exists qbitdir test",
+			name: "005 Must fail do not exists qbitdir test",
 			opts: &Opts{
 				BitDir:      "../../test/data",
 				QBitDir:     "/dir",

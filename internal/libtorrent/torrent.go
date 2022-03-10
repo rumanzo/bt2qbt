@@ -48,7 +48,7 @@ func CreateEmptyNewTorrentStructure() NewTorrentStructure {
 			LastDownload:        0,
 			LastSeenComplete:    0,
 			LastUpload:          0,
-			LibTorrentVersion:   "1.2.5.0",
+			LibTorrentVersion:   "2.0.5.0",
 			MaxConnections:      100,
 			MaxUploads:          100,
 			NumDownloaded:       0,
@@ -296,10 +296,10 @@ func (newStructure *NewTorrentStructure) HandleSavePaths() {
 		}
 	} else {
 		if lastdirname == torrentname {
-			newStructure.Fastresume.QBtContentLayout = "NoSubfolder"
+			newStructure.Fastresume.QBtContentLayout = "Subfolder"
 			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
 		} else {
-			newStructure.Fastresume.QBtContentLayout = "NoSubfolder"
+			newStructure.Fastresume.QBtContentLayout = "Original"
 			newStructure.torrentFileList = append(newStructure.torrentFileList, lastdirname)
 			newStructure.Fastresume.MappedFiles = newStructure.torrentFileList
 			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
