@@ -262,24 +262,23 @@ func (newStructure *NewTorrentStructure) FillPiecesParted() []byte {
 }
 
 func (newStructure *NewTorrentStructure) HandleSavePaths() {
-	var torrentname string
+	var torrentName string
 	if newStructure.TorrentFile.Info.NameUTF8 != "" {
-		torrentname = newStructure.TorrentFile.Info.NameUTF8
+		torrentName = newStructure.TorrentFile.Info.NameUTF8
 	} else {
-		torrentname = newStructure.TorrentFile.Info.Name
+		torrentName = newStructure.TorrentFile.Info.Name
 	}
-	origpath := newStructure.ResumeItem.Path
 	var dirpaths []string
-	if contains := strings.Contains(origpath, "\\"); contains {
-		dirpaths = strings.Split(origpath, "\\")
+	if contains := strings.Contains(newStructure.ResumeItem.Path, "\\"); contains {
+		dirpaths = strings.Split(newStructure.ResumeItem.Path, "\\")
 	} else {
-		dirpaths = strings.Split(origpath, "/")
+		dirpaths = strings.Split(newStructure.ResumeItem.Path, "/")
 	}
 	lastdirname := dirpaths[len(dirpaths)-1]
 	if len(newStructure.TorrentFile.Info.Files) > 0 {
-		if lastdirname == torrentname {
+		if lastdirname == torrentName {
 			newStructure.Fastresume.QBtContentLayout = "Original"
-			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newStructure.Fastresume.QbtSavePath = newStructure.ResumeItem.Path[0 : len(newStructure.ResumeItem.Path)-len(lastdirname)]
 			if len(newStructure.Targets) > 0 {
 				for _, path := range newStructure.torrentFileList {
 					if len(path) > 0 {
@@ -295,14 +294,14 @@ func (newStructure *NewTorrentStructure) HandleSavePaths() {
 			newStructure.Fastresume.MappedFiles = newStructure.torrentFileList
 		}
 	} else {
-		if lastdirname == torrentname {
+		if lastdirname == torrentName {
 			newStructure.Fastresume.QBtContentLayout = "Subfolder"
-			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newStructure.Fastresume.QbtSavePath = newStructure.ResumeItem.Path[0 : len(newStructure.ResumeItem.Path)-len(lastdirname)]
 		} else {
 			newStructure.Fastresume.QBtContentLayout = "Original"
 			newStructure.torrentFileList = append(newStructure.torrentFileList, lastdirname)
 			newStructure.Fastresume.MappedFiles = newStructure.torrentFileList
-			newStructure.Fastresume.QbtSavePath = origpath[0 : len(origpath)-len(lastdirname)]
+			newStructure.Fastresume.QbtSavePath = newStructure.ResumeItem.Path[0 : len(newStructure.ResumeItem.Path)-len(lastdirname)]
 		}
 	}
 	for _, pattern := range newStructure.Replace {

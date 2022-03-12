@@ -5,12 +5,12 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/libtorrent"
 	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/internal/replace"
+	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -139,9 +139,9 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 // check if resume key is absolute path. It means that we should search torrent file using this absolute path
 // notice that torrent file name always known
 func HandleTorrentFilePath(newStructure *libtorrent.NewTorrentStructure, key string, opts *options.Opts) {
-	if isAbs, _ := regexp.MatchString(`^([A-Za-z]:)?(\\\\?|/)`, key); isAbs == true {
+	if fileHelpers.IsAbs(key) {
 		newStructure.TorrentFilePath = key
-		newStructure.TorrentFileName = filepath.Base(key)
+		newStructure.TorrentFileName = fileHelpers.Base(key)
 	} else {
 		newStructure.TorrentFilePath = filepath.Join(opts.BitDir, key) // additional search required
 		newStructure.TorrentFileName = key
@@ -152,8 +152,10 @@ func HandleTorrentFilePath(newStructure *libtorrent.NewTorrentStructure, key str
 func FindTorrentFile(newStructure *libtorrent.NewTorrentStructure, searchPaths []string) error {
 	if _, err := os.Stat(newStructure.TorrentFilePath); os.IsNotExist(err) {
 		for _, searchPath := range searchPaths {
-			if _, err = os.Stat(filepath.Join(searchPath, newStructure.TorrentFileName)); err == nil {
-				newStructure.TorrentFilePath = filepath.Join(searchPath, newStructure.TorrentFileName)
+			// normalize path with os.PathSeparator, because file can be on share, for example
+			fullPath := fileHelpers.Join([]string{searchPath, newStructure.TorrentFileName}, string(os.PathSeparator))
+			if _, err = os.Stat(fullPath); err == nil {
+				newStructure.TorrentFilePath = fullPath
 				return nil
 			}
 		}

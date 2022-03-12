@@ -4,9 +4,20 @@ import (
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+// my fast test func
+// todo remove this
+func TestRand(t *testing.T) {
+	//path := `\\share\../test.file`
+	//isAbs := filepath.IsAbs(path)
+	//t.Fatalf("%v", isAbs)
+	//var checkWindowsDiskPath = regexp.MustCompile(`^[A-Za-z]:\\\\`)
+	t.Fatal(filepath.Join(``, `test`))
+}
 
 func TestHandleTorrentFilePath(t *testing.T) {
 	type SearchPathCase struct {
@@ -45,7 +56,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			if !equal && !testCase.mustFail {
 				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.newTorrentStructure.Fastresume, testCase.expected.Fastresume)
 			} else if equal && testCase.mustFail {
-				t.Fatal("Unexpected error: structures are equal, but they shouldn't\n", testCase.newTorrentStructure.Fastresume, testCase.expected.Fastresume)
+				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %#v\n", testCase.newTorrentStructure.Fastresume)
 			}
 		})
 	}
