@@ -57,6 +57,7 @@ func Normalize(filePath string, separator string) string {
 	return filePath
 }
 
+// remove last dir or file, change separator, normalize and leave root path exists
 func CutLastPath(filePath string, separator string) string {
 	prefixSubmatch := rootPathRegexp.FindAllString(filePath, 1)
 	var prefix string
@@ -72,9 +73,6 @@ func CutLastPath(filePath string, separator string) string {
 	lastSeparatorIndex := strings.LastIndex(filePath, separator)
 	if lastSeparatorIndex < len(prefix) {
 		return prefix
-	}
-	if lastSeparatorIndex < 0 {
-		return filePath
 	}
 	return filePath[:lastSeparatorIndex]
 }

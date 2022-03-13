@@ -480,6 +480,12 @@ func TestCutLastPath(t *testing.T) {
 			path:      `/`,
 			expected:  `\`,
 		},
+		{
+			name:      "024 just file without any slashes or backslashes",
+			separator: `/`,
+			path:      `myfile.txt`,
+			expected:  ``,
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
