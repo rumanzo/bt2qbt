@@ -274,7 +274,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 	if len(transfer.TorrentFile.Info.Files) > 0 {
 		if lastDirName == torrentName {
 			transfer.Fastresume.QBtContentLayout = "Original"
-			transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(transfer.ResumeItem.Path, transfer.Opts.PathSeparator)[0 : len(transfer.ResumeItem.Path)-len(lastDirName)]
+			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, transfer.Opts.PathSeparator)
 			if len(transfer.Targets) > 0 {
 				for _, path := range transfer.torrentFileList {
 					if len(path) > 0 {
@@ -292,31 +292,21 @@ func (transfer *TransferStructure) HandleSavePaths() {
 	} else {
 		if lastDirName == torrentName {
 			transfer.Fastresume.QBtContentLayout = "Subfolder"
-			transfer.Fastresume.QbtSavePath = transfer.ResumeItem.Path[0 : len(transfer.ResumeItem.Path)-len(lastDirName)]
 		} else {
 			transfer.Fastresume.QBtContentLayout = "Original"
-			transfer.torrentFileList = append(transfer.torrentFileList, lastDirName)
-			transfer.Fastresume.MappedFiles = transfer.torrentFileList
-			transfer.Fastresume.QbtSavePath = transfer.ResumeItem.Path[0 : len(transfer.ResumeItem.Path)-len(lastDirName)]
 		}
+		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(transfer.ResumeItem.Path, `/`) // sep always is /
 	}
 	for _, pattern := range transfer.Replace {
 		transfer.Fastresume.QbtSavePath = strings.ReplaceAll(transfer.Fastresume.QbtSavePath, pattern.From, pattern.To)
 	}
-	var oldsep string
-	switch transfer.Opts.PathSeparator {
-	case "\\":
-		oldsep = "/"
-	case "/":
-		oldsep = "\\"
-	}
-	transfer.Fastresume.QbtSavePath = strings.ReplaceAll(transfer.Fastresume.QbtSavePath, oldsep, transfer.Opts.PathSeparator)
-	transfer.Fastresume.SavePath = strings.ReplaceAll(transfer.Fastresume.QbtSavePath, "\\", "/")
+	transfer.Fastresume.SavePath = fileHelpers.Normalize(transfer.Fastresume.QbtSavePath, transfer.Opts.PathSeparator)
 
 	for num, entry := range transfer.Fastresume.MappedFiles {
-		newentry := strings.ReplaceAll(entry, oldsep, transfer.Opts.PathSeparator)
-		if entry != newentry {
-			transfer.Fastresume.MappedFiles[num] = newentry
+		// todo
+		//newentry := strings.ReplaceAll(entry, oldsep, transfer.Opts.PathSeparator)
+		if entry != entry {
+			transfer.Fastresume.MappedFiles[num] = entry
 		}
 	}
 }

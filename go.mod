@@ -7,6 +7,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/go-ini/ini v1.64.0
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/r3labs/diff/v2 v2.15.0
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/zeebo/bencode v1.0.0
 )

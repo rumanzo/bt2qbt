@@ -1,6 +1,10 @@
 package libtorrent
 
 import (
+	"github.com/davecgh/go-spew/spew"
+	"github.com/r3labs/diff/v2"
+	_ "github.com/r3labs/diff/v2"
+	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
@@ -33,17 +37,18 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			name: "001 Test torrent with windows single nofolder (original) path without replaces",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
-				ResumeItem: &utorrentStructs.ResumeItem{Path: "D:\\torrents"},
+				ResumeItem: &utorrentStructs.ResumeItem{Path: `D:\torrents`},
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Name: "test_torrent",
 					},
 				},
+				Opts: &options.Opts{PathSeparator: `\`},
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      "D:/torrents",
-					SavePath:         "D:\\torrents",
+					QbtSavePath:      `D:/torrents`,
+					SavePath:         `D:\torrents`,
 					QBtContentLayout: "Original",
 				},
 			},
@@ -54,9 +59,13 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			testCase.newTransferStructure.HandleSavePaths()
 			equal := reflect.DeepEqual(testCase.expected.Fastresume, testCase.newTransferStructure.Fastresume)
 			if !equal && !testCase.mustFail {
-				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume)
+				changes, err := diff.Diff(testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, diff.DiscardComplexOrigin())
+				if err != nil {
+					t.Error(err.Error())
+				}
+				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n Diff: %v", testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, spew.Sdump(changes))
 			} else if equal && testCase.mustFail {
-				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %#v\n", testCase.newTransferStructure.Fastresume)
+				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %v\n", spew.Sdump(testCase.newTransferStructure.Fastresume))
 			}
 		})
 	}
