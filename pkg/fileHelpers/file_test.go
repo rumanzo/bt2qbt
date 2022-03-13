@@ -326,3 +326,168 @@ func TestNormalize(t *testing.T) {
 		})
 	}
 }
+func TestCutLastPath(t *testing.T) {
+	type PathCutLastPathCase struct {
+		name      string
+		mustFail  bool
+		separator string
+		path      string
+		expected  string
+	}
+	cases := []PathCutLastPathCase{
+		{
+			name:      "001 empty path",
+			path:      ``,
+			separator: "/",
+			expected:  ``,
+		},
+		{
+			name:      "002 empty path. Mustfail",
+			path:      ``,
+			separator: "/",
+			mustFail:  true,
+			expected:  `.`,
+		},
+		{
+			name:      "003 Full windows path with file ending with backslash",
+			separator: `\`,
+			path:      `C:\\mydir\myfile.txt`,
+			expected:  `C:\mydir`,
+		},
+		{
+			name:      "004 Full windows path with backslash",
+			separator: `\`,
+			path:      `C:\\mydir`,
+			expected:  `C:\`,
+		},
+		{
+			name:      "005 Short windows path with backslash",
+			separator: `\`,
+			path:      `C:\mydir\myfile.txt`,
+			expected:  `C:\mydir`,
+		},
+		{
+			name:      "006 Short windows path with backslash and backslash ending",
+			separator: `\`,
+			path:      `C:\mydir\`,
+			expected:  `C:\`,
+		},
+		{
+			name:      "007 Short windows path with slash",
+			separator: `\`,
+			path:      `C:/mydir/myfile.txt`,
+			expected:  `C:\mydir`,
+		},
+		{
+			name:      "008 Windows share path with slashes. Change separator",
+			separator: `\`,
+			path:      `//mydir/myfile.txt`,
+			expected:  `\\mydir`,
+		},
+		{
+			name:      "009 Windows share path with backslashes. Change separator",
+			separator: `/`,
+			path:      `\\mydir\myfile.txt`,
+			expected:  `//mydir`,
+		},
+		{
+			name:      "010 Windows share path with slashes.",
+			separator: `/`,
+			path:      `//mydir/myfile.txt`,
+			expected:  `//mydir`,
+		},
+		{
+			name:      "011 Windows share path with backslashes",
+			separator: `\`,
+			path:      `\\mydir\myfile.txt`,
+			expected:  `\\mydir`,
+		},
+		{
+			name:      "012 Windows share path with backslashes directory",
+			separator: `\`,
+			path:      `\\mydir\\mydir2\\`,
+			expected:  `\\mydir`,
+		},
+		{
+			name:      "013 Windows share path with backslashes directory. Change separator",
+			separator: `/`,
+			path:      `\\mydir\mydir2\`,
+			expected:  `//mydir`,
+		},
+		{
+			name:      "014 Windows share path with broken backslashes directory. Change separator",
+			separator: `/`,
+			path:      `\\mydir\\mydir2\\`,
+			expected:  `//mydir`,
+		},
+		{
+			name:      "015 Windows share path with slashes directory.",
+			separator: `/`,
+			path:      `//mydir/mydir2/`,
+			expected:  `//mydir`,
+		},
+		{
+			name:      "016 Linux path with slashes directory.",
+			separator: `/`,
+			path:      `/mydir`,
+			expected:  `/`,
+		},
+		{
+			name:      "017 Windows share path with broken backslashes directory.",
+			separator: `\`,
+			path:      `\\mydir`,
+			expected:  `\\`,
+		},
+		{
+			name:      "018 Windows vanilla path",
+			separator: `/`,
+			path:      `C:/`,
+			expected:  `C:/`,
+		},
+		{
+			name:      "019 Windows relative path with backslashes with split",
+			separator: `\`,
+			path:      `.\somepath`,
+			expected:  `.\`,
+		},
+		{
+			name:      "020 Windows relative path with backslashes without split",
+			separator: `\`,
+			path:      `.\`,
+			expected:  `.\`,
+		},
+		{
+			name:      "021 Linux relative path with lashes with split",
+			separator: `/`,
+			path:      `./somepath`,
+			expected:  `./`,
+		},
+		{
+			name:      "022 Linux relative path with slashes without split",
+			separator: `/`,
+			path:      `./`,
+			expected:  `./`,
+		},
+		{
+			name:      "023 Linux absolute root path with slashes without any split",
+			separator: `/`,
+			path:      `/`,
+			expected:  `/`,
+		},
+		{
+			name:      "023 Linux absolute root path with slashes without any split. with change separator",
+			separator: `\`,
+			path:      `/`,
+			expected:  `\`,
+		},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if cutted := CutLastPath(testCase.path, testCase.separator); testCase.expected != cutted && !testCase.mustFail {
+				t.Fatalf("Unexpected error: should be %#v, got %#v", testCase.expected, cutted)
+			} else if testCase.mustFail && cutted == testCase.expected {
+				t.Fatalf("Test must fail, but it doesn't")
+			}
+		})
+	}
+}
