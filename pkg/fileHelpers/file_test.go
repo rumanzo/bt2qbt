@@ -145,3 +145,184 @@ func TestJoin(t *testing.T) {
 		})
 	}
 }
+func TestBase(t *testing.T) {
+	type PathBaseCase struct {
+		name     string
+		mustFail bool
+		path     string
+		expected string
+	}
+	cases := []PathBaseCase{
+		{
+			name:     "001 empty path",
+			path:     ``,
+			expected: `.`,
+		},
+		{
+			name:     "002 empty path. Mustfail",
+			path:     ``,
+			mustFail: true,
+			expected: ``,
+		},
+		{
+			name:     "003 Full windows path with file ending with backslash",
+			path:     `C:\\mydir\myfile.txt`,
+			expected: `myfile.txt`,
+		},
+		{
+			name:     "004 Full windows path with backslash",
+			path:     `C:\\mydir`,
+			expected: `mydir`,
+		},
+		{
+			name:     "005 Short windows path with backslash",
+			path:     `C:\mydir\myfile.txt`,
+			expected: `myfile.txt`,
+		},
+		{
+			name:     "006 Short windows path with backslash",
+			path:     `C:\mydir\myfile.txt`,
+			expected: `myfile.txt`,
+		},
+		{
+			name:     "007 Short windows path with slash",
+			path:     `C:/mydir/myfile.txt`,
+			expected: `myfile.txt`,
+		},
+		{
+			name:     "008 Windows share path with slashes",
+			path:     `//mydir/myfile.txt`,
+			expected: `myfile.txt`,
+		},
+		{
+			name:     "009 Windows share path with backslashes",
+			path:     `\\mydir\myfile.txt`,
+			expected: `myfile.txt`,
+		},
+		{
+			name:     "010 Windows share path with backslashes directory",
+			path:     `\\mydir\\mydir2\\`,
+			expected: `mydir2`,
+		},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if base := Base(testCase.path); testCase.expected != base && !testCase.mustFail {
+				t.Fatalf("Unexpected error: should be %#v, got %#v", testCase.expected, base)
+			} else if testCase.mustFail && base == testCase.expected {
+				t.Fatalf("Test must fail, but it doesn't")
+			}
+		})
+	}
+}
+func TestNormalize(t *testing.T) {
+	type PathNormalizeCase struct {
+		name      string
+		mustFail  bool
+		separator string
+		path      string
+		expected  string
+	}
+	cases := []PathNormalizeCase{
+		{
+			name:      "001 empty path",
+			path:      ``,
+			separator: "/",
+			expected:  `.`,
+		},
+		{
+			name:      "002 empty path. Mustfail",
+			path:      ``,
+			separator: "/",
+			mustFail:  true,
+			expected:  ``,
+		},
+		{
+			name:      "003 Full windows path with file ending with backslash",
+			separator: `\`,
+			path:      `C:\\mydir\myfile.txt`,
+			expected:  `C:\mydir\myfile.txt`,
+		},
+		{
+			name:      "004 Full windows path with backslash",
+			separator: `\`,
+			path:      `C:\\mydir`,
+			expected:  `C:\mydir`,
+		},
+		{
+			name:      "005 Short windows path with backslash",
+			separator: `\`,
+			path:      `C:\mydir\myfile.txt`,
+			expected:  `C:\mydir\myfile.txt`,
+		},
+		{
+			name:      "006 Short windows path with backslash and backslash ending",
+			separator: `\`,
+			path:      `C:\mydir\`,
+			expected:  `C:\mydir`,
+		},
+		{
+			name:      "007 Short windows path with slash",
+			separator: `\`,
+			path:      `C:/mydir/myfile.txt`,
+			expected:  `C:\mydir\myfile.txt`,
+		},
+		{
+			name:      "008 Windows share path with slashes. Change separator",
+			separator: `\`,
+			path:      `//mydir/myfile.txt`,
+			expected:  `\\mydir\myfile.txt`,
+		},
+		{
+			name:      "009 Windows share path with backslashes. Change separator",
+			separator: `/`,
+			path:      `\\mydir\myfile.txt`,
+			expected:  `//mydir/myfile.txt`,
+		},
+		{
+			name:      "010 Windows share path with slashes.",
+			separator: `/`,
+			path:      `//mydir/myfile.txt`,
+			expected:  `//mydir/myfile.txt`,
+		},
+		{
+			name:      "011 Windows share path with backslashes",
+			separator: `\`,
+			path:      `\\mydir\myfile.txt`,
+			expected:  `\\mydir\myfile.txt`,
+		},
+		{
+			name:      "012 Windows share path with backslashes directory",
+			separator: `\`,
+			path:      `\\mydir\\mydir2\\`,
+			expected:  `\\mydir\mydir2`,
+		},
+		{
+			name:      "013 Windows share path with backslashes directory. Change separator",
+			separator: `/`,
+			path:      `\\mydir\mydir2\`,
+			expected:  `//mydir/mydir2`,
+		},
+		{
+			name:      "014 Windows share path with broken backslashes directory. Change separator",
+			separator: `/`,
+			path:      `\\mydir\\mydir2\\`,
+			expected:  `//mydir/mydir2`,
+		},
+		{
+			name:      "015 Windows share path with slashes directory.",
+			separator: `/`,
+			path:      `//mydir/mydir2/`,
+			expected:  `//mydir/mydir2`,
+		},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if normalized := Normalize(testCase.path, testCase.separator); testCase.expected != normalized && !testCase.mustFail {
+				t.Fatalf("Unexpected error: should be %#v, got %#v", testCase.expected, normalized)
+			} else if testCase.mustFail && normalized == testCase.expected {
+				t.Fatalf("Test must fail, but it doesn't")
+			}
+		})
+	}
+}
