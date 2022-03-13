@@ -33,49 +33,48 @@ func HandleResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *
 	}()
 
 	// preparing structures for work with
+	transferStruct := libtorrent.CreateEmptyNewTransferStructure()
+	transferStruct.ResumeItem = resumeItem
+
 	var err error
-	newStructure := libtorrent.CreateEmptyNewTorrentStructure()
-	newStructure.WithoutTags = opts.WithoutTags
-	newStructure.WithoutLabels = opts.WithoutLabels
-	newStructure.ResumeItem = resumeItem
 	for _, str := range opts.Replaces {
 		patterns := strings.Split(str, ",")
-		newStructure.Replace = append(newStructure.Replace, replace.Replace{
+		transferStruct.Replace = append(transferStruct.Replace, replace.Replace{
 			From: patterns[0],
 			To:   patterns[1],
 		})
 	}
 
-	HandleTorrentFilePath(&newStructure, key, opts)
+	HandleTorrentFilePath(&transferStruct, key, opts)
 
-	err = FindTorrentFile(&newStructure, opts.SearchPaths)
+	err = FindTorrentFile(&transferStruct, opts.SearchPaths)
 	if err != nil {
 		chans.ErrChannel <- err.Error()
 		return err
 	}
 
 	// struct for work with
-	err = helpers.DecodeTorrentFile(newStructure.TorrentFilePath, newStructure.TorrentFile)
+	err = helpers.DecodeTorrentFile(transferStruct.TorrentFilePath, transferStruct.TorrentFile)
 	if err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newStructure.TorrentFilePath, key)
+		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", transferStruct.TorrentFilePath, key)
 		return err
 	}
 
 	// because hash of info very important it will be better to use interface for get hash
-	err = helpers.DecodeTorrentFile(newStructure.TorrentFilePath, &newStructure.TorrentFileRaw)
+	err = helpers.DecodeTorrentFile(transferStruct.TorrentFilePath, &transferStruct.TorrentFileRaw)
 	if err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", newStructure.TorrentFilePath, key)
+		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", transferStruct.TorrentFilePath, key)
 		return err
 	}
 
-	newStructure.HandleStructures()
+	transferStruct.HandleStructures()
 
-	newBaseName := newStructure.GetHash()
-	if err = helpers.EncodeTorrentFile(filepath.Join(opts.QBitDir, newBaseName+".fastresume"), newStructure.Fastresume); err != nil {
+	newBaseName := transferStruct.GetHash()
+	if err = helpers.EncodeTorrentFile(filepath.Join(opts.QBitDir, newBaseName+".fastresume"), transferStruct.Fastresume); err != nil {
 		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v. With error: %v", filepath.Join(opts.QBitDir, newBaseName+".fastresume"), err)
 		return err
 	}
-	if err = helpers.CopyFile(newStructure.TorrentFilePath, filepath.Join(opts.QBitDir, newBaseName+".torrent")); err != nil {
+	if err = helpers.CopyFile(transferStruct.TorrentFilePath, filepath.Join(opts.QBitDir, newBaseName+".torrent")); err != nil {
 		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", filepath.Join(opts.QBitDir, newBaseName+".torrent"))
 		return err
 	}
@@ -138,29 +137,29 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 
 // check if resume key is absolute path. It means that we should search torrent file using this absolute path
 // notice that torrent file name always known
-func HandleTorrentFilePath(newStructure *libtorrent.NewTorrentStructure, key string, opts *options.Opts) {
+func HandleTorrentFilePath(transferStructure *libtorrent.TransferStructure, key string, opts *options.Opts) {
 	if fileHelpers.IsAbs(key) {
-		newStructure.TorrentFilePath = key
-		newStructure.TorrentFileName = fileHelpers.Base(key)
+		transferStructure.TorrentFilePath = key
+		transferStructure.TorrentFileName = fileHelpers.Base(key)
 	} else {
-		newStructure.TorrentFilePath = filepath.Join(opts.BitDir, key) // additional search required
-		newStructure.TorrentFileName = key
+		transferStructure.TorrentFilePath = filepath.Join(opts.BitDir, key) // additional search required
+		transferStructure.TorrentFileName = key
 	}
 }
 
 // if we can find torrent file, we start check another locations from options search paths
-func FindTorrentFile(newStructure *libtorrent.NewTorrentStructure, searchPaths []string) error {
-	if _, err := os.Stat(newStructure.TorrentFilePath); os.IsNotExist(err) {
+func FindTorrentFile(transferStructure *libtorrent.TransferStructure, searchPaths []string) error {
+	if _, err := os.Stat(transferStructure.TorrentFilePath); os.IsNotExist(err) {
 		for _, searchPath := range searchPaths {
 			// normalize path with os.PathSeparator, because file can be on share, for example
-			fullPath := fileHelpers.Join([]string{searchPath, newStructure.TorrentFileName}, string(os.PathSeparator))
+			fullPath := fileHelpers.Join([]string{searchPath, transferStructure.TorrentFileName}, string(os.PathSeparator))
 			if _, err = os.Stat(fullPath); err == nil {
-				newStructure.TorrentFilePath = fullPath
+				transferStructure.TorrentFilePath = fullPath
 				return nil
 			}
 		}
 		// return error only if we didn't find anything
-		return fmt.Errorf("Can't locate torrent file %v", newStructure.TorrentFileName)
+		return fmt.Errorf("Can't locate torrent file %v", transferStructure.TorrentFileName)
 	}
 	return nil
 }

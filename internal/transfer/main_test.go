@@ -10,28 +10,28 @@ import (
 
 func TestSearchPaths(t *testing.T) {
 	type SearchPathCase struct {
-		name                string
-		mustFail            bool
-		newTorrentStructure libtorrent.NewTorrentStructure
-		SearchPaths         []string
+		name                 string
+		mustFail             bool
+		newTransferStructure libtorrent.TransferStructure
+		SearchPaths          []string
 	}
 	cases := []SearchPathCase{
 		{
 			name: "001 Find relative torrent directly",
-			newTorrentStructure: libtorrent.NewTorrentStructure{
+			newTransferStructure: libtorrent.TransferStructure{
 				TorrentFilePath: "../../test/data/testfileset.torrent",
 			},
 		},
 		{
 			name:     "002 Find relative torrent directly. mustFail",
 			mustFail: true,
-			newTorrentStructure: libtorrent.NewTorrentStructure{
+			newTransferStructure: libtorrent.TransferStructure{
 				TorrentFilePath: "../../test/data/testfileset_not_existing.torrent",
 			},
 		},
 		{
 			name: "003 Find relative torrent with search paths",
-			newTorrentStructure: libtorrent.NewTorrentStructure{
+			newTransferStructure: libtorrent.TransferStructure{
 				TorrentFilePath: "",
 				TorrentFileName: "testfileset.torrent",
 			},
@@ -40,7 +40,7 @@ func TestSearchPaths(t *testing.T) {
 		{
 			name:     "004 Find relative not existing torrent with search paths. mustFail",
 			mustFail: true,
-			newTorrentStructure: libtorrent.NewTorrentStructure{
+			newTransferStructure: libtorrent.TransferStructure{
 				TorrentFilePath: "",
 				TorrentFileName: "testfileset_not_existing.torrent",
 			},
@@ -50,7 +50,7 @@ func TestSearchPaths(t *testing.T) {
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if err := FindTorrentFile(&testCase.newTorrentStructure, testCase.SearchPaths); err != nil && !testCase.mustFail {
+			if err := FindTorrentFile(&testCase.newTransferStructure, testCase.SearchPaths); err != nil && !testCase.mustFail {
 				t.Fatalf("Unexpected error: %v", err)
 			} else if testCase.mustFail && err == nil {
 				t.Fatalf("Test must fail, but it doesn't")
@@ -61,71 +61,71 @@ func TestSearchPaths(t *testing.T) {
 
 func TestHandleTorrentFilePath(t *testing.T) {
 	type SearchPathCase struct {
-		name                string
-		mustFail            bool
-		newTorrentStructure *libtorrent.NewTorrentStructure
-		key                 string
-		opts                *options.Opts
-		expected            *libtorrent.NewTorrentStructure
+		name                 string
+		mustFail             bool
+		newTransferStructure *libtorrent.TransferStructure
+		key                  string
+		opts                 *options.Opts
+		expected             *libtorrent.TransferStructure
 	}
 
 	cases := []SearchPathCase{
 		{
-			name:                "001 Check absolute windows path with two start backslash",
-			key:                 `C:\\temp\t.torrent`,
-			newTorrentStructure: &libtorrent.NewTorrentStructure{},
-			expected: &libtorrent.NewTorrentStructure{
+			name:                 "001 Check absolute windows path with two start backslash",
+			key:                  `C:\\temp\t.torrent`,
+			newTransferStructure: &libtorrent.TransferStructure{},
+			expected: &libtorrent.TransferStructure{
 				TorrentFilePath: `C:\\temp\t.torrent`,
 				TorrentFileName: "t.torrent",
 			},
 			opts: &options.Opts{},
 		},
 		{
-			name:                "002 Check absolute windows path with two start backslash. Mustfail",
-			key:                 `C:\\temp\t.torrent`,
-			mustFail:            true,
-			newTorrentStructure: &libtorrent.NewTorrentStructure{},
-			expected: &libtorrent.NewTorrentStructure{
+			name:                 "002 Check absolute windows path with two start backslash. Mustfail",
+			key:                  `C:\\temp\t.torrent`,
+			mustFail:             true,
+			newTransferStructure: &libtorrent.TransferStructure{},
+			expected: &libtorrent.TransferStructure{
 				TorrentFilePath: `C:\\temp\\t.torrent`,
 				TorrentFileName: "t.torrent",
 			},
 			opts: &options.Opts{},
 		},
 		{
-			name:                "003 Check absolute windows path with one start backslash",
-			key:                 `C:\\temp\t.torrent`,
-			newTorrentStructure: &libtorrent.NewTorrentStructure{},
-			expected: &libtorrent.NewTorrentStructure{
+			name:                 "003 Check absolute windows path with one start backslash",
+			key:                  `C:\\temp\t.torrent`,
+			newTransferStructure: &libtorrent.TransferStructure{},
+			expected: &libtorrent.TransferStructure{
 				TorrentFilePath: `C:\\temp\t.torrent`,
 				TorrentFileName: "t.torrent",
 			},
 			opts: &options.Opts{},
 		},
 		{
-			name:                "004 Check absolute windows path with slashes",
-			key:                 `C:/temp/t.torrent`,
-			newTorrentStructure: &libtorrent.NewTorrentStructure{},
-			expected: &libtorrent.NewTorrentStructure{
+			name:                 "004 Check absolute windows path with slashes",
+			key:                  `C:/temp/t.torrent`,
+			newTransferStructure: &libtorrent.TransferStructure{},
+			expected: &libtorrent.TransferStructure{
 				TorrentFilePath: `C:/temp/t.torrent`,
 				TorrentFileName: "t.torrent",
 			},
 			opts: &options.Opts{},
 		},
 		{
-			name:                "005 Check absolute windows share path",
-			key:                 `\\temp\t.torrent`,
-			newTorrentStructure: &libtorrent.NewTorrentStructure{},
-			expected: &libtorrent.NewTorrentStructure{
+			name:                 "005 Check absolute windows share path",
+			key:                  `\\temp\t.torrent`,
+			newTransferStructure: &libtorrent.TransferStructure{},
+			expected: &libtorrent.TransferStructure{
 				TorrentFilePath: `\\temp\t.torrent`,
 				TorrentFileName: "t.torrent",
 			},
 			opts: &options.Opts{},
 		},
 		{
-			name:                "006 Check relative paths (torrent name)",
-			key:                 "t.torrent",
-			newTorrentStructure: &libtorrent.NewTorrentStructure{},
-			expected: &libtorrent.NewTorrentStructure{
+			name:                 "006 Check relative paths (torrent name)",
+			key:                  "t.torrent",
+			newTransferStructure: &libtorrent.TransferStructure{},
+			expected: &libtorrent.TransferStructure{
 				TorrentFilePath: `C:\temp\t.torrent`,
 				TorrentFileName: "t.torrent",
 			},
@@ -135,19 +135,19 @@ func TestHandleTorrentFilePath(t *testing.T) {
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
-			HandleTorrentFilePath(testCase.newTorrentStructure, testCase.key, testCase.opts)
-			equal := reflect.DeepEqual(testCase.expected, testCase.newTorrentStructure)
+			HandleTorrentFilePath(testCase.newTransferStructure, testCase.key, testCase.opts)
+			equal := reflect.DeepEqual(testCase.expected, testCase.newTransferStructure)
 			if !equal && !testCase.mustFail {
-				t.Fatalf("Unexpected error: structures aren't equal:\n Got: %#v\n Expect %#v\n", testCase.newTorrentStructure, testCase.expected)
+				t.Fatalf("Unexpected error: structures aren't equal:\n Got: %#v\n Expect %#v\n", testCase.newTransferStructure, testCase.expected)
 			} else if equal && testCase.mustFail {
-				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %#v\n", testCase.newTorrentStructure)
+				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %#v\n", testCase.newTransferStructure)
 			}
 		})
 	}
 }
 
 func TestPath(t *testing.T) {
-	nts := libtorrent.CreateEmptyNewTorrentStructure()
+	nts := libtorrent.CreateEmptyNewTransferStructure()
 	err := helpers.DecodeTorrentFile("../../test/data/testfileset.torrent", nts)
 	if err != nil {
 		t.Fatalf("Can't decode torrent file with error: %v", err)
