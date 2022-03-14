@@ -45,8 +45,8 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/torrents/`,
-					SavePath:         `D:\torrents\`,
+					QbtSavePath:      `D:/torrents`,
+					SavePath:         `D:\torrents`,
 					QBtContentLayout: "Original",
 				},
 			},
@@ -65,8 +65,8 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `E:/newfolder/`,
-					SavePath:         `E:\newfolder\`,
+					QbtSavePath:      `E:/newfolder`,
+					SavePath:         `E:\newfolder`,
 					QBtContentLayout: "Original",
 				},
 			},
@@ -85,8 +85,8 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/torrents/`,
-					SavePath:         `D:\torrents\`,
+					QbtSavePath:      `D:/torrents`,
+					SavePath:         `D:\torrents`,
 					QBtContentLayout: "Original",
 				},
 			},
@@ -189,8 +189,8 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `E:/newfolder/`,
-					SavePath:         `E:\newfolder\`,
+					QbtSavePath:      `E:/newfolder`,
+					SavePath:         `E:\newfolder`,
 					QBtContentLayout: "Original",
 				},
 			},
@@ -209,8 +209,8 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/torrents/`,
-					SavePath:         `D:\torrents\`,
+					QbtSavePath:      `D:/torrents`,
+					SavePath:         `D:\torrents`,
 					QBtContentLayout: "Original",
 				},
 			},
