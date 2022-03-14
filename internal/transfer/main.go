@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/rumanzo/bt2qbt/internal/libtorrent"
 	"github.com/rumanzo/bt2qbt/internal/options"
-	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
@@ -13,11 +12,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"sync"
 )
 
-func HandleResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *options.Opts, chans *Channels, wg *sync.WaitGroup) error {
+func HandleResumeItem(key string, transferStruct *libtorrent.TransferStructure, chans *Channels, wg *sync.WaitGroup) error {
 
 	//panic recover
 	defer wg.Done()
@@ -32,22 +30,11 @@ func HandleResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *
 		}
 	}()
 
-	// preparing structures for work with
-	transferStruct := libtorrent.CreateEmptyNewTransferStructure()
-	transferStruct.ResumeItem = resumeItem
-
 	var err error
-	for _, str := range opts.Replaces {
-		patterns := strings.Split(str, ",")
-		transferStruct.Replace = append(transferStruct.Replace, replace.Replace{
-			From: patterns[0],
-			To:   patterns[1],
-		})
-	}
 
-	HandleTorrentFilePath(&transferStruct, key, opts)
+	HandleTorrentFilePath(transferStruct, key)
 
-	err = FindTorrentFile(&transferStruct, opts.SearchPaths)
+	err = FindTorrentFile(transferStruct)
 	if err != nil {
 		chans.ErrChannel <- err.Error()
 		return err
@@ -70,12 +57,12 @@ func HandleResumeItem(key string, resumeItem *utorrentStructs.ResumeItem, opts *
 	transferStruct.HandleStructures()
 
 	newBaseName := transferStruct.GetHash()
-	if err = helpers.EncodeTorrentFile(filepath.Join(opts.QBitDir, newBaseName+".fastresume"), transferStruct.Fastresume); err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v. With error: %v", filepath.Join(opts.QBitDir, newBaseName+".fastresume"), err)
+	if err = helpers.EncodeTorrentFile(filepath.Join(transferStruct.Opts.QBitDir, newBaseName+".fastresume"), transferStruct.Fastresume); err != nil {
+		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent fastresume file %v. With error: %v", filepath.Join(transferStruct.Opts.QBitDir, newBaseName+".fastresume"), err)
 		return err
 	}
-	if err = helpers.CopyFile(transferStruct.TorrentFilePath, filepath.Join(opts.QBitDir, newBaseName+".torrent")); err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", filepath.Join(opts.QBitDir, newBaseName+".torrent"))
+	if err = helpers.CopyFile(transferStruct.TorrentFilePath, filepath.Join(transferStruct.Opts.QBitDir, newBaseName+".torrent")); err != nil {
+		chans.ErrChannel <- fmt.Sprintf("Can't create qBittorrent torrent file %v", filepath.Join(transferStruct.Opts.QBitDir, newBaseName+".torrent"))
 		return err
 	}
 	chans.ComChannel <- fmt.Sprintf("Sucessfully imported %v", key)
@@ -93,6 +80,8 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 
 	positionNum := 0
 
+	replaces := libtorrent.CreateReplaces(opts.Replaces)
+
 	for key, resumeItem := range resumeItems {
 		positionNum++
 		if opts.WithoutTags == false {
@@ -105,7 +94,11 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 			}
 			wg.Add(1)
 			chans.BoundedChannel <- true
-			go HandleResumeItem(key, resumeItem, opts, &chans, &wg)
+			transferStruct := libtorrent.CreateEmptyNewTransferStructure()
+			transferStruct.ResumeItem = resumeItem
+			transferStruct.Replace = replaces
+			transferStruct.Opts = opts
+			go HandleResumeItem(key, &transferStruct, &chans, &wg)
 		} else {
 			totalJobs--
 		}
@@ -137,20 +130,20 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 
 // check if resume key is absolute path. It means that we should search torrent file using this absolute path
 // notice that torrent file name always known
-func HandleTorrentFilePath(transferStructure *libtorrent.TransferStructure, key string, opts *options.Opts) {
+func HandleTorrentFilePath(transferStructure *libtorrent.TransferStructure, key string) {
 	if fileHelpers.IsAbs(key) {
 		transferStructure.TorrentFilePath = key
 		transferStructure.TorrentFileName = fileHelpers.Base(key)
 	} else {
-		transferStructure.TorrentFilePath = filepath.Join(opts.BitDir, key) // additional search required
+		transferStructure.TorrentFilePath = filepath.Join(transferStructure.Opts.BitDir, key) // additional search required
 		transferStructure.TorrentFileName = key
 	}
 }
 
 // if we can find torrent file, we start check another locations from options search paths
-func FindTorrentFile(transferStructure *libtorrent.TransferStructure, searchPaths []string) error {
+func FindTorrentFile(transferStructure *libtorrent.TransferStructure) error {
 	if _, err := os.Stat(transferStructure.TorrentFilePath); os.IsNotExist(err) {
-		for _, searchPath := range searchPaths {
+		for _, searchPath := range transferStructure.Opts.SearchPaths {
 			// normalize path with os.PathSeparator, because file can be on share, for example
 			fullPath := fileHelpers.Join([]string{searchPath, transferStructure.TorrentFileName}, string(os.PathSeparator))
 			if _, err = os.Stat(fullPath); err == nil {
