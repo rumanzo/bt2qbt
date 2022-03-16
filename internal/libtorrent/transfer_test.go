@@ -466,6 +466,36 @@ func TestHandleTorrentFilePath(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "016 Test torrent with windows folder (NoSubfolder) path without replaces. TorrentPaths UTF8",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Path: `D:\torrents\test`},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{PathUTF8: []string{"dir1", "file1.txt"}},
+							&torrentStructures.TorrentFile{PathUTF8: []string{"dir2", "file2.txt"}},
+							&torrentStructures.TorrentFile{PathUTF8: []string{"file0.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath: `D:/torrents/test`,
+					SavePath:    `D:\torrents\test`,
+					MappedFiles: []string{
+						`dir1\file1.txt`,
+						`dir2\file2.txt`,
+						`file0.txt`,
+					},
+					QBtContentLayout: "NoSubfolder",
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
