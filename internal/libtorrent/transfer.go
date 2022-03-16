@@ -263,6 +263,9 @@ func (transfer *TransferStructure) FillPiecesParted() []byte {
 }
 
 func (transfer *TransferStructure) HandleSavePaths() {
+	// Original paths always ending with pathSeparator
+	// SubFolder or NoSubfolder never have ending pathSeparator
+	// qBtSavePath always has separator /, otherwise SavePath use os pathSeparator
 	var torrentName string
 	if transfer.TorrentFile.Info.NameUTF8 != "" {
 		torrentName = transfer.TorrentFile.Info.NameUTF8
@@ -276,7 +279,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			transfer.Fastresume.QBtContentLayout = "Original"
 			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, transfer.Opts.PathSeparator)
 			if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
-				transfer.Fastresume.MappedFiles = make([]string, maxIndex, maxIndex)
+				transfer.Fastresume.MappedFiles = make([]string, maxIndex+1, maxIndex+1)
 				for _, paths := range transfer.ResumeItem.Targets {
 					index := paths[0].(int64)
 					pathParts := make([]string, len(paths)-1, len(paths)-1)
@@ -287,7 +290,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 					transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(append([]string{torrentName}, pathParts...), transfer.Opts.PathSeparator)
 				}
 			}
-			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, "/") // sep always is /
+			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, "/") + `/`
 		} else {
 			transfer.Fastresume.QBtContentLayout = "NoSubfolder"
 			// NoSubfolder always has full mapped files
@@ -312,35 +315,34 @@ func (transfer *TransferStructure) HandleSavePaths() {
 					transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(pathParts, transfer.Opts.PathSeparator)
 				}
 			}
-			transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(transfer.ResumeItem.Path, "/") // sep always is /
+			transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(transfer.ResumeItem.Path, "/")
 		}
 	} else {
 		transfer.Fastresume.QBtContentLayout = "Original" // utorrent\bittorrent don't support create subfolders for torrents with single file
 		if lastPathName == torrentName {
-			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, `/`) // sep always is /
+			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, `/`) + `/`
 		} else {
 			//it means that we have renamed path and targets item, and should have mapped files
 			transfer.Fastresume.MappedFiles = []string{lastPathName}
-			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, `/`) // sep always is /
+			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, `/`) + `/`
 		}
 	}
+
 	for _, pattern := range transfer.Replace {
 		transfer.Fastresume.QbtSavePath = strings.ReplaceAll(transfer.Fastresume.QbtSavePath, pattern.From, pattern.To)
 	}
+
 	transfer.Fastresume.SavePath = fileHelpers.Normalize(transfer.Fastresume.QbtSavePath, transfer.Opts.PathSeparator)
-
-	//
-	if len(transfer.Fastresume.MappedFiles) > 0 {
-		transfer.Fastresume.QbtSavePath = transfer.Fastresume.QbtSavePath + `/`
-		transfer.Fastresume.SavePath = transfer.Fastresume.SavePath + transfer.Opts.PathSeparator
+	if transfer.Fastresume.QBtContentLayout == "Original" {
+		transfer.Fastresume.SavePath += transfer.Opts.PathSeparator
 	}
-
 }
 
 // just helper for creating mappedfiles
 func (transfer *TransferStructure) FindHighestIndexOfMappedFiles() int64 {
 	if resumeItem := transfer.ResumeItem; resumeItem.Targets != nil {
-		return resumeItem.Targets[len(resumeItem.Targets)-1][0].(int64) // it must be like []interface{0, "path"}
+		lastElem := resumeItem.Targets[len(resumeItem.Targets)-1] // it must be like []interface{0, "path"}
+		return lastElem[0].(int64)
 	}
 	return -1
 }
