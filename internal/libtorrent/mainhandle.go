@@ -30,10 +30,7 @@ func (transfer *TransferStructure) HandleStructures() {
 	transfer.HandleLabels()
 
 	transfer.GetTrackers(transfer.ResumeItem.Trackers)
-	transfer.PrioConvert(transfer.ResumeItem.Prio)
-
-	// https://libtorrent.org/manual-ref.html#fast-resume
-	transfer.PieceLenght = transfer.TorrentFile.Info.PieceLength
+	transfer.HandlePriority() // important handle priorities before handling pieces
 
 	/*
 		pieces maps to a string whose length is a multiple of 20. It is to be subdivided into strings of length 20,
@@ -43,7 +40,6 @@ func (transfer *TransferStructure) HandleStructures() {
 	transfer.NumPieces = int64(len(transfer.TorrentFile.Info.Pieces)) / 20
 
 	transfer.HandleCompleted()
-	transfer.HandleSizes()
 	transfer.HandleSavePaths()
 	transfer.HandlePieces()
 }

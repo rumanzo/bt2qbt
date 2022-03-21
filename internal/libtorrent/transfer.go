@@ -6,13 +6,11 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
-	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
 	"io"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -25,10 +23,7 @@ type TransferStructure struct {
 	Opts            *options.Opts                                `bencode:"-"`
 	TorrentFilePath string                                       `bencode:"-"`
 	TorrentFileName string                                       `bencode:"-"`
-	sizeAndPrio     [][]int64                                    `bencode:"-"`
-	torrentFileList []string                                     `bencode:"-"`
 	NumPieces       int64                                        `bencode:"-"`
-	PieceLenght     int64                                        `bencode:"-"`
 	Replace         []*replace.Replace                           `bencode:"-"`
 	Targets         map[int64]string                             `bencode:"-"`
 }
@@ -127,6 +122,7 @@ func (transfer *TransferStructure) HandleLabels() {
 	}
 }
 
+// recurstive function for searching trackers in resume item trackers
 func (transfer *TransferStructure) GetTrackers(trackers interface{}) {
 	switch strct := trackers.(type) {
 	case []interface{}:
@@ -141,83 +137,18 @@ func (transfer *TransferStructure) GetTrackers(trackers interface{}) {
 	}
 }
 
-func (transfer *TransferStructure) PrioConvert(src []byte) {
-	var newprio []int64
-	for _, c := range src {
-		if i := int(c); (i == 0) || (i == 128) { // if not selected
-			newprio = append(newprio, 0)
-		} else if (i >= 1) && (i <= 8) { // if low or normal prio
-			newprio = append(newprio, 1)
-		} else if (i > 8) && (i <= 15) { // if high prio
-			newprio = append(newprio, 6)
+func (transfer *TransferStructure) HandlePriority() {
+	for _, c := range transfer.ResumeItem.Prio {
+		if i := int(c); (i == 0) || (i == 128) { // if priority not selected
+			transfer.Fastresume.FilePriority = append(transfer.Fastresume.FilePriority, 0)
+		} else if (i >= 1) && (i <= 8) { // if low or normal priority
+			transfer.Fastresume.FilePriority = append(transfer.Fastresume.FilePriority, 1)
+		} else if (i > 8) && (i <= 15) { // if high priority
+			transfer.Fastresume.FilePriority = append(transfer.Fastresume.FilePriority, 6)
 		} else {
-			newprio = append(newprio, 0)
+			transfer.Fastresume.FilePriority = append(transfer.Fastresume.FilePriority, 0)
 		}
 	}
-	transfer.Fastresume.FilePriority = newprio
-}
-
-func (transfer *TransferStructure) HandlePieces() {
-	if transfer.Fastresume.Unfinished != nil {
-		transfer.Fastresume.Pieces = transfer.FillWholePieces("0")
-	} else {
-		if len(transfer.TorrentFile.Info.Files) > 0 {
-			transfer.Fastresume.Pieces = transfer.FillPiecesParted()
-		} else {
-			transfer.Fastresume.Pieces = transfer.FillWholePieces("1")
-		}
-	}
-}
-
-func (transfer *TransferStructure) HandleSizes() {
-	if len(transfer.TorrentFile.Info.Files) > 0 {
-		var filelists [][]int64
-		for num, file := range transfer.TorrentFile.Info.Files {
-			var lenght, mtime int64
-			var filestrings []string
-			var mappedPath []string
-			if file.PathUTF8 != nil {
-				mappedPath = file.PathUTF8
-			} else {
-				mappedPath = file.Path
-			}
-
-			for n, f := range mappedPath {
-				if len(mappedPath)-1 == n && len(transfer.Targets) > 0 {
-					for index, rewrittenFileName := range transfer.Targets {
-						if index == int64(num) {
-							filestrings = append(filestrings, rewrittenFileName)
-						}
-					}
-				} else {
-					filestrings = append(filestrings, f)
-				}
-			}
-			filename := strings.Join(filestrings, transfer.Opts.PathSeparator)
-			transfer.torrentFileList = append(transfer.torrentFileList, filename)
-			fullpath := transfer.ResumeItem.Path + transfer.Opts.PathSeparator + filename
-			if n := transfer.Fastresume.FilePriority[num]; n != 0 {
-				lenght = file.Length
-				transfer.sizeAndPrio = append(transfer.sizeAndPrio, []int64{lenght, 1})
-				mtime = helpers.Fmtime(fullpath)
-			} else {
-				lenght, mtime = 0, 0
-				transfer.sizeAndPrio = append(transfer.sizeAndPrio,
-					[]int64{file.Length, 0})
-			}
-			flenmtime := []int64{lenght, mtime}
-			filelists = append(filelists, flenmtime)
-		}
-	}
-}
-
-func (transfer *TransferStructure) FillWholePieces(chr string) []byte {
-	var newpieces = make([]byte, 0, transfer.NumPieces)
-	nchr, _ := strconv.Atoi(chr)
-	for i := int64(0); i < transfer.NumPieces; i++ {
-		newpieces = append(newpieces, byte(nchr))
-	}
-	return newpieces
 }
 
 func (transfer *TransferStructure) GetHash() (hash string) {
@@ -228,31 +159,66 @@ func (transfer *TransferStructure) GetHash() (hash string) {
 	return
 }
 
-func (transfer *TransferStructure) FillPiecesParted() []byte {
-	var newpieces = make([]byte, 0, transfer.NumPieces)
-	var allocation [][]int64
-	chrone, _ := strconv.Atoi("1")
-	chrzero, _ := strconv.Atoi("0")
-	offset := int64(0)
-	for _, pair := range transfer.sizeAndPrio {
-		allocation = append(allocation, []int64{offset + 1, offset + pair[0], pair[1]})
-		offset = offset + pair[0]
+func (transfer *TransferStructure) HandlePieces() {
+	if transfer.Fastresume.Unfinished != nil {
+		transfer.FillWholePieces(0)
+	} else {
+		if len(transfer.TorrentFile.Info.Files) > 0 {
+			transfer.FillPiecesParted()
+		} else {
+			transfer.FillWholePieces(1)
+		}
 	}
+}
+
+func (transfer *TransferStructure) FillWholePieces(piecePrio int) {
+	transfer.Fastresume.Pieces = make([]byte, 0, transfer.NumPieces)
 	for i := int64(0); i < transfer.NumPieces; i++ {
-		belongs := false
-		first, last := i*transfer.PieceLenght, (i+1)*transfer.PieceLenght
-		for _, trio := range allocation {
-			if (first >= trio[0]-transfer.PieceLenght && last <= trio[1]+transfer.PieceLenght) && trio[2] == 1 {
-				belongs = true
+		transfer.Fastresume.Pieces = append(transfer.Fastresume.Pieces, byte(piecePrio))
+	}
+}
+
+func (transfer *TransferStructure) FillPiecesParted() {
+	transfer.Fastresume.Pieces = make([]byte, 0, transfer.NumPieces)
+
+	// we count file offsets
+	type fileOffset struct {
+		firstOffset int64
+		lastOffset  int64
+	}
+	var fileOffsets []fileOffset
+	bytesLength := int64(0)
+	for _, bytesFileLength := range transfer.TorrentFile.Info.Files {
+		fileFirstOffset := bytesLength + 1
+		bytesLength += bytesFileLength.Length
+		fileLastOffset := bytesLength
+		fileOffsets = append(fileOffsets, fileOffset{firstOffset: fileFirstOffset, lastOffset: fileLastOffset})
+	}
+
+	for i := int64(0); i < transfer.NumPieces; i++ {
+		activePiece := false
+
+		// we find offsets of pieces using piece length
+		// https://libtorrent.org/manual-ref.html#fast-resume
+		firstPieceOffset, lastPieceOffset := i*transfer.TorrentFile.Info.PieceLength+1, (i+1)*transfer.TorrentFile.Info.PieceLength
+
+		// then we find indexes of the files that belongs to this piece
+		for fileIndex, offsets := range fileOffsets {
+			if offsets.firstOffset >= firstPieceOffset && offsets.lastOffset <= lastPieceOffset {
+				// and if one of them have priority more than zero, we will append piece as completed
+				if transfer.Fastresume.FilePriority[fileIndex] > 0 {
+					activePiece = true
+					break
+				}
 			}
 		}
-		if belongs {
-			newpieces = append(newpieces, byte(chrone))
+
+		if activePiece {
+			transfer.Fastresume.Pieces = append(transfer.Fastresume.Pieces, byte(1))
 		} else {
-			newpieces = append(newpieces, byte(chrzero))
+			transfer.Fastresume.Pieces = append(transfer.Fastresume.Pieces, byte(0))
 		}
 	}
-	return newpieces
 }
 
 func (transfer *TransferStructure) HandleSavePaths() {

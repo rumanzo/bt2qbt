@@ -10,15 +10,6 @@ import (
 	"strconv"
 )
 
-func Fmtime(path string) (mtime int64) {
-	if fi, err := os.Stat(path); err != nil {
-		return 0
-	} else {
-		mtime = fi.ModTime().Unix()
-		return
-	}
-}
-
 func ASCIIConvert(s string) string {
 	var buffer bytes.Buffer
 	for _, c := range s {
@@ -31,7 +22,7 @@ func ASCIIConvert(s string) string {
 	return buffer.String()
 }
 
-// return true and string if string exists in array, else false and string
+// CheckExists return true and string if string exists in array, else false and string
 func CheckExists(s string, arr []string) (bool, string) {
 	for _, value := range arr {
 		if value == s {
