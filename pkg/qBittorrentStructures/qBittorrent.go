@@ -35,11 +35,10 @@ type QBittorrentFastresume struct {
 	NumComplete               int64                          `bencode:"num_complete"`
 	NumDownloaded             int64                          `bencode:"num_downloaded"`
 	NumIncomplete             int64                          `bencode:"num_incomplete"`
-	Paused                    int64                          `bencode:"paused"`         // 	integer. 1 if the torrent is paused, 0 otherwise.
-	Peers                     int64                          `bencode:"peers"`          // string. This string contains IPv4 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 4 bytes IPv4 address followed by 2 bytes port. Hence, the length of this string should be divisible by 6.
-	Peers6                    int64                          `bencode:"peers6"`         // 	string. This string contains IPv6 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 16 bytes IPv6 address followed by 2 bytes port. The length of this string should be divisible by 18.
-	PiecePriority             []byte                         `bencode:"piece_priority"` // string of bytes. Each byte is interpreted as an integer and is the priority of that piece.
-	Pieces                    []byte                         `bencode:"pieces"`         // A string with piece flags, one character per piece. Bit 1 means we have that piece. Bit 2 means we have verified that this piece is correct. This only applies when the torrent is in seed_mode.
+	Paused                    int64                          `bencode:"paused"` // 	integer. 1 if the torrent is paused, 0 otherwise.
+	Peers                     int64                          `bencode:"peers"`  // string. This string contains IPv4 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 4 bytes IPv4 address followed by 2 bytes port. Hence, the length of this string should be divisible by 6.
+	Peers6                    int64                          `bencode:"peers6"` // 	string. This string contains IPv6 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 16 bytes IPv6 address followed by 2 bytes port. The length of this string should be divisible by 18.
+	Pieces                    []byte                         `bencode:"pieces"` // A string with piece flags, one character per piece. Bit 1 means we have that piece. Bit 2 means we have verified that this piece is correct. This only applies when the torrent is in seed_mode.
 	QBtCategory               string                         `bencode:"qBt-category"`
 	QBtContentLayout          string                         `bencode:"qBt-contentLayout"` // Original, Subfolder, NoSubfolder
 	QBtFirstLastPiecePriority string                         `bencode:"qBt-firstLastPiecePriority"`

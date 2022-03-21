@@ -106,7 +106,6 @@ func (transfer *TransferStructure) HandleCompleted() {
 	} else {
 		transfer.Fastresume.Unfinished = new([]interface{})
 	}
-
 }
 
 func (transfer *TransferStructure) HandleTags() {
@@ -161,18 +160,12 @@ func (transfer *TransferStructure) PrioConvert(src []byte) {
 func (transfer *TransferStructure) HandlePieces() {
 	if transfer.Fastresume.Unfinished != nil {
 		transfer.Fastresume.Pieces = transfer.FillWholePieces("0")
-		if len(transfer.TorrentFile.Info.Files) > 0 {
-			transfer.Fastresume.PiecePriority = transfer.FillPiecesParted()
-		} else {
-			transfer.Fastresume.PiecePriority = transfer.FillWholePieces("1")
-		}
 	} else {
 		if len(transfer.TorrentFile.Info.Files) > 0 {
 			transfer.Fastresume.Pieces = transfer.FillPiecesParted()
 		} else {
 			transfer.Fastresume.Pieces = transfer.FillWholePieces("1")
 		}
-		transfer.Fastresume.PiecePriority = transfer.Fastresume.Pieces
 	}
 }
 
