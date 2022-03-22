@@ -20,7 +20,7 @@ import (
 //	t.Fatal(spew.Sdump(test[`test1_renamed_qbt_мойфайл.txt.torrent`]))
 //}
 
-func TestHandleTorrentFilePath(t *testing.T) {
+func TestTransferStructure_HandleSavePaths(t *testing.T) {
 	type SearchPathCase struct {
 		name                 string
 		mustFail             bool
@@ -540,7 +540,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 	}
 }
 
-func TestTransferStructure_FillPiecesParted(t *testing.T) {
+func TestTransferStructure_HandlePieces(t *testing.T) {
 	type FillPiecesPartedCase struct {
 		name                 string
 		mustFail             bool
@@ -679,7 +679,7 @@ func TestTransferStructure_FillPiecesParted(t *testing.T) {
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
-			testCase.newTransferStructure.FillPiecesParted()
+			testCase.newTransferStructure.HandlePieces()
 			equal := reflect.DeepEqual(testCase.expected.Fastresume, testCase.newTransferStructure.Fastresume)
 			if !equal && !testCase.mustFail {
 				changes, err := diff.Diff(testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, diff.DiscardComplexOrigin())
