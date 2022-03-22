@@ -182,29 +182,32 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	transfer.Fastresume.Pieces = make([]byte, 0, transfer.NumPieces)
 
 	// we count file offsets
-	type fileOffset struct {
+	type Offset struct {
 		firstOffset int64
 		lastOffset  int64
 	}
-	var fileOffsets []fileOffset
+	var fileOffsets []Offset
 	bytesLength := int64(0)
 	for _, bytesFileLength := range transfer.TorrentFile.Info.Files {
 		fileFirstOffset := bytesLength + 1
 		bytesLength += bytesFileLength.Length
 		fileLastOffset := bytesLength
-		fileOffsets = append(fileOffsets, fileOffset{firstOffset: fileFirstOffset, lastOffset: fileLastOffset})
+		fileOffsets = append(fileOffsets, Offset{firstOffset: fileFirstOffset, lastOffset: fileLastOffset})
 	}
 
 	for i := int64(0); i < transfer.NumPieces; i++ {
 		activePiece := false
 
-		// we find offsets of pieces using piece length
+		// we find fileOffset of pieces using piece length
 		// https://libtorrent.org/manual-ref.html#fast-resume
-		firstPieceOffset, lastPieceOffset := i*transfer.TorrentFile.Info.PieceLength+1, (i+1)*transfer.TorrentFile.Info.PieceLength
+		pieceOffset := Offset{
+			firstOffset: i*transfer.TorrentFile.Info.PieceLength + 1,
+			lastOffset:  (i + 1) * transfer.TorrentFile.Info.PieceLength,
+		}
 
 		// then we find indexes of the files that belongs to this piece
-		for fileIndex, offsets := range fileOffsets {
-			if offsets.firstOffset >= firstPieceOffset && offsets.lastOffset <= lastPieceOffset {
+		for fileIndex, fileOffset := range fileOffsets {
+			if fileOffset.firstOffset <= pieceOffset.lastOffset && fileOffset.lastOffset >= pieceOffset.firstOffset {
 				// and if one of them have priority more than zero, we will append piece as completed
 				if transfer.Fastresume.FilePriority[fileIndex] > 0 {
 					activePiece = true

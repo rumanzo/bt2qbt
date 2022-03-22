@@ -539,3 +539,126 @@ func TestHandleTorrentFilePath(t *testing.T) {
 		})
 	}
 }
+
+func TestTransferStructure_FillPiecesParted(t *testing.T) {
+	type FillPiecesPartedCase struct {
+		name                 string
+		mustFail             bool
+		newTransferStructure *TransferStructure
+		expected             *TransferStructure
+	}
+
+	cases := []FillPiecesPartedCase{
+		{
+			name: "001",
+			newTransferStructure: &TransferStructure{
+				NumPieces: 5,
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1, 0, 0},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Length: 5},
+							&torrentStructures.TorrentFile{Length: 5},
+							&torrentStructures.TorrentFile{Length: 5},
+							&torrentStructures.TorrentFile{Length: 5},
+							&torrentStructures.TorrentFile{Length: 5},
+						},
+						PieceLength: 5,
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1, 0, 0},
+					Pieces: []byte{
+						byte(1),
+						byte(0),
+						byte(1),
+						byte(0),
+						byte(0),
+					},
+				},
+			},
+		},
+		{
+			name: "002",
+			newTransferStructure: &TransferStructure{
+				NumPieces: 5,
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Length: 13},
+							&torrentStructures.TorrentFile{Length: 7},
+							&torrentStructures.TorrentFile{Length: 5},
+						},
+						PieceLength: 5, // 25 total
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1},
+					Pieces: []byte{
+						byte(1),
+						byte(1),
+						byte(1),
+						byte(0),
+						byte(1),
+					},
+				},
+			},
+		},
+		{
+			name: "003 Mustfail",
+			newTransferStructure: &TransferStructure{
+				NumPieces: 5,
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Length: 13},
+							&torrentStructures.TorrentFile{Length: 7},
+							&torrentStructures.TorrentFile{Length: 5},
+						},
+						PieceLength: 5, // 25 total
+					},
+				},
+			},
+			mustFail: true,
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1},
+					Pieces: []byte{
+						byte(0),
+						byte(1),
+						byte(1),
+						byte(0),
+						byte(1),
+					},
+				},
+			},
+		},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.newTransferStructure.FillPiecesParted()
+			equal := reflect.DeepEqual(testCase.expected.Fastresume, testCase.newTransferStructure.Fastresume)
+			if !equal && !testCase.mustFail {
+				changes, err := diff.Diff(testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, diff.DiscardComplexOrigin())
+				if err != nil {
+					t.Error(err.Error())
+				}
+				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n Diff: %v\n", testCase.newTransferStructure.Fastresume.Pieces, testCase.expected.Fastresume.Pieces, spew.Sdump(changes))
+			} else if equal && testCase.mustFail {
+				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %v\n", spew.Sdump(testCase.newTransferStructure.Fastresume))
+			}
+		})
+	}
+}
