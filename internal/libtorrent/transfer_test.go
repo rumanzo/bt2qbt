@@ -614,6 +614,37 @@ func TestTransferStructure_FillPiecesParted(t *testing.T) {
 			},
 		},
 		{
+			name: "003",
+			newTransferStructure: &TransferStructure{
+				NumPieces: 5,
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{0, 1, 0},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Length: 9},
+							&torrentStructures.TorrentFile{Length: 6},
+							&torrentStructures.TorrentFile{Length: 10},
+						},
+						PieceLength: 5, // 25 total
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{0, 1, 0},
+					Pieces: []byte{
+						byte(0),
+						byte(1),
+						byte(1),
+						byte(0),
+						byte(0),
+					},
+				},
+			},
+		},
+		{
 			name: "003 Mustfail",
 			newTransferStructure: &TransferStructure{
 				NumPieces: 5,
