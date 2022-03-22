@@ -738,3 +738,56 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 		})
 	}
 }
+
+func TestTransferStructure_HandlePriority(t *testing.T) {
+	transferStructure := TransferStructure{
+		Fastresume: &qBittorrentStructures.QBittorrentFastresume{FilePriority: []int64{}},
+		ResumeItem: &utorrentStructs.ResumeItem{
+			Prio: []byte{
+				byte(0),
+				byte(128),
+				byte(2),
+				byte(5),
+				byte(8),
+				byte(9),
+				byte(15),
+				byte(127), // unexpected
+			},
+		},
+	}
+	expect := []int64{0, 0, 1, 1, 1, 6, 6, 0}
+	transferStructure.HandlePriority()
+	if !reflect.DeepEqual(transferStructure.Fastresume.FilePriority, expect) {
+		t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", transferStructure.Fastresume.FilePriority, expect)
+	}
+}
+
+func TestTransferStructure_GetTrackers(t *testing.T) {
+	transferStructure := TransferStructure{
+		Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+	}
+	testTrackers := []interface{}{
+		"test1",
+		"test2",
+		[]interface{}{
+			"test3",
+			"test4",
+			[]interface{}{
+				"test5",
+				"test6",
+			},
+		},
+	}
+	expect := [][]string{
+		[]string{"test1"},
+		[]string{"test2"},
+		[]string{"test3"},
+		[]string{"test4"},
+		[]string{"test5"},
+		[]string{"test6"},
+	}
+	transferStructure.GetTrackers(testTrackers)
+	if !reflect.DeepEqual(transferStructure.Fastresume.Trackers, expect) {
+		t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", transferStructure.Fastresume.Trackers, expect)
+	}
+}

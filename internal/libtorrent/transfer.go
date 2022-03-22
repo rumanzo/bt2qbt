@@ -188,9 +188,9 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 	var fileOffsets []Offset
 	bytesLength := int64(0)
-	for _, bytesFileLength := range transfer.TorrentFile.Info.Files {
+	for _, file := range transfer.TorrentFile.Info.Files {
 		fileFirstOffset := bytesLength + 1
-		bytesLength += bytesFileLength.Length
+		bytesLength += file.Length
 		fileLastOffset := bytesLength
 		fileOffsets = append(fileOffsets, Offset{firstOffset: fileFirstOffset, lastOffset: fileLastOffset})
 	}
