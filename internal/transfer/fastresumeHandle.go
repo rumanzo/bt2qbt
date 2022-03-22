@@ -1,4 +1,4 @@
-package libtorrent
+package transfer
 
 import (
 	"time"

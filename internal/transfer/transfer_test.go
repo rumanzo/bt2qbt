@@ -1,4 +1,4 @@
-package libtorrent
+package transfer
 
 import (
 	"github.com/davecgh/go-spew/spew"

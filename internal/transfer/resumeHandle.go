@@ -2,7 +2,6 @@ package transfer
 
 import (
 	"fmt"
-	"github.com/rumanzo/bt2qbt/internal/libtorrent"
 	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
@@ -15,7 +14,7 @@ import (
 	"sync"
 )
 
-func HandleResumeItem(key string, transferStruct *libtorrent.TransferStructure, chans *Channels, wg *sync.WaitGroup) error {
+func HandleResumeItem(key string, transferStruct *TransferStructure, chans *Channels, wg *sync.WaitGroup) error {
 
 	//panic recover
 	defer wg.Done()
@@ -80,7 +79,7 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 
 	positionNum := 0
 
-	replaces := libtorrent.CreateReplaces(opts.Replaces)
+	replaces := CreateReplaces(opts.Replaces)
 
 	for key, resumeItem := range resumeItems {
 		positionNum++
@@ -94,7 +93,7 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 			}
 			wg.Add(1)
 			chans.BoundedChannel <- true
-			transferStruct := libtorrent.CreateEmptyNewTransferStructure()
+			transferStruct := CreateEmptyNewTransferStructure()
 			transferStruct.ResumeItem = resumeItem
 			transferStruct.Replace = replaces
 			transferStruct.Opts = opts
@@ -130,7 +129,7 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 
 // check if resume key is absolute path. It means that we should search torrent file using this absolute path
 // notice that torrent file name always known
-func HandleTorrentFilePath(transferStructure *libtorrent.TransferStructure, key string) {
+func HandleTorrentFilePath(transferStructure *TransferStructure, key string) {
 	if fileHelpers.IsAbs(key) {
 		transferStructure.TorrentFilePath = key
 		transferStructure.TorrentFileName = fileHelpers.Base(key)
@@ -141,7 +140,7 @@ func HandleTorrentFilePath(transferStructure *libtorrent.TransferStructure, key 
 }
 
 // if we can find torrent file, we start check another locations from options search paths
-func FindTorrentFile(transferStructure *libtorrent.TransferStructure) error {
+func FindTorrentFile(transferStructure *TransferStructure) error {
 	if _, err := os.Stat(transferStructure.TorrentFilePath); os.IsNotExist(err) {
 		for _, searchPath := range transferStructure.Opts.SearchPaths {
 			// normalize path with os.PathSeparator, because file can be on share, for example
