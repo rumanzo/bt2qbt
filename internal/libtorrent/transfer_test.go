@@ -541,16 +541,16 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 }
 
 func TestTransferStructure_HandlePieces(t *testing.T) {
-	type FillPiecesPartedCase struct {
+	type HandlePiecesCase struct {
 		name                 string
 		mustFail             bool
 		newTransferStructure *TransferStructure
 		expected             *TransferStructure
 	}
 
-	cases := []FillPiecesPartedCase{
+	cases := []HandlePiecesCase{
 		{
-			name: "001",
+			name: "001 parted",
 			newTransferStructure: &TransferStructure{
 				NumPieces: 5,
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
@@ -583,7 +583,7 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 			},
 		},
 		{
-			name: "002",
+			name: "002 parted",
 			newTransferStructure: &TransferStructure{
 				NumPieces: 5,
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
@@ -614,7 +614,7 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 			},
 		},
 		{
-			name: "003",
+			name: "003 parted",
 			newTransferStructure: &TransferStructure{
 				NumPieces: 5,
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
@@ -645,7 +645,7 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 			},
 		},
 		{
-			name: "003 Mustfail",
+			name: "004 parted Mustfail",
 			newTransferStructure: &TransferStructure{
 				NumPieces: 5,
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
@@ -671,6 +671,51 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 						byte(1),
 						byte(1),
 						byte(0),
+						byte(1),
+					},
+				},
+			},
+		},
+		{
+			name: "005 single unfinished",
+			newTransferStructure: &TransferStructure{
+				NumPieces: 5,
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Unfinished: new([]interface{}),
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Unfinished: new([]interface{}),
+					Pieces: []byte{
+						byte(0),
+						byte(0),
+						byte(0),
+						byte(0),
+						byte(0),
+					},
+				},
+			},
+		},
+		{
+			name: "005 single finished",
+			newTransferStructure: &TransferStructure{
+				NumPieces:  5,
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Pieces: []byte{
+						byte(1),
+						byte(1),
+						byte(1),
+						byte(1),
 						byte(1),
 					},
 				},

@@ -39,7 +39,7 @@ func (transfer *TransferStructure) HandleStructures() {
 	*/
 	transfer.NumPieces = int64(len(transfer.TorrentFile.Info.Pieces)) / 20
 
-	transfer.HandleCompleted()
+	transfer.HandleCompleted() // important handle priorities before handling pieces
 	transfer.HandleSavePaths()
 	transfer.HandlePieces()
 }
