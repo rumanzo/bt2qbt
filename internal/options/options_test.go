@@ -153,9 +153,10 @@ func TestOptionsChecks(t *testing.T) {
 		{
 			name: "002 Check exists folders or files",
 			opts: &Opts{
-				BitDir:  "../../test/data",
-				QBitDir: "../../test/data",
-				Config:  "../../test/data/testfileset.torrent",
+				BitDir:      "../../test/data",
+				QBitDir:     "../../test/data",
+				Config:      "../../test/data/testfileset.torrent",
+				SearchPaths: []string{},
 			},
 			mustFail: false,
 		},

@@ -34,11 +34,36 @@ func Join(filePaths []string, separator string) string {
 	return filePath
 }
 
+// Base returns the last element of path.
+// Trailing path separators are removed before extracting the last element.
+// If the path is empty, Base returns ".".
+// If the path consists entirely of separators, Base returns a single separator.
 func Base(filePath string) string {
 	if checkIsShareRegExp.MatchString(filePath) {
 		filePath = filePath[2:]
 	}
-	return filepath.Base(filePath)
+	if filePath == "" {
+		return "."
+	}
+	// Strip trailing slashes.
+	for len(filePath) > 0 && IsPathSeparator(filePath[len(filePath)-1]) {
+		filePath = filePath[0 : len(filePath)-1]
+	}
+	// Throw away volume name
+	filePath = filePath[len(filepath.VolumeName(filePath)):]
+	// Find the last element
+	i := len(filePath) - 1
+	for i >= 0 && !IsPathSeparator(filePath[i]) {
+		i--
+	}
+	if i >= 0 {
+		filePath = filePath[i+1:]
+	}
+	// If empty now, it had only slashes.
+	if filePath == "" {
+		return string(filePath)
+	}
+	return filePath
 }
 
 func Normalize(filePath string, separator string) string {
@@ -47,12 +72,15 @@ func Normalize(filePath string, separator string) string {
 		prefix = filePath[:2]
 		filePath = filePath[2:]
 	}
+
+	filePath = strings.ReplaceAll(filePath, `\`, `/`)
 	filePath = filepath.Clean(filePath)
 	filePath = prefix + filePath
-	if separator == "/" {
-		filePath = filepath.ToSlash(filePath)
-	} else {
+	if separator == `\` {
 		filePath = strings.ReplaceAll(filePath, `/`, `\`)
+	} else {
+		// we need change separators in prefix too
+		filePath = strings.ReplaceAll(filePath, `\`, `/`)
 	}
 	return filePath
 }
@@ -75,4 +103,10 @@ func CutLastPath(filePath string, separator string) string {
 		return prefix
 	}
 	return filePath[:lastSeparatorIndex]
+}
+
+// windows reazilation everywhere
+func IsPathSeparator(c uint8) bool {
+	// NOTE: Windows accept / as path separator.
+	return c == '\\' || c == '/'
 }

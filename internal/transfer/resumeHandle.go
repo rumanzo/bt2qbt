@@ -131,10 +131,10 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 // notice that torrent file name always known
 func HandleTorrentFilePath(transferStructure *TransferStructure, key string) {
 	if fileHelpers.IsAbs(key) {
-		transferStructure.TorrentFilePath = key
+		transferStructure.TorrentFilePath = fileHelpers.Normalize(key, `/`)
 		transferStructure.TorrentFileName = fileHelpers.Base(key)
 	} else {
-		transferStructure.TorrentFilePath = filepath.Join(transferStructure.Opts.BitDir, key) // additional search required
+		transferStructure.TorrentFilePath = fileHelpers.Join([]string{transferStructure.Opts.BitDir, key}, `/`) // additional search required
 		transferStructure.TorrentFileName = key
 	}
 }

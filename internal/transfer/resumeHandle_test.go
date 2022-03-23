@@ -78,7 +78,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			key:                  `C:\\temp\t.torrent`,
 			newTransferStructure: &TransferStructure{Opts: &options.Opts{}},
 			expected: &TransferStructure{
-				TorrentFilePath: `C:\\temp\t.torrent`,
+				TorrentFilePath: `C:/temp/t.torrent`,
 				TorrentFileName: "t.torrent",
 				Opts:            &options.Opts{},
 			},
@@ -89,7 +89,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			mustFail:             true,
 			newTransferStructure: &TransferStructure{Opts: &options.Opts{}},
 			expected: &TransferStructure{
-				TorrentFilePath: `C:\\temp\\t.torrent`,
+				TorrentFilePath: `C:\temp\\t.torrent`,
 				TorrentFileName: "t.torrent",
 				Opts:            &options.Opts{},
 			},
@@ -99,7 +99,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			key:                  `C:\\temp\t.torrent`,
 			newTransferStructure: &TransferStructure{Opts: &options.Opts{}},
 			expected: &TransferStructure{
-				TorrentFilePath: `C:\\temp\t.torrent`,
+				TorrentFilePath: `C:/temp/t.torrent`,
 				TorrentFileName: "t.torrent",
 				Opts:            &options.Opts{},
 			},
@@ -119,7 +119,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			key:                  `\\temp\t.torrent`,
 			newTransferStructure: &TransferStructure{Opts: &options.Opts{}},
 			expected: &TransferStructure{
-				TorrentFilePath: `\\temp\t.torrent`,
+				TorrentFilePath: `//temp/t.torrent`,
 				TorrentFileName: "t.torrent",
 				Opts:            &options.Opts{},
 			},
@@ -129,7 +129,7 @@ func TestHandleTorrentFilePath(t *testing.T) {
 			key:                  "t.torrent",
 			newTransferStructure: &TransferStructure{Opts: &options.Opts{BitDir: `C:\\temp`}},
 			expected: &TransferStructure{
-				TorrentFilePath: `C:\temp\t.torrent`,
+				TorrentFilePath: `C:/temp/t.torrent`,
 				TorrentFileName: "t.torrent",
 				Opts:            &options.Opts{BitDir: `C:\\temp`},
 			},
