@@ -12,14 +12,6 @@ import (
 	"testing"
 )
 
-// my fast test func
-// todo remove this
-//func TestRand(t *testing.T) {
-//	test := map[string]interface{}{}
-//	helpers.DecodeTorrentFile(`C:\Users\ruman\AppData\Roaming\uTorrent\resume.dat`, &test)
-//	t.Fatal(spew.Sdump(test[`test1_renamed_qbt_мойфайл.txt.torrent`]))
-//}
-
 func TestTransferStructure_HandleSavePaths(t *testing.T) {
 	type SearchPathCase struct {
 		name                 string
