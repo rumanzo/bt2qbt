@@ -11,11 +11,20 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
 	"time"
 )
 
+var version, commit, date, buildImage string
+
 func main() {
 	opts := options.MakeOpts()
+
+	if opts.Version {
+		date = time.Now().Format("01-02-2006 15:04:05")
+		fmt.Printf("Version: %v\nCommit: %v\nGolang version: %v\nBuild image: %v\nBuild date: %v\n", version, commit, runtime.Version(), buildImage, date)
+		os.Exit(0)
+	}
 
 	resumeFilePath := path.Join(opts.BitDir, "resume.dat")
 	if _, err := os.Stat(resumeFilePath); os.IsNotExist(err) {

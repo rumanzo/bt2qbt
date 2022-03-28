@@ -21,6 +21,7 @@ type Opts struct {
 	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files\n	Example: --search='/mnt/olddisk/savedtorrents' --search='/mnt/olddisk/workstorrents'"`
 	Replaces      []string `short:"r" long:"replace" description:"Replace save paths. Important: you have to use single slashes in paths\n	Delimiter for from/to is comma - ,\n	Example: -r \"D:/films,/home/user/films\" -r \"D:/music,/home/user/music\"\n"`
 	PathSeparator string   `long:"sep" description:"Default path separator that will use in all paths. You may need use this flag if you migrating from windows to linux in some cases"`
+	Version       bool     `short:"v" long:"version" description:"Show version"`
 }
 
 func PrepareOpts() *Opts {

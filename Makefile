@@ -5,26 +5,34 @@
 #GOOS=darwin GOARCH=amd64 go build -o bt2qbt_v${1}_amd64_macos -tags forceposix
 #GOOS=darwin GOARCH=386 go build -o bt2qbt_v${1}_i386_macos -tags forceposix
 
-GOVER=1.18.0
-GOTAG=1.18.0-bullseye
-OLDGOVER=1.15.15
-OLDGOTAG=1.15.15-buster
+gotag=1.18.0-bullseye
+oldgotag=1.14.15-buster
 
-CGO_ENABLED?=0
+commit=$(shell git rev-parse HEAD)
 
-COMMIT=$(shell git rev-parse HEAD)
-
-DOCKERCMD=docker run --rm -v $(CURDIR):/usr/src/bt2qbt -w /usr/src/bt2qbt
-BUILDTAGS=-tags forceposix
-
+dockercmd=docker run --rm -v $(CURDIR):/usr/src/bt2qbt -w /usr/src/bt2qbt
+buildtags = -tags forceposix
+buildenvs = -e CGO_ENABLED=0
+version = 1.999
+ldflags = -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(gotag)'"
 
 all: tests build
 
-tidy:
-	$(DOCKERCMD) golang:$(GOTAG) go mod tidy
-
 tests:
-	$(DOCKERCMD) golang:$(GOTAG) go test $(BUILDTAGS) ./pkg/fileHelpers
+	$(dockercmd) golang:$(gotag) go test $(buildtags) ./...
 
-build: tests
-	$(DOCKERCMD) golang:$(GOTAG) go build $(BUILDTAGS) ./cmd/bt2qbt/
+build: | tests windows linux darwin
+
+
+windows:
+	$(dockercmd) $(buildenvs) -e GOOS=windows -e GOARCH=amd64 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_amd64.exe
+	$(dockercmd) $(buildenvs) -e GOOS=windows -e GOARCH=386 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_i386.exe
+
+linux:
+	$(dockercmd) $(buildenvs) -e GOOS=linux -e GOARCH=amd64 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_amd64_linux
+	$(dockercmd) $(buildenvs) -e GOOS=linux -e GOARCH=386 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_i386_linux
+
+darwin:
+	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=amd64 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_amd64_macos
+	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=386 -e GO111MODULE=on golang:$(oldgotag) go build -v $(buildtags) -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(oldgotag)'" -o bt2qbt_v$(version)_i386_macos
+
