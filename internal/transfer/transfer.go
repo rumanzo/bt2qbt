@@ -76,6 +76,8 @@ func (transfer *TransferStructure) HandleCaption() {
 	}
 }
 
+// todo if not all files selected for download but torrent completed it should be stopped
+// todo need tests
 func (transfer *TransferStructure) HandleState() {
 	if transfer.ResumeItem.Started == 0 {
 		transfer.Fastresume.Paused = 1
@@ -244,12 +246,19 @@ func (transfer *TransferStructure) HandleSavePaths() {
 				transfer.Fastresume.MappedFiles = make([]string, maxIndex+1, maxIndex+1)
 				for _, paths := range transfer.ResumeItem.Targets {
 					index := paths[0].(int64)
-					pathParts := make([]string, len(paths)-1, len(paths)-1)
-					for num, part := range paths[1:] {
-						pathParts[num] = part.(string)
+					var pathParts []string
+					if fileHelpers.IsAbs(paths[1].(string)) {
+						pathParts = []string{fileHelpers.Normalize(paths[1].(string), transfer.Opts.PathSeparator)}
+						// if path is absolute just normalize it
+						transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(pathParts, transfer.Opts.PathSeparator)
+					} else {
+						pathParts = make([]string, len(paths)-1, len(paths)-1)
+						for num, part := range paths[1:] {
+							pathParts[num] = part.(string)
+						}
+						// we have to append torrent name(from torrent file) at the top of path
+						transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(append([]string{torrentName}, pathParts...), transfer.Opts.PathSeparator)
 					}
-					// we have to append torrent name(from torrent file) at the top of path
-					transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(append([]string{torrentName}, pathParts...), transfer.Opts.PathSeparator)
 				}
 			}
 			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, "/") + `/`
@@ -270,9 +279,14 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
 				for _, paths := range transfer.ResumeItem.Targets {
 					index := paths[0].(int64)
-					pathParts := make([]string, len(paths)-1, len(paths)-1)
-					for num, part := range paths[1:] {
-						pathParts[num] = part.(string)
+					var pathParts []string
+					if fileHelpers.IsAbs(paths[1].(string)) {
+						pathParts = []string{fileHelpers.Normalize(paths[1].(string), transfer.Opts.PathSeparator)}
+					} else {
+						pathParts = make([]string, len(paths)-1, len(paths)-1)
+						for num, part := range paths[1:] {
+							pathParts[num] = part.(string)
+						}
 					}
 					transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(pathParts, transfer.Opts.PathSeparator)
 				}
