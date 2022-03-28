@@ -34,5 +34,5 @@ linux:
 
 darwin:
 	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=amd64 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_amd64_macos
-	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=386 -e GO111MODULE=on golang:$(oldgotag) go build -v $(buildtags) -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(oldgotag)'" -o bt2qbt_v$(version)_i386_macos
+	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=386 -e GO111MODULE=off golang:$(oldgotag) bash -c "go get -v && go build -v $(buildtags) -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(oldgotag)'" -o bt2qbt_v$(version)_i386_macos"
 
