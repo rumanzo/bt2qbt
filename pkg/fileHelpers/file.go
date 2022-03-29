@@ -13,7 +13,6 @@ var checkIsShareRegExp = regexp.MustCompile(`^(//|\\\\)`)
 
 var rootPathRegexp = regexp.MustCompile(`^(\.\.?(/|\\)|[A-Za-z]:(/|\\)|(//?|\\\\))`)
 
-// todo check windows share is abs
 func IsAbs(filePath string) bool {
 	if checkAbsRegExp.MatchString(filePath) {
 		return true
