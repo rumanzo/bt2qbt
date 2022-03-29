@@ -5,12 +5,14 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
+	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"sync"
 )
 
@@ -47,10 +49,17 @@ func HandleResumeItem(key string, transferStruct *TransferStructure, chans *Chan
 	}
 
 	// because hash of info very important it will be better to use interface for get hash
-	err = helpers.DecodeTorrentFile(transferStruct.TorrentFilePath, &transferStruct.TorrentFileRaw)
-	if err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", transferStruct.TorrentFilePath, key)
-		return err
+	if !strings.HasPrefix(key, "magnet:?") {
+		err = helpers.DecodeTorrentFile(transferStruct.TorrentFilePath, &transferStruct.TorrentFileRaw)
+		if err != nil {
+			chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", transferStruct.TorrentFilePath, key)
+			return err
+		}
+	} else {
+		transferStruct.Magnet = true
+		transferStruct.TorrentFile = &torrentStructures.Torrent{
+			Info: &torrentStructures.TorrentInfo{},
+		}
 	}
 
 	transferStruct.HandleStructures()

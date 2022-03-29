@@ -858,6 +858,27 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "025 Test magnet link downloads",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `D:\torrents\test`,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{},
+				},
+				Opts:   &options.Opts{PathSeparator: `\`},
+				Magnet: true,
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `D:/torrents/test`,
+					SavePath:         `D:\torrents\test`,
+					QBtContentLayout: "Original",
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
