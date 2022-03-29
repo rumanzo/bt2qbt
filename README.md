@@ -1,22 +1,28 @@
 # bt2qbt
+
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
+> [!IMPORTANT]
+Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2
+
 - [bt2qbt](#bt2qbt)
-	- [Feature](#user-content-feature)
-	- [Help](#user-content-help)
-	- [Usage examples](#user-content-usage-examples)
-	- [Known issuses](#user-content-known-issuses)
-	
+    - [Feature](#user-content-feature)
+    - [Help](#user-content-help)
+    - [Usage examples](#user-content-usage-examples)
+
 Feature:
 ---------
- - Processing all torrents
- - Processing torrents with subdirectories and without subdirectories
- - Processing torrents with renamed files
- - Processing torrents with non-standard encodings (for example, cp1251)
- - Processing of torrents in the not ready state *
- - Processing modified torrent names
- - Save date, metrics, status. **
- - Import of tags and labels
- - Multithreading
+
+- Processing all torrents
+- Processing torrents with subdirectories and without subdirectories
+- Processing torrents with renamed files
+- Processing torrents with non-standard encodings (for example, cp1251)
+- Processing of torrents in the not ready state *
+- Processing magnet links
+- Processing modified torrent names
+- Save date, metrics, status. **
+- Import of tags and labels
+- Multithreading
+- Covered with tests
 
 > [!NOTE]
 > \* This torrents will not be done (0%) and will need force recheck (right click on torrent -> Force recheck)
@@ -31,16 +37,16 @@ Feature:
 > \* If you migrate from windows to linux you may need to define path separathor with --sep flag
 
 > [!NOTE]
->\*\* The calculation of the completed parts is based only on the priority of the files in torrent. Don't transfer global uTorrent/BitTorrent statistics.
+> \*\* The calculation of the completed parts is based only on the priority of the files in torrent. Don't transfer global uTorrent/BitTorrent statistics.
 
 > [!NOTE]
->\*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a recheck (right click on torrent -> Force recheck). Without recheck torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
+> \*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a recheck (right click on torrent -> Force recheck). Without recheck torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
 
 > [!IMPORTANT]
 > Don't forget before use make backup bittorrent\utorrent, qbittorrent folder. and config %APPDATA%/Roaming/qBittorrent/qBittorrent.ini. Close all this program before.
-> 
+>
 > [!IMPORTANT]
-> You must previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files will not handled
+> You must previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files wouldn't be handled
 
 Help:
 -------
@@ -49,31 +55,23 @@ Help (from cmd or powershell)
 
 ```
 Usage:
-  C:\Users\user\Downloads\bt2qbt.exe [OPTIONS]
+  bt2qbt_v1.999_amd64.exe [OPTIONS]
 
 Application Options:
-  -s, --source=         Source directory that contains resume.dat and torrents
-                        files (default:
-                        C:\Users\user\AppData\Roaming\uTorrent\)
-  -d, --destination=    Destination directory BT_backup (as default) (default:
-                        C:\Users\user\AppData\Local\qBittorrent\BT_backup\)
-  -c, --config=         qBittorrent config file (for write tags) (default:
-                        C:\Users\user\AppData\Roaming\qBittorrent\qBittorren-
-
-                        t.ini)
+  -s, --source=         Source directory that contains resume.dat and torrents files (default: C:\Users\user\AppData\Roaming\uTorrent)
+  -d, --destination=    Destination directory BT_backup (as default) (default: C:\Users\user\AppData\Local\qBittorrent\BT_backup)
+  -c, --config=         qBittorrent config file (for write tags) (default: C:\Users\user\AppData\Roaming\qBittorrent\qBittorrent.ini)
       --without-labels  Do not export/import labels
       --without-tags    Do not export/import tags
   -t, --search=         Additional search path for torrents files
-                        Example: --search='/mnt/olddisk/savedtorrents'
-                        --search='/mnt/olddisk/workstorrents'
-  -r, --replace=        Replace paths.
+                        Example: --search='/mnt/olddisk/savedtorrents' --search='/mnt/olddisk/workstorrents'
+  -r, --replace=        Replace save paths. Important: you have to use single slashes in paths
                         Delimiter for from/to is comma - ,
-                        Example: -r "D:\films,/home/user/films" -r
-                        "D:\music,/home/user/music"
+                        Example: -r "D:/films,/home/user/films" -r "D:/music,/home/user/music"
 
-      --sep=            Default path separator that will use in all paths. You
-                        may need use this flag if you migrating from windows to
-                        linux in some cases (default: \)
+      --sep=            Default path separator that will use in all paths. You may need use this flag if you migrating from windows to linux in some cases
+                        (default: \)
+  -v, --version         Show version
 
 Help Options:
   -h, --help            Show this help message
@@ -83,7 +81,9 @@ Help Options:
 Usage examples:
 ----------------
 
-- If you just run application, it will processing torrents from %APPDATA%\uTorrent\ to %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
+- If you just run application, it will handle torrents from %APPDATA%\uTorrent\ to
+  %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
+
 ```
 C:\Users\user\Downloads> .\bt2qbt.exe
 It will be performed processing from directory C:\Users\user\AppData\Roaming\uTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
@@ -100,7 +100,9 @@ Started
 Press Enter to exit
 ```
 
-- Run application from cmd or powershell with keys, if you want change source dir or destination dir, or export/import behavior
+- Run application from cmd or powershell with keys, if you want change source dir or destination dir, or export/import
+  behavior
+
 ```
 C:\Users\user\Downloads> .\bt2qbt.exe -s C:\Users\user\AppData\Roaming\BitTorrent\
 It will be performed processing from directory C:\Users\user\AppData\Roaming\BitTorrent\ to directory C:\Users\user\AppData\Local\qBittorrent\BT_backup\
@@ -120,6 +122,3 @@ Started
 
 Press Enter to exit
 ```
-Known issuses:
----------------
- - Unknown
