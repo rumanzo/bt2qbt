@@ -306,6 +306,12 @@ func (transfer *TransferStructure) HandleSavePaths() {
 
 	for _, pattern := range transfer.Replace {
 		transfer.Fastresume.QbtSavePath = strings.ReplaceAll(transfer.Fastresume.QbtSavePath, pattern.From, pattern.To)
+		// replace mapped files if them are absolute paths
+		for mapIndex, mapPath := range transfer.Fastresume.MappedFiles {
+			if fileHelpers.IsAbs(mapPath) {
+				transfer.Fastresume.MappedFiles[mapIndex] = strings.ReplaceAll(mapPath, pattern.From, pattern.To)
+			}
+		}
 	}
 
 	transfer.Fastresume.SavePath = fileHelpers.Normalize(transfer.Fastresume.QbtSavePath, transfer.Opts.PathSeparator)
