@@ -76,13 +76,28 @@ func (transfer *TransferStructure) HandleCaption() {
 	}
 }
 
-// todo if not all files selected for download but torrent completed it should be stopped
-// todo need tests
+// HandleState transfer torrents state.
+// if torrent has several files and it doesn't completed downloaded (priority), it will stopped
 func (transfer *TransferStructure) HandleState() {
 	if transfer.ResumeItem.Started == 0 {
 		transfer.Fastresume.Paused = 1
 		transfer.Fastresume.AutoManaged = 0
 	} else {
+		if transfer.TorrentFile.Info.Files != nil {
+			if len(transfer.TorrentFile.Info.Files) > 1 {
+				var parted bool
+				for _, prio := range transfer.ResumeItem.Prio {
+					if byte(prio) == 0 || byte(prio) == 128 {
+						parted = true
+					}
+				}
+				if parted {
+					transfer.Fastresume.Paused = 1
+					transfer.Fastresume.AutoManaged = 0
+					return
+				}
+			}
+		}
 		transfer.Fastresume.Paused = 0
 		transfer.Fastresume.AutoManaged = 1
 	}

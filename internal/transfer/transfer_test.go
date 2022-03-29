@@ -559,7 +559,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 		},
 		{
-			name: "019 Test torrent with windows folder (original) path without replaces. Moved files with absolute paths. Replace",
+			name: "019 Test torrent with windows folder (original) path with replaces. Moved files with absolute paths",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -601,9 +601,9 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 					MappedFiles: []string{
 						``,
 						``,
-						`test_torrent\renamed_test_torrent.txt`,
-						`E:\somedir1\renamed_test_torrent2.txt`,
-						`F:\somedir\somedir4\renamed_test_torrent3.txt`,
+						`test_torrent/renamed_test_torrent.txt`,
+						`/mnt/e/somedir1/renamed_test_torrent2.txt`,
+						`/mnt/f/somedir/somedir4/renamed_test_torrent3.txt`,
 					},
 				},
 			},
@@ -1131,4 +1131,257 @@ func TestTransferStructure_GetTrackers(t *testing.T) {
 	if !reflect.DeepEqual(transferStructure.Fastresume.Trackers, expect) {
 		t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", transferStructure.Fastresume.Trackers, expect)
 	}
+}
+
+func TestTransferStructure_HandleState(t *testing.T) {
+	type HandleStateCase struct {
+		name                 string
+		mustFail             bool
+		newTransferStructure *TransferStructure
+		expected             *TransferStructure
+	}
+	cases := []HandleStateCase{
+		{
+			name: "001 Mustfail",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+			},
+			mustFail: true,
+		},
+		{
+			name: "002 stopped resume",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Started: 0},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+			},
+		},
+		{
+			name: "003 started resume",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Started: 1},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 0, AutoManaged: 1},
+			},
+		},
+		{
+			name: "004 started resume with full downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+					Prio: []byte{
+						byte(1),
+						byte(1),
+						byte(2),
+						byte(5),
+						byte(8),
+						byte(9),
+						byte(15),
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 0, AutoManaged: 1},
+			},
+		},
+		{
+			name: "005 started resume with parted downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+					Prio: []byte{
+						byte(0),
+						byte(10),
+						byte(2),
+						byte(5),
+						byte(8),
+						byte(9),
+						byte(15),
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+			},
+		},
+		{
+			name: "006 started resume with parted downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+					Prio: []byte{
+						byte(1),
+						byte(128),
+						byte(2),
+						byte(5),
+						byte(8),
+						byte(9),
+						byte(15),
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+			},
+		},
+		{
+			name: "007 started resume with full downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+					Prio: []byte{
+						byte(1),
+						byte(128),
+						byte(2),
+						byte(5),
+						byte(8),
+						byte(9),
+						byte(15),
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+			},
+		},
+		{
+			name: "008 started resume with parted downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+					Prio: []byte{
+						byte(1),
+						byte(128),
+						byte(2),
+						byte(5),
+						byte(8),
+						byte(9),
+						byte(15),
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+			},
+		},
+		{
+			name: "009 started resume without files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 0,
+					Prio: []byte{
+						byte(1),
+						byte(128),
+						byte(2),
+						byte(5),
+						byte(8),
+						byte(9),
+						byte(15),
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+			},
+		},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.newTransferStructure.HandleState()
+			equal := reflect.DeepEqual(testCase.expected.Fastresume, testCase.newTransferStructure.Fastresume)
+			if !equal && !testCase.mustFail {
+				changes, err := diff.Diff(testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, diff.DiscardComplexOrigin())
+				if err != nil {
+					t.Error(err.Error())
+				}
+				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n Diff: %v\n", testCase.newTransferStructure.Fastresume.Pieces, testCase.expected.Fastresume.Pieces, spew.Sdump(changes))
+			} else if equal && testCase.mustFail {
+				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %v\n", spew.Sdump(testCase.newTransferStructure.Fastresume))
+			}
+		})
+	}
+
 }
