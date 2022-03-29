@@ -658,6 +658,206 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "021 Test torrent with windows folder (Original) path without replaces. Moved files with absolute paths. Windows share",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `\\torrents\test_torrent`,
+					Targets: [][]interface{}{
+						[]interface{}{
+							int64(2),
+							"renamed_test_torrent.txt",
+						},
+						[]interface{}{
+							int64(3),
+							`E:\somedir1\renamed_test_torrent2.txt`,
+						},
+						[]interface{}{
+							int64(4),
+							`\\somedir\somedir4\renamed_test_torrent3.txt`,
+						},
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"dir2", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `//torrents/`,
+					SavePath:         `\\torrents\`,
+					QBtContentLayout: "Original",
+					MappedFiles: []string{
+						``,
+						``,
+						`test_torrent\renamed_test_torrent.txt`,
+						`E:\somedir1\renamed_test_torrent2.txt`,
+						`\\somedir\somedir4\renamed_test_torrent3.txt`,
+					},
+				},
+			},
+		},
+		{
+			name: "022 Test torrent with windows folder (NoSubfolder) path without replaces. Moved files with absolute paths",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `\\torrents\test`,
+					Targets: [][]interface{}{
+						[]interface{}{
+							int64(2),
+							"renamed_test_torrent.txt",
+						},
+						[]interface{}{
+							int64(3),
+							`E:\somedir1\renamed_test_torrent2.txt`,
+						},
+						[]interface{}{
+							int64(4),
+							`\\somedir\somedir4\renamed_test_torrent3.txt`,
+						},
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"dir2", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `//torrents/test`,
+					SavePath:         `\\torrents\test`,
+					QBtContentLayout: "NoSubfolder",
+					MappedFiles: []string{
+						`dir1\file1.txt`,
+						`dir2\file2.txt`,
+						`renamed_test_torrent.txt`,
+						`E:\somedir1\renamed_test_torrent2.txt`,
+						`\\somedir\somedir4\renamed_test_torrent3.txt`,
+					},
+				},
+			},
+		},
+		{
+			name: "023 Test torrent with windows folder (Original) path without replaces. Absolute paths. Windows share Replace",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `\\torrents\test_torrent`,
+					Targets: [][]interface{}{
+						[]interface{}{
+							int64(2),
+							"renamed_test_torrent.txt",
+						},
+						[]interface{}{
+							int64(3),
+							`E:\somedir1\renamed_test_torrent2.txt`,
+						},
+						[]interface{}{
+							int64(4),
+							`\\somedir\somedir4\renamed_test_torrent3.txt`,
+						},
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"dir2", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `/`, Replaces: []string{`D:/torrents,/mnt/d/torrents`, `E:,/mnt/e`, `//somedir,/mnt/share`}},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `//torrents/`,
+					SavePath:         `//torrents/`,
+					QBtContentLayout: "Original",
+					MappedFiles: []string{
+						``,
+						``,
+						`test_torrent/renamed_test_torrent.txt`,
+						`/mnt/e/somedir1/renamed_test_torrent2.txt`,
+						`/mnt/share/somedir4/renamed_test_torrent3.txt`,
+					},
+				},
+			},
+		},
+		{
+			name: "024 Test torrent with windows folder (NoSubfolder) path without replaces. Absolute paths. Windows share Replace",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `\\torrents\test`,
+					Targets: [][]interface{}{
+						[]interface{}{
+							int64(2),
+							"renamed_test_torrent.txt",
+						},
+						[]interface{}{
+							int64(3),
+							`E:\somedir1\renamed_test_torrent2.txt`,
+						},
+						[]interface{}{
+							int64(4),
+							`\\somedir\somedir4\renamed_test_torrent3.txt`,
+						},
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"dir2", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `/`, Replaces: []string{`D:/torrents,/mnt/d/torrents`, `E:,/mnt/e`, `//somedir,/mnt/share`}},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `//torrents/test`,
+					SavePath:         `//torrents/test`,
+					QBtContentLayout: "NoSubfolder",
+					MappedFiles: []string{
+						`dir1/file1.txt`,
+						`dir2/file2.txt`,
+						`renamed_test_torrent.txt`,
+						`/mnt/e/somedir1/renamed_test_torrent2.txt`,
+						`/mnt/share/somedir4/renamed_test_torrent3.txt`,
+					},
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
