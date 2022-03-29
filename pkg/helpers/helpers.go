@@ -57,7 +57,6 @@ func EncodeTorrentFile(path string, content interface{}) error {
 		file, err = os.OpenFile(path, os.O_WRONLY, 0666)
 		if err != nil {
 			return err
-			panic(err)
 		}
 		defer file.Close()
 	}

@@ -127,7 +127,7 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 	}
 }
 
-// check if resume key is absolute path. It means that we should search torrent file using this absolute path
+// HandleTorrentFilePath check if resume key is absolute path. It means that we should search torrent file using this absolute path
 // notice that torrent file name always known
 func HandleTorrentFilePath(transferStructure *TransferStructure, key string) {
 	if fileHelpers.IsAbs(key) {
@@ -151,7 +151,7 @@ func FindTorrentFile(transferStructure *TransferStructure) error {
 			}
 		}
 		// return error only if we didn't find anything
-		return fmt.Errorf("Can't locate torrent file %v", transferStructure.TorrentFileName)
+		return fmt.Errorf("can't locate torrent file %v", transferStructure.TorrentFileName)
 	}
 	return nil
 }

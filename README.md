@@ -43,7 +43,7 @@ Feature:
 > Don't forget before use make backup bittorrent\utorrent, qbittorrent folder. and config %APPDATA%/Roaming/qBittorrent/qBittorrent.ini. Close all this program before.
 >
 > [!IMPORTANT]
-> You must previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files will not handled
+> You must previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files wouldn't be handled
 
 Help:
 -------
@@ -86,7 +86,7 @@ Help Options:
 Usage examples:
 ----------------
 
-- If you just run application, it will processing torrents from %APPDATA%\uTorrent\ to
+- If you just run application, it will handle torrents from %APPDATA%\uTorrent\ to
   %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
 
 ```

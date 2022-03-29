@@ -11,7 +11,7 @@ var checkAbsRegExp = regexp.MustCompile(`^(([A-Za-z]:)(\\\\?|/)|(\\\\|//))`)
 
 var checkIsShareRegExp = regexp.MustCompile(`^(//|\\\\)`)
 
-var rootPathRegexp = regexp.MustCompile(`^(\.\.?(/|\\)|[A-Za-z]:(/|\\)|(//?|\\\\))`)
+var rootPathRegexp = regexp.MustCompile(`^(\.\.?([/\\])|[A-Za-z]:([/\\])|(//?|\\\\))`)
 
 func IsAbs(filePath string) bool {
 	if checkAbsRegExp.MatchString(filePath) {
@@ -61,7 +61,7 @@ func Base(filePath string) string {
 	}
 	// If empty now, it had only slashes.
 	if filePath == "" {
-		return string(filePath)
+		return filePath
 	}
 	return filePath
 }
@@ -85,7 +85,7 @@ func Normalize(filePath string, separator string) string {
 	return filePath
 }
 
-// remove last dir or file, change separator, normalize and leave root path exists
+// CutLastPath remove last dir or file, change separator, normalize and leave root path exists
 func CutLastPath(filePath string, separator string) string {
 	prefixSubmatch := rootPathRegexp.FindAllString(filePath, 1)
 	var prefix string
@@ -105,7 +105,7 @@ func CutLastPath(filePath string, separator string) string {
 	return filePath[:lastSeparatorIndex]
 }
 
-// windows reazilation everywhere
+// IsPathSeparator windows reazilation everywhere
 func IsPathSeparator(c uint8) bool {
 	// NOTE: Windows accept / as path separator.
 	return c == '\\' || c == '/'

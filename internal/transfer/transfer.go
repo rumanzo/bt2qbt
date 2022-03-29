@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+//goland:noinspection GoNameStartsWithPackageName
 type TransferStructure struct {
 	Fastresume      *qBittorrentStructures.QBittorrentFastresume `bencode:"-"`
 	ResumeItem      *utorrentStructs.ResumeItem                  `bencode:"-"`
@@ -77,7 +78,7 @@ func (transfer *TransferStructure) HandleCaption() {
 }
 
 // HandleState transfer torrents state.
-// if torrent has several files and it doesn't completed downloaded (priority), it will stopped
+// if torrent has several files and it doesn't complete downloaded (priority), it will be stopped
 func (transfer *TransferStructure) HandleState() {
 	if transfer.ResumeItem.Started == 0 {
 		transfer.Fastresume.Paused = 1
@@ -139,7 +140,7 @@ func (transfer *TransferStructure) HandleLabels() {
 	}
 }
 
-// recurstive function for searching trackers in resume item trackers
+// GetTrackers recurstive function for searching trackers in resume item trackers
 func (transfer *TransferStructure) GetTrackers(trackers interface{}) {
 	switch strct := trackers.(type) {
 	case []interface{}:
@@ -335,7 +336,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 	}
 }
 
-// just helper for creating mappedfiles
+// FindHighestIndexOfMappedFiles just helper for creating mappedfiles
 func (transfer *TransferStructure) FindHighestIndexOfMappedFiles() int64 {
 	if resumeItem := transfer.ResumeItem; resumeItem.Targets != nil {
 		lastElem := resumeItem.Targets[len(resumeItem.Targets)-1] // it must be like []interface{0, "path"}
@@ -345,7 +346,7 @@ func (transfer *TransferStructure) FindHighestIndexOfMappedFiles() int64 {
 }
 
 func CreateReplaces(replaces []string) []*replace.Replace {
-	r := []*replace.Replace{}
+	var r []*replace.Replace
 	for _, str := range replaces {
 		patterns := strings.Split(str, ",")
 		r = append(r, &replace.Replace{

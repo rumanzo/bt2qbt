@@ -73,28 +73,28 @@ func OptsCheck(opts *Opts) error {
 		for _, str := range opts.Replaces {
 			patterns := strings.Split(str, ",")
 			if len(patterns) != 2 {
-				return fmt.Errorf("Bad replace pattern")
+				return fmt.Errorf("bad replace pattern")
 			}
 		}
 	}
 
 	if _, err := os.Stat(opts.BitDir); os.IsNotExist(err) {
-		return fmt.Errorf("Can't find uTorrent\\Bittorrent folder")
+		return fmt.Errorf("can't find uTorrent\\Bittorrent folder")
 	}
 
 	if _, err := os.Stat(opts.QBitDir); os.IsNotExist(err) {
-		return fmt.Errorf("Can't find qBittorrent folder")
+		return fmt.Errorf("can't find qBittorrent folder")
 	}
 
 	if opts.WithoutTags == false {
 		if _, err := os.Stat(opts.Config); os.IsNotExist(err) {
-			return fmt.Errorf("Can not read qBittorrent config file. Try run and close qBittorrent if you have not done" +
+			return fmt.Errorf("can not read qBittorrent config file. Try run and close qBittorrent if you have not done" +
 				" so already, or specify the path explicitly or do not import tags")
 		}
 	}
 	if runtime.GOOS == "linux" {
 		if opts.SearchPaths == nil {
-			return fmt.Errorf("On linux systems you must define search path for torrents")
+			return fmt.Errorf("on linux systems you must define search path for torrents")
 		}
 	}
 	return nil
