@@ -2,7 +2,7 @@
 
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
 > [!IMPORTANT]
-Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2
+> Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2
 
 - [bt2qbt](#bt2qbt)
     - [Feature](#user-content-feature)

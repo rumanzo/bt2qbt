@@ -6,14 +6,13 @@
 #GOOS=darwin GOARCH=386 go build -o bt2qbt_v${1}_i386_macos -tags forceposix
 
 gotag=1.18.0-bullseye
-oldgotag=1.14.15-buster
 
 commit=$(shell git rev-parse HEAD)
 
 dockercmd=docker run --rm -v $(CURDIR):/usr/src/bt2qbt -w /usr/src/bt2qbt
 buildtags = -tags forceposix
 buildenvs = -e CGO_ENABLED=0
-version = 1.999
+version = 1999
 ldflags = -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(gotag)'"
 
 all: tests build
@@ -34,5 +33,3 @@ linux:
 
 darwin:
 	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=amd64 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_amd64_macos
-	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=386 -e GO111MODULE=off golang:$(oldgotag) bash -c "go get -v && go build -v $(buildtags) -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(oldgotag)'" -o bt2qbt_v$(version)_i386_macos"
-
