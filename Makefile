@@ -12,7 +12,7 @@ commit=$(shell git rev-parse HEAD)
 dockercmd=docker run --rm -v $(CURDIR):/usr/src/bt2qbt -w /usr/src/bt2qbt
 buildtags = -tags forceposix
 buildenvs = -e CGO_ENABLED=0
-version = 1999
+version = 1.999
 ldflags = -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(gotag)'"
 
 all: tests build
