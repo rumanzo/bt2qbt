@@ -21,7 +21,7 @@ func main() {
 	opts := options.MakeOpts()
 
 	if opts.Version {
-		date = time.Now().Format("01-02-2006 15:04:05")
+		date = time.Now().Format("2006-01-02 15:04:05")
 		fmt.Printf("Version: %v\nCommit: %v\nGolang version: %v\nBuild image: %v\nBuild date: %v\n", version, commit, runtime.Version(), buildImage, date)
 		os.Exit(0)
 	}
