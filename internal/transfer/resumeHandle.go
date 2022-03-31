@@ -100,16 +100,14 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 					}
 				}
 			}
-			wg.Add(1)
-			chans.BoundedChannel <- true
-			transferStruct := CreateEmptyNewTransferStructure()
-			transferStruct.ResumeItem = resumeItem
-			transferStruct.Replace = replaces
-			transferStruct.Opts = opts
-			go HandleResumeItem(key, &transferStruct, &chans, &wg)
-		} else {
-			totalJobs--
 		}
+		wg.Add(1)
+		chans.BoundedChannel <- true
+		transferStruct := CreateEmptyNewTransferStructure()
+		transferStruct.ResumeItem = resumeItem
+		transferStruct.Replace = replaces
+		transferStruct.Opts = opts
+		go HandleResumeItem(key, &transferStruct, &chans, &wg)
 	}
 	go func() {
 		wg.Wait()
