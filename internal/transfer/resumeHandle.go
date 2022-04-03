@@ -95,7 +95,7 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 		if opts.WithoutTags == false {
 			if resumeItem.Labels != nil {
 				for _, label := range resumeItem.Labels {
-					if exists, tag := helpers.CheckExists(helpers.ASCIIConvert(label), newTags); !exists {
+					if exists, tag := helpers.CheckExists(label, newTags); !exists {
 						newTags = append(newTags, tag)
 					}
 				}
@@ -125,7 +125,10 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 		numJob++
 	}
 	if opts.WithoutTags == false {
-		ProcessLabels(opts, newTags)
+		err := ProcessLabels(opts, newTags)
+		if err != nil {
+			fmt.Printf("Can't handle labels with error:\n%v\n", err)
+		}
 	}
 	fmt.Println()
 	log.Println("Ended")

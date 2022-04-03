@@ -15,7 +15,7 @@ import (
 type Opts struct {
 	BitDir        string   `short:"s" long:"source" description:"Source directory that contains resume.dat and torrents files"`
 	QBitDir       string   `short:"d" long:"destination" description:"Destination directory BT_backup (as default)"`
-	Config        string   `short:"c" long:"config" description:"qBittorrent config file (for write tags)"`
+	Categories    string   `short:"c" long:"categories" description:"path to qBittorrent categories.json file (for write tags)"`
 	WithoutLabels bool     `long:"without-labels" description:"Do not export/import labels"`
 	WithoutTags   bool     `long:"without-tags" description:"Do not export/import tags"`
 	SearchPaths   []string `short:"t" long:"search" description:"Additional search path for torrents files\n	Example: --search='/mnt/olddisk/savedtorrents' --search='/mnt/olddisk/workstorrents'"`
@@ -29,7 +29,7 @@ func PrepareOpts() *Opts {
 	switch OS := runtime.GOOS; OS {
 	case "windows":
 		opts.BitDir = filepath.Join(os.Getenv("APPDATA"), "uTorrent")
-		opts.Config = filepath.Join(os.Getenv("APPDATA"), "qBittorrent", "qBittorrent.ini")
+		opts.Categories = filepath.Join(os.Getenv("APPDATA"), "qBittorrent", "categories.json")
 		opts.QBitDir = filepath.Join(os.Getenv("LOCALAPPDATA"), "qBittorrent", "BT_backup")
 	case "linux":
 		usr, err := user.Current()
@@ -37,7 +37,7 @@ func PrepareOpts() *Opts {
 			panic(err)
 		}
 		opts.BitDir = "/mnt/uTorrent/"
-		opts.Config = filepath.Join(usr.HomeDir, ".config", "qBittorrent", "qBittorrent.conf")
+		opts.Categories = filepath.Join(usr.HomeDir, ".config", "qBittorrent", "categories.json")
 		opts.QBitDir = filepath.Join(usr.HomeDir, ".local", "share", "data", "qBittorrent", "BT_backup")
 	case "darwin":
 		usr, err := user.Current()
@@ -45,7 +45,7 @@ func PrepareOpts() *Opts {
 			panic(err)
 		}
 		opts.BitDir = filepath.Join(usr.HomeDir, "Library", "Application Support", "uTorrent")
-		opts.Config = filepath.Join(usr.HomeDir, ".config", "qBittorrent", "qbittorrent.ini")
+		opts.Categories = filepath.Join(usr.HomeDir, ".config", "qBittorrent", "categories.json")
 		opts.QBitDir = filepath.Join(usr.HomeDir, "Library", "Application Support", "QBittorrent", "BT_backup")
 	}
 	return opts
@@ -86,12 +86,6 @@ func OptsCheck(opts *Opts) error {
 		return fmt.Errorf("can't find qBittorrent folder")
 	}
 
-	if opts.WithoutTags == false {
-		if _, err := os.Stat(opts.Config); os.IsNotExist(err) {
-			return fmt.Errorf("can not read qBittorrent config file. Try run and close qBittorrent if you have not done" +
-				" so already, or specify the path explicitly or do not import tags")
-		}
-	}
 	if runtime.GOOS == "linux" {
 		if opts.SearchPaths == nil {
 			return fmt.Errorf("on linux systems you must define search path for torrents")

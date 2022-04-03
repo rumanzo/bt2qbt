@@ -33,7 +33,7 @@ func TestOptionsArgs(t *testing.T) {
 			args: []string{
 				"-s", "/dir",
 				"-d", "/dir",
-				"-c", "/dir/q.conf",
+				"-c", "/dir/q.json",
 				"-r", "dir1,dir2", "-r", "dir3,dir4",
 				"--sep", "/",
 				"-t", "/dir5", "-t", "/dir6/",
@@ -42,7 +42,7 @@ func TestOptionsArgs(t *testing.T) {
 			expected: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
-				Config:        "/dir/q.conf",
+				Categories:    "/dir/q.json",
 				Replaces:      []string{"dir1,dir2", "dir3,dir4"},
 				PathSeparator: "/",
 				SearchPaths:   []string{"/dir5", "/dir6/"},
@@ -54,7 +54,7 @@ func TestOptionsArgs(t *testing.T) {
 			args: []string{
 				"--source", "/dir",
 				"--destination", "/dir",
-				"--config", "/dir/q.conf",
+				"--categories", "/dir/q.json",
 				"--replace", "dir1,dir2", "-r", "dir3,dir4",
 				"--sep", "/",
 				"--search", "/dir5", "-t", "/dir6/",
@@ -63,7 +63,7 @@ func TestOptionsArgs(t *testing.T) {
 			expected: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
-				Config:        "/dir/q.conf",
+				Categories:    "/dir/q.json",
 				Replaces:      []string{"dir1,dir2", "dir3,dir4"},
 				PathSeparator: "/",
 				SearchPaths:   []string{"/dir5", "/dir6/"},
@@ -96,7 +96,7 @@ func TestOptionsHandle(t *testing.T) {
 			opts: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
-				Config:        "/dir/q.conf",
+				Categories:    "/dir/q.json",
 				Replaces:      []string{"dir1,dir2", "dir3,dir4"},
 				PathSeparator: "/",
 				SearchPaths:   []string{"/dir5", "/dir6/"},
@@ -142,7 +142,7 @@ func TestOptionsChecks(t *testing.T) {
 			opts: &Opts{
 				BitDir:        "/dir",
 				QBitDir:       "/dir",
-				Config:        "/dir/q.conf",
+				Categories:    "/dir/q.json",
 				Replaces:      []string{"dir1,dir2", "dir3,dir4"},
 				PathSeparator: "/",
 				SearchPaths:   []string{"/dir5", "/dir6/"},
@@ -155,7 +155,6 @@ func TestOptionsChecks(t *testing.T) {
 			opts: &Opts{
 				BitDir:      "../../test/data",
 				QBitDir:     "../../test/data",
-				Config:      "../../test/data/testfileset.torrent",
 				SearchPaths: []string{},
 			},
 			mustFail: false,
@@ -165,23 +164,14 @@ func TestOptionsChecks(t *testing.T) {
 			opts: &Opts{
 				BitDir:      "/dir",
 				QBitDir:     "/dir",
-				Config:      "/dir/q.conf",
+				Categories:  "/dir/q.json",
 				Replaces:    []string{"dir1,dir2,dir4", "dir4"},
 				SearchPaths: []string{"/dir5", "/dir6/"},
 			},
 			mustFail: true,
 		},
 		{
-			name: "004 Must fail do not exists config test",
-			opts: &Opts{
-				BitDir:  "../../test/data",
-				QBitDir: "../../test/data",
-				Config:  "/dir/q.conf",
-			},
-			mustFail: true,
-		},
-		{
-			name: "005 Must fail do not exists qbitdir test",
+			name: "004 Must fail do not exists qbitdir test",
 			opts: &Opts{
 				BitDir:      "../../test/data",
 				QBitDir:     "/dir",

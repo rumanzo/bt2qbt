@@ -1,50 +1,65 @@
 package transfer
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/go-ini/ini"
 	"github.com/rumanzo/bt2qbt/internal/options"
-	"github.com/rumanzo/bt2qbt/pkg/helpers"
+	"io/ioutil"
 	"os"
-	"strings"
-	"time"
 )
 
-func ProcessLabels(opts *options.Opts, newtags []string) {
-	var oldtags string
-	cfg, err := ini.Load(opts.Config)
-	ini.PrettyFormat = false
-	ini.PrettySection = false
-	if err != nil {
-		fmt.Println("Can not read qBittorrent config file. Try to specify the path explicitly or do not import tags")
-		time.Sleep(30 * time.Second)
-		os.Exit(1)
-	}
-	if _, err := cfg.GetSection("BitTorrent"); err != nil {
-		cfg.NewSection("BitTorrent")
+func ProcessLabels(opts *options.Opts, newtags []string) error {
+	categories := map[string]map[string]string{}
 
-		//Dirty hack for section order. Sorry
-		kv := cfg.Section("Network").KeysHash()
-		cfg.DeleteSection("Network")
-		cfg.NewSection("Network")
-		for key, value := range kv {
-			cfg.Section("Network").NewKey(key, value)
-		}
-		//End of dirty hack
+	// check if categories is new file. If it exists it must be unmarshaled. Default categories file contains only {}
+	var categoriesIsNew bool
+	file, err := os.OpenFile(opts.Categories, os.O_RDWR, 0644)
+	if errors.Is(err, os.ErrNotExist) {
+		categoriesIsNew = true
+	} else if err != nil {
+		return errors.New(fmt.Sprintf("Unexpected error while open categories.json. Error:\n%v\n", err))
 	}
-	if cfg.Section("BitTorrent").HasKey("Session\\Tags") {
-		oldtags = cfg.Section("BitTorrent").Key("Session\\Tags").String()
-		for _, tag := range strings.Split(oldtags, ", ") {
-			if exists, t := helpers.CheckExists(tag, newtags); !exists {
-				newtags = append(newtags, t)
-			}
+
+	if !categoriesIsNew {
+		dataRaw, err := ioutil.ReadAll(file)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Unexpected error while read categories.json. Error:\n%v\n", err))
 		}
-		cfg.Section("BitTorrent").Key("Session\\Tags").SetValue(strings.Join(newtags, ", "))
-	} else {
-		cfg.Section("BitTorrent").NewKey("Session\\Tags", strings.Join(newtags, ", "))
+
+		err = file.Close()
+		if err != nil {
+			return errors.New(fmt.Sprintf("Can't close categories.json. Error:\n%v\n", err))
+		}
+
+		err = json.Unmarshal(dataRaw, &categories)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Unexpected error while unmarshaling categories.json. Error:\n%v\n", err))
+		}
 	}
-	err = cfg.SaveTo(opts.Config)
+
+	for _, tag := range newtags {
+		if _, ok := categories[tag]; !ok { // append only if key doesn't already exist
+			categories[tag] = map[string]string{"save_path": ""}
+		}
+	}
+
+	if !categoriesIsNew {
+		err = os.Rename(opts.Categories, opts.Categories+".bak")
+		if err != nil {
+			return errors.New(fmt.Sprintf("Can't move categories.json to categories.bak. Error:\n%v\n", err))
+		}
+	}
+
+	newCategories, err := json.Marshal(categories)
 	if err != nil {
-		fmt.Printf("Unexpected error while save qBittorrent config.ini. Error:\n%v\n", err)
+		return errors.New(fmt.Sprintf("Can't marshal categories. Error:\n%v\n", err))
 	}
+
+	err = ioutil.WriteFile(opts.Categories, newCategories, 0644)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Can't write categories.json. Error:\n%v\n", err))
+	}
+
+	return nil
 }
