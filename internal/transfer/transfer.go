@@ -146,13 +146,13 @@ func (transfer *TransferStructure) GetTrackers(trackers interface{}) {
 	switch strct := trackers.(type) {
 	case []string:
 		for _, str := range strct {
-			for _, str := range strings.Fields(str) {
-				transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{str})
+			for _, substr := range strings.Fields(str) {
+				transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{substr})
 			}
 		}
 	case string:
-		for _, str := range strings.Fields(strct) {
-			transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{str})
+		for _, substr := range strings.Fields(strct) {
+			transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{substr})
 		}
 	case []interface{}:
 		for _, st := range strct {
