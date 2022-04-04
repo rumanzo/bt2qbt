@@ -1139,6 +1139,9 @@ func TestTransferStructure_GetTrackers(t *testing.T) {
 				"test6",
 			},
 		},
+		[]interface{}{
+			[]interface{}{"test7", "test8"},
+		},
 	}
 	expect := [][]string{
 		[]string{"test1"},
@@ -1147,6 +1150,8 @@ func TestTransferStructure_GetTrackers(t *testing.T) {
 		[]string{"test4"},
 		[]string{"test5"},
 		[]string{"test6"},
+		[]string{"test7"},
+		[]string{"test8"},
 	}
 	transferStructure.GetTrackers(testTrackers)
 	if !reflect.DeepEqual(transferStructure.Fastresume.Trackers, expect) {

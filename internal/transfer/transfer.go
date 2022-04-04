@@ -144,15 +144,20 @@ func (transfer *TransferStructure) HandleLabels() {
 // GetTrackers recurstive function for searching trackers in resume item trackers
 func (transfer *TransferStructure) GetTrackers(trackers interface{}) {
 	switch strct := trackers.(type) {
-	case []interface{}:
-		for _, st := range strct {
-			transfer.GetTrackers(st)
+	case []string:
+		for _, str := range strct {
+			for _, str := range strings.Fields(str) {
+				transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{str})
+			}
 		}
 	case string:
 		for _, str := range strings.Fields(strct) {
 			transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{str})
 		}
-
+	case []interface{}:
+		for _, st := range strct {
+			transfer.GetTrackers(st)
+		}
 	}
 }
 
