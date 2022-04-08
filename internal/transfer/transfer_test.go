@@ -1124,36 +1124,50 @@ func TestTransferStructure_HandlePriority(t *testing.T) {
 	}
 }
 
-func TestTransferStructure_GetTrackers(t *testing.T) {
+func TestTransferStructure_HandleTrackers(t *testing.T) {
 	transferStructure := TransferStructure{
 		Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
-	}
-	testTrackers := []interface{}{
-		"test1",
-		"test2",
-		[]interface{}{
-			"test3",
-			"test4",
-			[]interface{}{
-				"test5",
-				"test6",
+		ResumeItem: &utorrentStructs.ResumeItem{
+			Trackers: []interface{}{
+				"http://test1.org",
+				"udp://test1.org",
+				"http://test1.local",
+				"udp://test1.local",
+				[]interface{}{
+					"http://test2.org:80",
+					"udp://test2.org:8080",
+					"http://test2.local:80",
+					"udp://test2.local:8080",
+					[]interface{}{
+						"http://test3.org:80/somepath",
+						"udp://test3.org:8080/somepath",
+						"http://test3.local:80/somepath",
+						"udp://test3.local:8080/somepath",
+					},
+				},
+				[]interface{}{
+					[]interface{}{
+						"http://test4.org:80/",
+						"udp://test4.org:8080/",
+						"http://test4.local:80/",
+						"udp://test4.local:8080/",
+					},
+				},
 			},
-		},
-		[]interface{}{
-			[]interface{}{"test7", "test8"},
 		},
 	}
 	expect := [][]string{
-		[]string{"test1"},
-		[]string{"test2"},
-		[]string{"test3"},
-		[]string{"test4"},
-		[]string{"test5"},
-		[]string{"test6"},
-		[]string{"test7"},
-		[]string{"test8"},
+		[]string{
+			"http://test1.org", "udp://test1.org",
+			"http://test2.org:80", "udp://test2.org:8080",
+			"http://test3.org:80/somepath", "udp://test3.org:8080/somepath",
+			"http://test4.org:80/", "udp://test4.org:8080/"},
+		[]string{"http://test1.local", "udp://test1.local",
+			"http://test2.local:80", "udp://test2.local:8080",
+			"http://test3.local:80/somepath", "udp://test3.local:8080/somepath",
+			"http://test4.local:80/", "udp://test4.local:8080/"},
 	}
-	transferStructure.GetTrackers(testTrackers)
+	transferStructure.HandleTrackers()
 	if !reflect.DeepEqual(transferStructure.Fastresume.Trackers, expect) {
 		t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", transferStructure.Fastresume.Trackers, expect)
 	}

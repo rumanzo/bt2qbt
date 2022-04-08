@@ -29,7 +29,7 @@ func (transfer *TransferStructure) HandleStructures() {
 	transfer.HandleTags()
 	transfer.HandleLabels()
 
-	transfer.GetTrackers(transfer.ResumeItem.Trackers)
+	transfer.HandleTrackers()
 	transfer.HandlePriority() // important handle priorities before handling pieces
 
 	/*

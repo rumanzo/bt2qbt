@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func ASCIIConvert(s string) string {
@@ -92,4 +93,21 @@ func CopyFile(src string, dst string) error {
 		return err
 	}
 	return nil
+}
+
+func GetStrings(trackers interface{}) []string {
+	ntrackers := []string{}
+	switch strct := trackers.(type) {
+	case []string:
+		for _, str := range strct {
+			ntrackers = append(ntrackers, strings.Fields(str)...)
+		}
+	case string:
+		ntrackers = append(ntrackers, strings.Fields(strct)...)
+	case []interface{}:
+		for _, st := range strct {
+			ntrackers = append(ntrackers, GetStrings(st)...)
+		}
+	}
+	return ntrackers
 }

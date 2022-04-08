@@ -15,7 +15,7 @@ type ResumeItem struct {
 	Started          int64           `bencode:"started"`
 	Targets          [][]interface{} `bencode:"targets,omitempty"`
 	Time             int64           `bencode:"time"`
-	Trackers         []string        `bencode:"trackers,omitempty"`
+	Trackers         interface{}     `bencode:"trackers,omitempty"`
 	UpSpeed          int64           `bencode:"upspeed"`
 	Uploaded         int64           `bencode:"uploaded"`
 }

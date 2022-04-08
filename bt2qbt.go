@@ -46,7 +46,7 @@ func main() {
 	resumeItems := map[string]*utorrentStructs.ResumeItem{}
 	err = bencode.DecodeBytes(b, &resumeItems)
 	if err != nil {
-		log.Println("Can't process convert resume.dat")
+		log.Printf("Can't convert resume.dat. Err: %v\n", err)
 		time.Sleep(30 * time.Second)
 		os.Exit(1)
 	}

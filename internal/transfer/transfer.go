@@ -6,11 +6,13 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
+	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
 	"io"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -141,23 +143,29 @@ func (transfer *TransferStructure) HandleLabels() {
 	}
 }
 
-// GetTrackers recurstive function for searching trackers in resume item trackers
-func (transfer *TransferStructure) GetTrackers(trackers interface{}) {
-	switch strct := trackers.(type) {
-	case []string:
-		for _, str := range strct {
-			for _, substr := range strings.Fields(str) {
-				transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{substr})
-			}
+var localTracker = regexp.MustCompile(`(http|udp)://\S+\.local\S*`)
+
+func (transfer *TransferStructure) HandleTrackers() {
+	trackers := helpers.GetStrings(transfer.ResumeItem.Trackers)
+	trackersMap := map[string][]string{}
+	var index string
+	for _, tracker := range trackers {
+		if localTracker.MatchString(tracker) {
+			index = "local"
+		} else {
+			index = "main"
 		}
-	case string:
-		for _, substr := range strings.Fields(strct) {
-			transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, []string{substr})
+		if _, ok := trackersMap[index]; ok {
+			trackersMap[index] = append(trackersMap[index], tracker)
+		} else {
+			trackersMap[index] = []string{tracker}
 		}
-	case []interface{}:
-		for _, st := range strct {
-			transfer.GetTrackers(st)
-		}
+	}
+	if val, ok := trackersMap["main"]; ok {
+		transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, val)
+	}
+	if val, ok := trackersMap["local"]; ok {
+		transfer.Fastresume.Trackers = append(transfer.Fastresume.Trackers, val)
 	}
 }
 
