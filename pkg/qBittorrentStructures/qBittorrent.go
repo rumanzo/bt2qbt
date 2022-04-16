@@ -36,12 +36,12 @@ type QBittorrentFastresume struct {
 	NumDownloaded             int64                          `bencode:"num_downloaded"`
 	NumIncomplete             int64                          `bencode:"num_incomplete"`
 	Paused                    int64                          `bencode:"paused"` // 	integer. 1 if the torrent is paused, 0 otherwise.
-	Peers                     int64                          `bencode:"peers"`  // string. This string contains IPv4 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 4 bytes IPv4 address followed by 2 bytes port. Hence, the length of this string should be divisible by 6.
-	Peers6                    int64                          `bencode:"peers6"` // 	string. This string contains IPv6 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 16 bytes IPv6 address followed by 2 bytes port. The length of this string should be divisible by 18.
+	Peers                     string                         `bencode:"peers"`  // string. This string contains IPv4 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 4 bytes IPv4 address followed by 2 bytes port. Hence, the length of this string should be divisible by 6.
+	Peers6                    string                         `bencode:"peers6"` // 	string. This string contains IPv6 and port pairs of peers we were connected to last session. The endpoints are in compact representation. 16 bytes IPv6 address followed by 2 bytes port. The length of this string should be divisible by 18.
 	Pieces                    []byte                         `bencode:"pieces"` // A string with piece flags, one character per piece. Bit 1 means we have that piece. Bit 2 means we have verified that this piece is correct. This only applies when the torrent is in seed_mode.
 	QBtCategory               string                         `bencode:"qBt-category"`
 	QBtContentLayout          string                         `bencode:"qBt-contentLayout"` // Original, Subfolder, NoSubfolder
-	QBtFirstLastPiecePriority string                         `bencode:"qBt-firstLastPiecePriority"`
+	QBtFirstLastPiecePriority int64                          `bencode:"qBt-firstLastPiecePriority"`
 	QbtName                   string                         `bencode:"qBt-name"`
 	QbtRatioLimit             int64                          `bencode:"qBt-ratioLimit"`
 	QbtSavePath               string                         `bencode:"qBt-savePath"`
@@ -61,5 +61,5 @@ type QBittorrentFastresume struct {
 	Unfinished                *[]interface{}                 `bencode:"unfinished,omitempty"`
 	UploadMode                int64                          `bencode:"upload_mode"`       // integer. 1 if the torrent_flags::upload_mode is set.
 	UploadRateLimit           int64                          `bencode:"upload_rate_limit"` // integer. In case this torrent has a per-torrent upload rate limit, this is that limit. In bytes per second.
-	UrlList                   int64                          `bencode:"url-list"`          // list of strings. List of url-seed URLs used by this torrent. The URLs are expected to be properly encoded and not contain any illegal url characters.
+	UrlList                   []string                       `bencode:"url-list"`          // list of strings. List of url-seed URLs used by this torrent. The URLs are expected to be properly encoded and not contain any illegal url characters.
 }
