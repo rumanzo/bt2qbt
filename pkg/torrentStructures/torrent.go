@@ -12,24 +12,19 @@ type Torrent struct {
 }
 
 type TorrentInfo struct {
-	FileDuration []int64                     `bencode:"file-duration,omitempty"`
-	FileMedia    []int64                     `bencode:"file-media,omitempty"`
-	Files        []*TorrentFile              `bencode:"files,omitempty"`
-	FileTree     map[string]*TorrentFileTree `bencode:"file tree,omitempty"`
-	Length       int64                       `bencode:"length,omitempty"`
-	MetaVersion  int64                       `bencode:"meta version,omitempty"`
-	Md5sum       string                      `bencode:"md5sum,omitempty"`
-	Name         string                      `bencode:"name,omitempty"`
-	NameUTF8     string                      `bencode:"name.utf-8,omitempty"`
-	PieceLength  int64                       `bencode:"piece length,omitempty"`
-	Pieces       []byte                      `bencode:"pieces,omitempty"`
-	Private      uint8                       `bencode:"private,omitempty"`
-	Profiles     []*TorrentProfile           `bencode:"profiles,omitempty"`
-}
-
-type TorrentFileTree struct {
-	Length     int64  `bencode:"length,omitempty"`
-	PiecesRoot []byte `bencode:"pieces root"`
+	FileDuration []int64                `bencode:"file-duration,omitempty"`
+	FileMedia    []int64                `bencode:"file-media,omitempty"`
+	Files        []*TorrentFile         `bencode:"files,omitempty"`
+	FileTree     map[string]interface{} `bencode:"file tree,omitempty"`
+	Length       int64                  `bencode:"length,omitempty"`
+	MetaVersion  int64                  `bencode:"meta version,omitempty"`
+	Md5sum       string                 `bencode:"md5sum,omitempty"`
+	Name         string                 `bencode:"name,omitempty"`
+	NameUTF8     string                 `bencode:"name.utf-8,omitempty"`
+	PieceLength  int64                  `bencode:"piece length,omitempty"`
+	Pieces       []byte                 `bencode:"pieces,omitempty"`
+	Private      uint8                  `bencode:"private,omitempty"`
+	Profiles     []*TorrentProfile      `bencode:"profiles,omitempty"`
 }
 
 type TorrentFile struct {
