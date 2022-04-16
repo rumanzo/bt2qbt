@@ -921,11 +921,11 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{Length: 5},
-							&torrentStructures.TorrentFile{Length: 5},
-							&torrentStructures.TorrentFile{Length: 5},
-							&torrentStructures.TorrentFile{Length: 5},
-							&torrentStructures.TorrentFile{Length: 5},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 5},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 5},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 5},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 5},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 5},
 						},
 						PieceLength: 5,
 					},
@@ -954,9 +954,9 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{Length: 13},
-							&torrentStructures.TorrentFile{Length: 7},
-							&torrentStructures.TorrentFile{Length: 5},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 13},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 7},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 5},
 						},
 						PieceLength: 5, // 25 total
 					},
@@ -985,9 +985,9 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{Length: 9},
-							&torrentStructures.TorrentFile{Length: 6},
-							&torrentStructures.TorrentFile{Length: 10},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 9},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 6},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 10},
 						},
 						PieceLength: 5, // 25 total
 					},
@@ -1016,9 +1016,9 @@ func TestTransferStructure_HandlePieces(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{Length: 13},
-							&torrentStructures.TorrentFile{Length: 7},
-							&torrentStructures.TorrentFile{Length: 5},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 13},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 7},
+							&torrentStructures.TorrentFile{Path: []string{`/`}, Length: 5},
 						},
 						PieceLength: 5, // 25 total
 					},
@@ -1252,9 +1252,13 @@ func TestTransferStructure_HandleState(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
 						},
 					},
 				},
@@ -1282,9 +1286,13 @@ func TestTransferStructure_HandleState(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
 						},
 					},
 				},
@@ -1312,9 +1320,13 @@ func TestTransferStructure_HandleState(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
 						},
 					},
 				},
@@ -1342,9 +1354,13 @@ func TestTransferStructure_HandleState(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
 						},
 					},
 				},
@@ -1372,9 +1388,13 @@ func TestTransferStructure_HandleState(t *testing.T) {
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
 						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
-							&torrentStructures.TorrentFile{},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
 						},
 					},
 				},

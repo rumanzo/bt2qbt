@@ -87,19 +87,17 @@ func (transfer *TransferStructure) HandleState() {
 		transfer.Fastresume.Paused = 1
 		transfer.Fastresume.AutoManaged = 0
 	} else {
-		if transfer.TorrentFile.Info.Files != nil {
-			if len(transfer.TorrentFile.Info.Files) > 1 {
-				var parted bool
-				for _, prio := range transfer.ResumeItem.Prio {
-					if byte(prio) == 0 || byte(prio) == 128 {
-						parted = true
-					}
+		if len(transfer.TorrentFile.GetFileList()) > 1 {
+			var parted bool
+			for _, prio := range transfer.ResumeItem.Prio {
+				if byte(prio) == 0 || byte(prio) == 128 {
+					parted = true
 				}
-				if parted {
-					transfer.Fastresume.Paused = 1
-					transfer.Fastresume.AutoManaged = 0
-					return
-				}
+			}
+			if parted {
+				transfer.Fastresume.Paused = 1
+				transfer.Fastresume.AutoManaged = 0
+				return
 			}
 		}
 		transfer.Fastresume.Paused = 0
@@ -195,7 +193,7 @@ func (transfer *TransferStructure) HandlePieces() {
 	if transfer.Fastresume.Unfinished != nil {
 		transfer.FillWholePieces(0)
 	} else {
-		if len(transfer.TorrentFile.Info.Files) > 0 {
+		if len(transfer.TorrentFile.GetFileList()) > 0 {
 			transfer.FillPiecesParted()
 		} else {
 			transfer.FillWholePieces(1)
@@ -220,7 +218,7 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 	var fileOffsets []Offset
 	bytesLength := int64(0)
-	for _, file := range transfer.TorrentFile.Info.Files {
+	for _, file := range transfer.TorrentFile.Info.Files { // need to adapt for torrents v2 version
 		fileFirstOffset := bytesLength + 1
 		bytesLength += file.Length
 		fileLastOffset := bytesLength
@@ -300,14 +298,8 @@ func (transfer *TransferStructure) HandleSavePaths() {
 				transfer.Fastresume.QBtContentLayout = "NoSubfolder"
 				// NoSubfolder always has full mapped files
 				// so we append all of them
-				for _, filePath := range transfer.TorrentFile.Info.Files {
-					var paths []string
-					if len(filePath.PathUTF8) != 0 {
-						paths = filePath.PathUTF8
-					} else {
-						paths = filePath.Path
-					}
-					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles, fileHelpers.Join(paths, transfer.Opts.PathSeparator))
+				for _, filePath := range transfer.TorrentFile.GetFileList() {
+					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles, fileHelpers.Normalize(filePath, transfer.Opts.PathSeparator))
 				}
 				// and then doing remap if resumeItem contain target field
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
