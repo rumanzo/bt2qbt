@@ -32,7 +32,7 @@ func getFile(f interface{}) []string {
 			for _, path := range s {
 				nfiles = append(nfiles, fileHelpers.Join(append([]string{k}, path), "/"))
 			}
-		} else { // it's mean it was last node, juse return key
+		} else { // it's mean it was last node, just return key
 			nfiles = append(nfiles, k)
 		}
 	}
