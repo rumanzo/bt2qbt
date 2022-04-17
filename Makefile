@@ -25,3 +25,4 @@ linux:
 
 darwin:
 	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=amd64 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_amd64_macos
+	$(dockercmd) $(buildenvs) -e GOOS=darwin -e GOARCH=arm64 golang:$(gotag) go build -v $(buildtags) $(ldflags) -o bt2qbt_v$(version)_arm64_macos
