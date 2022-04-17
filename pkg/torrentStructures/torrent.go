@@ -1,14 +1,16 @@
 package torrentStructures
 
 type Torrent struct {
-	Announce     string                    `bencode:"announce"`
-	Comment      string                    `bencode:"comment"`
-	CreatedBy    string                    `bencode:"created by"`
-	CreationDate int64                     `bencode:"creation date"`
-	Info         *TorrentInfo              `bencode:"info"`
-	Publisher    string                    `bencode:"publisher,omitempty"`
-	PublisherUrl string                    `bencode:"publisher-url,omitempty"`
-	PieceLayers  *map[string][]interface{} `bencode:"piece layers"`
+	Announce       string                  `bencode:"announce"`
+	Comment        string                  `bencode:"comment"`
+	CreatedBy      string                  `bencode:"created by"`
+	CreationDate   int64                   `bencode:"creation date"`
+	Info           *TorrentInfo            `bencode:"info"`
+	Publisher      string                  `bencode:"publisher,omitempty"`
+	PublisherUrl   string                  `bencode:"publisher-url,omitempty"`
+	PieceLayers    *map[string]interface{} `bencode:"piece layers"`
+	FilePathLength *[]FilepathLength       `bencode:"-"` // service field
+	FilePaths      *[]string               `bencode:"-"` // service field
 }
 
 type TorrentInfo struct {
@@ -39,4 +41,9 @@ type TorrentProfile struct {
 	Height int64  `bencode:"height,omitempty"`
 	Vcodec []byte `bencode:"vcodec,omitempty"`
 	Width  int64  `bencode:"width,omitempty"`
+}
+
+type FilepathLength struct {
+	Path   string
+	Length int64
 }

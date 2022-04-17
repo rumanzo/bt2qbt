@@ -89,9 +89,10 @@ func (transfer *TransferStructure) HandleState() {
 	} else {
 		if len(transfer.TorrentFile.GetFileList()) > 1 {
 			var parted bool
-			for _, prio := range transfer.ResumeItem.Prio {
-				if byte(prio) == 0 || byte(prio) == 128 {
+			for _, prio := range transfer.Fastresume.FilePriority {
+				if prio == 0 {
 					parted = true
+					break
 				}
 			}
 			if parted {
@@ -168,6 +169,13 @@ func (transfer *TransferStructure) HandleTrackers() {
 }
 
 func (transfer *TransferStructure) HandlePriority() {
+	if transfer.TorrentFile.IsV2OrHybryd() { // so we need get only odd
+		trimmedPrio := make([]byte, 0, len(transfer.ResumeItem.Prio)/2)
+		for i := 0; i < len(transfer.ResumeItem.Prio); i += 2 {
+			trimmedPrio = append(trimmedPrio, transfer.ResumeItem.Prio[i])
+		}
+		transfer.ResumeItem.Prio = trimmedPrio
+	}
 	for _, c := range transfer.ResumeItem.Prio {
 		if i := int(c); (i == 0) || (i == 128) { // if priority not selected
 			transfer.Fastresume.FilePriority = append(transfer.Fastresume.FilePriority, 0)
@@ -218,7 +226,7 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 	var fileOffsets []Offset
 	bytesLength := int64(0)
-	for _, file := range transfer.TorrentFile.Info.Files { // need to adapt for torrents v2 version
+	for _, file := range transfer.TorrentFile.GetFileListWB() { // need to adapt for torrents v2 version
 		fileFirstOffset := bytesLength + 1
 		bytesLength += file.Length
 		fileLastOffset := bytesLength
@@ -270,7 +278,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		}
 		lastPathName := fileHelpers.Base(transfer.ResumeItem.Path)
 
-		if len(transfer.TorrentFile.Info.Files) > 0 {
+		if len(transfer.TorrentFile.GetFileList()) > 0 {
 			if lastPathName == torrentName {
 				transfer.Fastresume.QBtContentLayout = "Original"
 				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, transfer.Opts.PathSeparator)
