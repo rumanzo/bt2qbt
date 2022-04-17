@@ -87,19 +87,18 @@ func (transfer *TransferStructure) HandleState() {
 		transfer.Fastresume.Paused = 1
 		transfer.Fastresume.AutoManaged = 0
 	} else {
-		if transfer.TorrentFile.Info.Files != nil {
-			if len(transfer.TorrentFile.Info.Files) > 1 {
-				var parted bool
-				for _, prio := range transfer.ResumeItem.Prio {
-					if byte(prio) == 0 || byte(prio) == 128 {
-						parted = true
-					}
+		if len(transfer.TorrentFile.GetFileList()) > 1 {
+			var parted bool
+			for _, prio := range transfer.Fastresume.FilePriority {
+				if prio == 0 {
+					parted = true
+					break
 				}
-				if parted {
-					transfer.Fastresume.Paused = 1
-					transfer.Fastresume.AutoManaged = 0
-					return
-				}
+			}
+			if parted {
+				transfer.Fastresume.Paused = 1
+				transfer.Fastresume.AutoManaged = 0
+				return
 			}
 		}
 		transfer.Fastresume.Paused = 0
@@ -170,6 +169,13 @@ func (transfer *TransferStructure) HandleTrackers() {
 }
 
 func (transfer *TransferStructure) HandlePriority() {
+	if transfer.TorrentFile.IsV2OrHybryd() { // so we need get only odd
+		trimmedPrio := make([]byte, 0, len(transfer.ResumeItem.Prio)/2)
+		for i := 0; i < len(transfer.ResumeItem.Prio); i += 2 {
+			trimmedPrio = append(trimmedPrio, transfer.ResumeItem.Prio[i])
+		}
+		transfer.ResumeItem.Prio = trimmedPrio
+	}
 	for _, c := range transfer.ResumeItem.Prio {
 		if i := int(c); (i == 0) || (i == 128) { // if priority not selected
 			transfer.Fastresume.FilePriority = append(transfer.Fastresume.FilePriority, 0)
@@ -195,7 +201,7 @@ func (transfer *TransferStructure) HandlePieces() {
 	if transfer.Fastresume.Unfinished != nil {
 		transfer.FillWholePieces(0)
 	} else {
-		if len(transfer.TorrentFile.Info.Files) > 0 {
+		if len(transfer.TorrentFile.GetFileList()) > 0 {
 			transfer.FillPiecesParted()
 		} else {
 			transfer.FillWholePieces(1)
@@ -220,7 +226,7 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 	var fileOffsets []Offset
 	bytesLength := int64(0)
-	for _, file := range transfer.TorrentFile.Info.Files {
+	for _, file := range transfer.TorrentFile.GetFileListWB() { // need to adapt for torrents v2 version
 		fileFirstOffset := bytesLength + 1
 		bytesLength += file.Length
 		fileLastOffset := bytesLength
@@ -272,7 +278,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		}
 		lastPathName := fileHelpers.Base(transfer.ResumeItem.Path)
 
-		if len(transfer.TorrentFile.Info.Files) > 0 {
+		if len(transfer.TorrentFile.GetFileList()) > 0 {
 			if lastPathName == torrentName {
 				transfer.Fastresume.QBtContentLayout = "Original"
 				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, transfer.Opts.PathSeparator)
@@ -300,14 +306,8 @@ func (transfer *TransferStructure) HandleSavePaths() {
 				transfer.Fastresume.QBtContentLayout = "NoSubfolder"
 				// NoSubfolder always has full mapped files
 				// so we append all of them
-				for _, filePath := range transfer.TorrentFile.Info.Files {
-					var paths []string
-					if len(filePath.PathUTF8) != 0 {
-						paths = filePath.PathUTF8
-					} else {
-						paths = filePath.Path
-					}
-					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles, fileHelpers.Join(paths, transfer.Opts.PathSeparator))
+				for _, filePath := range transfer.TorrentFile.GetFileList() {
+					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles, fileHelpers.Normalize(filePath, transfer.Opts.PathSeparator))
 				}
 				// and then doing remap if resumeItem contain target field
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {

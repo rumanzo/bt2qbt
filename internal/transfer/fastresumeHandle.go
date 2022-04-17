@@ -17,9 +17,10 @@ func (transfer *TransferStructure) HandleStructures() {
 	transfer.Fastresume.ActiveTime = transfer.ResumeItem.Runtime
 	transfer.Fastresume.AddedTime = transfer.ResumeItem.AddedOn
 	transfer.Fastresume.CompletedTime = transfer.ResumeItem.CompletedOn
-	transfer.Fastresume.Info = transfer.TorrentFile.Info
+	transfer.Fastresume.Info = transfer.TorrentFileRaw["info"]
 	transfer.Fastresume.InfoHash = transfer.ResumeItem.Info
 	transfer.Fastresume.SeedingTime = transfer.ResumeItem.Runtime
+	transfer.HandlePriority() //  handle priorities before handling pieces and state
 	transfer.HandleState()
 	transfer.Fastresume.FinishedTime = int64(time.Since(time.Unix(transfer.ResumeItem.CompletedOn, 0)).Minutes())
 
@@ -30,7 +31,6 @@ func (transfer *TransferStructure) HandleStructures() {
 	transfer.HandleLabels()
 
 	transfer.HandleTrackers()
-	transfer.HandlePriority() // important handle priorities before handling pieces
 
 	/*
 		pieces maps to a string whose length is a multiple of 20. It is to be subdivided into strings of length 20,
