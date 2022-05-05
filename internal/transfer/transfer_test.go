@@ -879,6 +879,57 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "026 Test torrent with signle file torrent and savepath in rootdirectory",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `D:\test.txt`,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test.txt",
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `D:/`,
+					SavePath:         `D:\`,
+					QBtContentLayout: "Original",
+				},
+			},
+		},
+		{
+			name: "027 Test torrent with signle file torrent and savepath in rootdirectory",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `D:\test_torrent`,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"dir2", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `D:/`,
+					SavePath:         `D:\`,
+					QBtContentLayout: "Original",
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {

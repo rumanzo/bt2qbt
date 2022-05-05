@@ -301,7 +301,10 @@ func (transfer *TransferStructure) HandleSavePaths() {
 						}
 					}
 				}
-				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, "/") + `/`
+				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, "/")
+				if string(transfer.Fastresume.QbtSavePath[len(transfer.Fastresume.QbtSavePath)-1]) != `/` {
+					transfer.Fastresume.QbtSavePath += `/`
+				}
 			} else {
 				transfer.Fastresume.QBtContentLayout = "NoSubfolder"
 				// NoSubfolder always has full mapped files
@@ -329,12 +332,13 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			}
 		} else {
 			transfer.Fastresume.QBtContentLayout = "Original" // utorrent\bittorrent don't support create subfolders for torrents with single file
-			if lastPathName == torrentName {
-				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, `/`) + `/`
-			} else {
+			if lastPathName != torrentName {
 				//it means that we have renamed path and targets item, and should have mapped files
 				transfer.Fastresume.MappedFiles = []string{lastPathName}
-				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, `/`) + `/`
+			}
+			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(transfer.ResumeItem.Path, `/`)
+			if string(transfer.Fastresume.QbtSavePath[len(transfer.Fastresume.QbtSavePath)-1]) != `/` {
+				transfer.Fastresume.QbtSavePath += `/`
 			}
 		}
 	}
@@ -351,7 +355,9 @@ func (transfer *TransferStructure) HandleSavePaths() {
 
 	transfer.Fastresume.SavePath = fileHelpers.Normalize(transfer.Fastresume.QbtSavePath, transfer.Opts.PathSeparator)
 	if transfer.Fastresume.QBtContentLayout == "Original" && !transfer.Magnet {
-		transfer.Fastresume.SavePath += transfer.Opts.PathSeparator
+		if string(transfer.Fastresume.SavePath[len(transfer.Fastresume.SavePath)-1]) != transfer.Opts.PathSeparator {
+			transfer.Fastresume.SavePath += transfer.Opts.PathSeparator
+		}
 	}
 }
 
