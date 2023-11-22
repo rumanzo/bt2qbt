@@ -2,8 +2,11 @@
 
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
 > [!IMPORTANT]
-> Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2
+> Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2. It should work with older version utorrent and newer version of qBittorrent, but it isn't tested.
 
+> [!IMPORTANT]
+> In most cases just enough run app. For windows users double click on downloaded exe file. But read notices and warnings below
+> 
 - [bt2qbt](#bt2qbt)
     - [Feature](#user-content-feature)
     - [Help](#user-content-help)
@@ -58,9 +61,12 @@ Usage:
   bt2qbt_v1.999_amd64.exe [OPTIONS]
 
 Application Options:
-  -s, --source=         Source directory that contains resume.dat and torrents files (default: C:\Users\user\AppData\Roaming\uTorrent)
-  -d, --destination=    Destination directory BT_backup (as default) (default: C:\Users\user\AppData\Local\qBittorrent\BT_backup)
-  -c, --config=         qBittorrent config file (for write tags) (default: C:\Users\user\AppData\Roaming\qBittorrent\qBittorrent.ini)
+  -s, --source=         Source directory that contains resume.dat and torrents files (default:
+                        C:\Users\rumanzo\AppData\Roaming\uTorrent)
+  -d, --destination=    Destination directory BT_backup (as default) (default:
+                        C:\Users\rumanzo\AppData\Local\qBittorrent\BT_backup)
+  -c, --categories=     Path to qBittorrent categories.json file (for write tags) (default:
+                        C:\Users\rumanzo\AppData\Roaming\qBittorrent\categories.json)
       --without-labels  Do not export/import labels
       --without-tags    Do not export/import tags
   -t, --search=         Additional search path for torrents files
@@ -69,12 +75,9 @@ Application Options:
                         Delimiter for from/to is comma - ,
                         Example: -r "D:/films,/home/user/films" -r "D:/music,/home/user/music"
 
-      --sep=            Default path separator that will use in all paths. You may need use this flag if you migrating from windows to linux in some cases
-                        (default: \)
+      --sep=            Default path separator that will use in all paths. You may need use this flag if you migrating
+                        from windows to linux in some cases (default: \)
   -v, --version         Show version
-
-Help Options:
-  -h, --help            Show this help message
 
 ```
 
