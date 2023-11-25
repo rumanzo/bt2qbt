@@ -1,6 +1,7 @@
 package transfer
 
 import (
+	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"time"
 )
 
@@ -8,7 +9,7 @@ func (transfer *TransferStructure) HandleStructures() {
 
 	if ok := transfer.ResumeItem.Targets; ok != nil {
 		for _, entry := range transfer.ResumeItem.Targets {
-			transfer.Targets[entry[0].(int64)] = entry[1].(string)
+			transfer.Targets[entry[0].(int64)] = helpers.HandleCesu8(entry[1].(string))
 		}
 	}
 

@@ -1029,7 +1029,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				},
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
-						Name: "test_torrent \\xed\\xa0\\xbc\\xed\\xb6\\x95",
+						Name: "test_torrent \xed\xa0\xbc\xed\xb6\x95",
 						Files: []*torrentStructures.TorrentFile{
 							&torrentStructures.TorrentFile{Path: []string{"dir1", "\xed\xa0\xbc\xed\xb6\x95 file1.txt"}},
 							&torrentStructures.TorrentFile{Path: []string{"\xed\xa0\xbc\xed\xb6\x95", "file2.txt"}},
@@ -1097,7 +1097,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				if err != nil {
 					t.Error(err.Error())
 				}
-				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n Diff: %v\n", testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, spew.Sdump(changes))
+				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v \n Expect %#v \n Diff: %v\n", testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, spew.Sdump(changes))
 			} else if equal && testCase.mustFail {
 				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %v\n", spew.Sdump(testCase.newTransferStructure.Fastresume))
 			}
