@@ -272,10 +272,13 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(helpers.HandleCesu8(transfer.ResumeItem.Path), "/")
 	} else {
 		var torrentName string
+		var torrentNameOriginal string
 		if transfer.TorrentFile.Info.NameUTF8 != "" {
 			torrentName = helpers.HandleCesu8(transfer.TorrentFile.Info.NameUTF8)
+			torrentNameOriginal = transfer.TorrentFile.Info.NameUTF8
 		} else {
 			torrentName = helpers.HandleCesu8(transfer.TorrentFile.Info.Name)
+			torrentNameOriginal = transfer.TorrentFile.Info.Name
 		}
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 
@@ -341,7 +344,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			}
 		} else {
 			transfer.Fastresume.QBtContentLayout = "Original" // utorrent\bittorrent don't support create subfolders for torrents with single file
-			if lastPathName != torrentName {
+			if lastPathName != torrentNameOriginal {
 				//it means that we have renamed path and targets item, and should have mapped files
 				transfer.Fastresume.MappedFiles = []string{lastPathName}
 			}

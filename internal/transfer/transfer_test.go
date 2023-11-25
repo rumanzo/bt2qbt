@@ -1168,6 +1168,29 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "034 Test torrent with windows single nofolder (original) path without replaces. Cesu8 emoji",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Path: "D:\\torrents\\test_torrent \xed\xa0\xbc\xed\xb6\x95.txt"},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent \xed\xa0\xbc\xed\xb6\x95.txt",
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath: `D:/torrents/`,
+					SavePath:    `D:\torrents\`,
+					MappedFiles: []string{
+						"test_torrent \xf0\x9f\x86\x95.txt",
+					},
+					QBtContentLayout: "Original",
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
