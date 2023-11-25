@@ -1,7 +1,9 @@
 package options
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jessevdk/go-flags"
+	"github.com/r3labs/diff/v2"
 	"reflect"
 	"testing"
 )
@@ -82,7 +84,11 @@ func TestOptionsArgs(t *testing.T) {
 			}
 			if testCase.expected != nil {
 				if !reflect.DeepEqual(testCase.expected, opts) && !testCase.mustFail {
-					t.Fatalf("Unexpected error: opts isn't equoptions:\n Got: %#v\n Expect %#v\n", opts, testCase.expected)
+					changes, err := diff.Diff(opts, testCase.expected, diff.DiscardComplexOrigin())
+					if err != nil {
+						t.Error(err.Error())
+					}
+					t.Fatalf("Unexpected error: opts isn't equoptions:\nGot: %#v\nExpect %#v\nDiff: %v\\n", opts, testCase.expected, spew.Sdump(changes))
 				}
 			}
 		})
@@ -121,14 +127,57 @@ func TestOptionsHandle(t *testing.T) {
 				SearchPaths:   []string{"/dir5", "/dir6/", "/bitdir"},
 			},
 		},
+		{
+			name: "003 Parse portable args test",
+			opts: &Opts{
+				BitDir:        `/dir1`,
+				QBitDir:       `C:\btportable\profile\qBittorrent\data\BT_backup\`,
+				PathSeparator: `\`,
+				SearchPaths:   []string{},
+			},
+			mustFail: false,
+			expected: &Opts{
+				BitDir:        `/dir1`,
+				QBitDir:       `C:\btportable\profile\qBittorrent\data\BT_backup\`,
+				Categories:    `C:\btportable\profile\qBittorrent\config\categories.json`,
+				SearchPaths:   []string{`/dir1`},
+				PathSeparator: `\`,
+			},
+		},
+		{
+			name: "004 Parse portable args test with categories file",
+			opts: &Opts{
+				BitDir:        `/dir1`,
+				QBitDir:       `C:\btportable\profile\qBittorrent\data\BT_backup\`,
+				Categories:    `C:\categories.json`,
+				PathSeparator: `\`,
+				SearchPaths:   []string{},
+			},
+			mustFail: false,
+			expected: &Opts{
+				BitDir:        `/dir1`,
+				QBitDir:       `C:\btportable\profile\qBittorrent\data\BT_backup\`,
+				Categories:    `C:\categories.json`,
+				SearchPaths:   []string{`/dir1`},
+				PathSeparator: `\`,
+			},
+		},
 	}
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
+			if testCase.opts.Categories == `` {
+				refOpts := MakeOpts()
+				testCase.opts.Categories = refOpts.Categories
+			}
 			HandleOpts(testCase.opts)
 			if testCase.expected != nil {
+				changes, err := diff.Diff(testCase.opts, testCase.expected, diff.DiscardComplexOrigin())
+				if err != nil {
+					t.Error(err.Error())
+				}
 				if !reflect.DeepEqual(testCase.expected, testCase.opts) && !testCase.mustFail {
-					t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v\n Expect %#v\n", testCase.opts, testCase.expected)
+					t.Fatalf("Unexpected error: opts isn't equal:\nGot: %#v\nExpect %#v\nDiff: %v\\\\n", testCase.opts, testCase.expected, spew.Sdump(changes))
 				}
 			}
 		})
