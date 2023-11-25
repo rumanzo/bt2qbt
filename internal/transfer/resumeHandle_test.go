@@ -4,7 +4,9 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/r3labs/diff/v2"
 	"github.com/rumanzo/bt2qbt/internal/options"
+	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
+	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"reflect"
 	"testing"
 )
@@ -134,6 +136,16 @@ func TestHandleTorrentFilePath(t *testing.T) {
 				Opts:            &options.Opts{BitDir: `C:\\temp`},
 			},
 		},
+		{
+			name:                 "007 Check emoji",
+			key:                  "normal_text \xf0\x9f\x86\x95 normal_text \xf0\x9f\x9a\x9c.txt.torrent",
+			newTransferStructure: &TransferStructure{Opts: &options.Opts{BitDir: `C:\\temp`}},
+			expected: &TransferStructure{
+				TorrentFilePath: "C:/temp/normal_text \xf0\x9f\x86\x95 normal_text \xf0\x9f\x9a\x9c.txt.torrent",
+				TorrentFileName: "normal_text \xf0\x9f\x86\x95 normal_text \xf0\x9f\x9a\x9c.txt.torrent",
+				Opts:            &options.Opts{BitDir: `C:\\temp`},
+			},
+		},
 	}
 
 	for _, testCase := range cases {
@@ -158,5 +170,25 @@ func TestPath(t *testing.T) {
 	err := helpers.DecodeTorrentFile("../../test/data/testfileset.torrent", nts)
 	if err != nil {
 		t.Fatalf("Can't decode torrent file with error: %v", err)
+	}
+}
+
+func TestEmojiResumeDecode(t *testing.T) {
+	resumeFilePath := "../../test/data/resume_emoji_clear.dat"
+	torrentsDir := "../../test/data/"
+	resumeFile := map[string]interface{}{}
+	err := helpers.DecodeTorrentFile(resumeFilePath, resumeFile)
+	if err != nil {
+		t.Fatalf("Can't decode torrent file with error: %v", err)
+	}
+	for k, _ := range resumeFile {
+		torrentFile := torrentStructures.Torrent{}
+		err := helpers.DecodeTorrentFile(fileHelpers.Join([]string{torrentsDir, helpers.HandleCesu8(k)}, "/"), &torrentFile)
+		if err != nil {
+			t.Fatalf("Can't decode torrent file with error: %v", err)
+		}
+		if torrentFile.CreationDate == 0 {
+			t.Fatal("Decoded values is wrong")
+		}
 	}
 }
