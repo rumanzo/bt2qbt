@@ -3,6 +3,7 @@ package options
 import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
+	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"log"
 	"os"
 	"os/user"
@@ -64,8 +65,20 @@ func ParseOpts(opts *Opts) *Opts {
 	return opts
 }
 
+// HandleOpts used for enrichment opts after first creation
 func HandleOpts(opts *Opts) {
 	opts.SearchPaths = append(opts.SearchPaths, opts.BitDir)
+
+	qbtDir := fileHelpers.Normalize(opts.QBitDir, `/`)
+	if strings.Contains(qbtDir, `profile/qBittorrent/data/BT_backup`) {
+		qbtRootDir, _ := strings.CutSuffix(qbtDir, `data/BT_backup`)
+
+		// check that user not define categories
+		refOpts := MakeOpts()
+		if refOpts.Categories == opts.Categories {
+			opts.Categories = fileHelpers.Join([]string{qbtRootDir, `config/categories.json`}, opts.PathSeparator)
+		}
+	}
 }
 
 func OptsCheck(opts *Opts) error {
