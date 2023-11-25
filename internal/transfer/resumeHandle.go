@@ -107,7 +107,7 @@ func HandleResumeItems(opts *options.Opts, resumeItems map[string]*utorrentStruc
 		transferStruct.ResumeItem = resumeItem
 		transferStruct.Replace = replaces
 		transferStruct.Opts = opts
-		go HandleResumeItem(key, &transferStruct, &chans, &wg)
+		go HandleResumeItem(helpers.HandleCesu8(key), &transferStruct, &chans, &wg)
 	}
 	go func() {
 		wg.Wait()

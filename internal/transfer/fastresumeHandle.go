@@ -1,6 +1,7 @@
 package transfer
 
 import (
+	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"time"
 )
 
@@ -8,12 +9,17 @@ func (transfer *TransferStructure) HandleStructures() {
 
 	if ok := transfer.ResumeItem.Targets; ok != nil {
 		for _, entry := range transfer.ResumeItem.Targets {
-			transfer.Targets[entry[0].(int64)] = entry[1].(string)
+			transfer.Targets[entry[0].(int64)] = helpers.HandleCesu8(entry[1].(string))
 		}
 	}
 
 	// if torrent name was renamed, add modified name
 	transfer.HandleCaption()
+	if transfer.TorrentFile.Info.NameUTF8 != "" {
+		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.NameUTF8)
+	} else {
+		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.Name)
+	}
 	transfer.Fastresume.ActiveTime = transfer.ResumeItem.Runtime
 	transfer.Fastresume.AddedTime = transfer.ResumeItem.AddedOn
 	transfer.Fastresume.CompletedTime = transfer.ResumeItem.CompletedOn

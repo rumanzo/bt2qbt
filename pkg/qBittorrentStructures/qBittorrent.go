@@ -30,6 +30,7 @@ type QBittorrentFastresume struct {
 	MappedFiles               []string       `bencode:"mapped_files,omitempty"` // list of strings. If any file in the torrent has been renamed, this entry contains a list of all the filenames. In the same order as in the torrent file.
 	MaxConnections            int64          `bencode:"max_connections"`        // integer. The max number of peer connections this torrent may have, if a limit is set.
 	MaxUploads                int64          `bencode:"max_uploads"`            // integer. The max number of unchoked peers this torrent may have, if a limit is set.
+	Name                      string         `bencode:"name"`
 	NumComplete               int64          `bencode:"num_complete"`
 	NumDownloaded             int64          `bencode:"num_downloaded"`
 	NumIncomplete             int64          `bencode:"num_incomplete"`

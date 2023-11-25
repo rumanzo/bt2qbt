@@ -57,3 +57,10 @@ func TestDecodeTorrentFile(t *testing.T) {
 		})
 	}
 }
+func TestEmojiCesu8(t *testing.T) {
+	cesu8 := "normal_text \xed\xa0\xbc\xed\xb6\x95 normal_text \xed\xa0\xbd\xed\xba\x9c.txt.torrent"
+	utf8 := "normal_text \xf0\x9f\x86\x95 normal_text \xf0\x9f\x9a\x9c.txt.torrent"
+	if utf8 != HandleCesu8(cesu8) {
+		t.Fatalf("Cesu8 to utf-8 transformation fail")
+	}
+}

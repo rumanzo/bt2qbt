@@ -3,6 +3,7 @@ package helpers
 import (
 	"bufio"
 	"bytes"
+	"github.com/crazytyper/go-cesu8"
 	"github.com/zeebo/bencode"
 	"io"
 	"io/ioutil"
@@ -110,4 +111,11 @@ func GetStrings(trackers interface{}) []string {
 		}
 	}
 	return ntrackers
+}
+
+func HandleCesu8(str string) string {
+	if strings.Contains(str, "\xed\xa0") {
+		return cesu8.DecodeString([]byte(str))
+	}
+	return str
 }
