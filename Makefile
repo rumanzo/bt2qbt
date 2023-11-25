@@ -8,6 +8,8 @@ buildenvs = -e CGO_ENABLED=0
 version = 1.999
 ldflags = -ldflags="-X 'main.version=$(version)' -X 'main.commit=$(commit)' -X 'main.buildImage=golang:$(gotag)'"
 
+.PHONY: all tests build
+
 all: | tests build
 
 tests:
