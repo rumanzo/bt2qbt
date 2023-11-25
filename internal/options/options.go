@@ -74,7 +74,7 @@ func HandleOpts(opts *Opts) {
 		qbtRootDir, _ := strings.CutSuffix(qbtDir, `data/BT_backup`)
 
 		// check that user not define categories
-		refOpts := MakeOpts()
+		refOpts := PrepareOpts()
 		if refOpts.Categories == opts.Categories {
 			opts.Categories = fileHelpers.Join([]string{qbtRootDir, `config/categories.json`}, opts.PathSeparator)
 		}

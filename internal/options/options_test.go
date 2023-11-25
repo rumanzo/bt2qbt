@@ -167,7 +167,7 @@ func TestOptionsHandle(t *testing.T) {
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
 			if testCase.opts.Categories == `` {
-				refOpts := MakeOpts()
+				refOpts := PrepareOpts()
 				testCase.opts.Categories = refOpts.Categories
 			}
 			HandleOpts(testCase.opts)
