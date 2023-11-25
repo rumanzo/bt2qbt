@@ -1007,7 +1007,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 		},
 		{
-			name: "030 Test torrent with windows folder (original) path without replaces. Emoji cesu8 in file and name",
+			name: "030 Test torrent with windows folder (original) path with renamed files. Emoji cesu8 in file and name",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -1041,13 +1041,13 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/torrents/`,
-					SavePath:         `D:\torrents\`,
-					QBtContentLayout: "Original",
+					QbtSavePath:      "D:/torrents/test_torrent \xf0\x9f\x86\x95",
+					SavePath:         "D:\\torrents\\test_torrent \xf0\x9f\x86\x95",
+					QBtContentLayout: "NoSubfolder",
 					MappedFiles: []string{
 						"E:\\somedir1 \xf0\x9f\x86\x95\\\xf0\x9f\x86\x95 renamed_test_torrent2.txt",
 						"\\\\somedir\\somedir4 \xf0\x9f\x86\x95\\\xf0\x9f\x86\x95 renamed_test_torrent3.txt",
-						"test_torrent \xf0\x9f\x86\x95\\renamed \xf0\x9f\x86\x95 file1.txt",
+						"renamed \xf0\x9f\x86\x95 file1.txt",
 					},
 				},
 			},
@@ -1078,6 +1078,92 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 						"dir1\\\xf0\x9f\x86\x95 file1.txt",
 						"\xf0\x9f\x86\x95\\file2.txt",
 						"file0 \xf0\x9f\x86\x95.txt",
+					},
+				},
+			},
+		},
+		{
+			name: "032 Test torrent with windows folder without renamed files. Emoji cesu8 in file and torrent name",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Path: "D:\\torrents\\test_torrent"},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "\xed\xa0\xbc\xed\xb6\x95 file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"\xed\xa0\xbc\xed\xb6\x95", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0 \xed\xa0\xbc\xed\xb6\x95.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2 \xed\xa0\xbc\xed\xb6\x95.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      "D:/torrents/test_torrent",
+					SavePath:         "D:\\torrents\\test_torrent",
+					QBtContentLayout: "NoSubfolder",
+					MappedFiles: []string{
+						"dir1\\\xf0\x9f\x86\x95 file1.txt",
+						"\xf0\x9f\x86\x95\\file2.txt",
+						"file0 \xf0\x9f\x86\x95.txt",
+						`file1.txt`,
+						"file2 \xf0\x9f\x86\x95.txt",
+					},
+				},
+			},
+		},
+		{
+			name: "033 Test torrent with windows folder with renamed files. Emoji cesu8 in file and torrent name",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: "D:\\torrents\\test_torrent",
+					Targets: [][]interface{}{
+						[]interface{}{
+							int64(0),
+							"E:\\somedir1 \xed\xa0\xbc\xed\xb6\x95\\\xed\xa0\xbc\xed\xb6\x95 renamed_test_torrent2.txt",
+						},
+						[]interface{}{
+							int64(1),
+							"\\\\somedir\\somedir4 \xed\xa0\xbc\xed\xb6\x95\\\xed\xa0\xbc\xed\xb6\x95 renamed_test_torrent3.txt",
+						},
+						[]interface{}{
+							int64(3),
+							"renamed \xed\xa0\xbc\xed\xb6\x95 file1.txt",
+						},
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "\xed\xa0\xbc\xed\xb6\x95 file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"\xed\xa0\xbc\xed\xb6\x95", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0 \xed\xa0\xbc\xed\xb6\x95.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2 \xed\xa0\xbc\xed\xb6\x95.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file4.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      "D:/torrents/test_torrent",
+					SavePath:         "D:\\torrents\\test_torrent",
+					QBtContentLayout: "NoSubfolder",
+					MappedFiles: []string{
+						"E:\\somedir1 \xf0\x9f\x86\x95\\\xf0\x9f\x86\x95 renamed_test_torrent2.txt",
+						"\\\\somedir\\somedir4 \xf0\x9f\x86\x95\\\xf0\x9f\x86\x95 renamed_test_torrent3.txt",
+						"file0 \xf0\x9f\x86\x95.txt",
+						"renamed \xf0\x9f\x86\x95 file1.txt",
+						"file2 \xf0\x9f\x86\x95.txt",
+						"file4.txt",
 					},
 				},
 			},

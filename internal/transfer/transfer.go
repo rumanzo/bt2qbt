@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 //goland:noinspection GoNameStartsWithPackageName
@@ -279,7 +280,15 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 
 		if len(transfer.TorrentFile.GetFileList()) > 0 {
-			if lastPathName == torrentName {
+			var cesu8FilesExists bool
+			for _, filePath := range transfer.TorrentFile.GetFileList() {
+				cesuEncodedFilepath := helpers.HandleCesu8(filePath)
+				if utf8.RuneCountInString(filePath) != utf8.RuneCountInString(cesuEncodedFilepath) {
+					cesu8FilesExists = true
+					break
+				}
+			}
+			if lastPathName == torrentName && !cesu8FilesExists {
 				transfer.Fastresume.QBtContentLayout = "Original"
 				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(helpers.HandleCesu8(transfer.ResumeItem.Path), transfer.Opts.PathSeparator)
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
