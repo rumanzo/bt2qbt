@@ -12,6 +12,28 @@ func (t *Torrent) IsV2OrHybryd() bool {
 	return false
 }
 
+func (t *Torrent) IsSingle() bool {
+	if t.IsV2OrHybryd() {
+		if len(t.Info.FileTree) == 1 {
+			var torrentName string
+			if t.Info.NameUTF8 != "" {
+				torrentName = t.Info.NameUTF8
+			} else {
+				torrentName = t.Info.Name
+			}
+
+			if _, ok := t.Info.FileTree[torrentName]; ok {
+				return true
+			}
+		}
+	} else {
+		if t.Info.Files == nil {
+			return true
+		}
+	}
+	return false
+}
+
 // GetFileListWB function that return struct with filelists with bytes from torrent file
 func (t *Torrent) GetFileListWB() []FilepathLength {
 	if t.FilePathLength == nil {

@@ -88,7 +88,7 @@ func (transfer *TransferStructure) HandleState() {
 		transfer.Fastresume.Paused = 1
 		transfer.Fastresume.AutoManaged = 0
 	} else {
-		if len(transfer.TorrentFile.GetFileList()) > 1 {
+		if !transfer.TorrentFile.IsSingle() {
 			var parted bool
 			for _, prio := range transfer.Fastresume.FilePriority {
 				if prio == 0 {
@@ -202,7 +202,7 @@ func (transfer *TransferStructure) HandlePieces() {
 	if transfer.Fastresume.Unfinished != nil {
 		transfer.FillWholePieces(0)
 	} else {
-		if len(transfer.TorrentFile.GetFileList()) > 0 {
+		if !transfer.TorrentFile.IsSingle() {
 			transfer.FillPiecesParted()
 		} else {
 			transfer.FillWholePieces(1)
@@ -292,7 +292,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		}
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 		// if FileList contain only 1 file that means it is single file torrent
-		if len(transfer.TorrentFile.GetFileList()) > 1 {
+		if !transfer.TorrentFile.IsSingle() {
 			var cesu8FilesExists bool
 			for _, filePath := range transfer.TorrentFile.GetFileList() {
 				cesuEncodedFilepath := helpers.HandleCesu8(filePath)
