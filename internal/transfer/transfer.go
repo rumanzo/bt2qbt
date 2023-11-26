@@ -267,7 +267,10 @@ func (transfer *TransferStructure) HandleSavePaths() {
 	// Original paths always ending with pathSeparator
 	// SubFolder or NoSubfolder never have ending pathSeparator
 	// qBtSavePath always has separator /, otherwise SavePath use os pathSeparator
+
+	// we can't use these symbols on windows systems, but can use in *nix
 	prohibitedSymbols := `/:*?"<>|`
+
 	if transfer.Magnet {
 		transfer.Fastresume.QBtContentLayout = "Original"
 		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(helpers.HandleCesu8(transfer.ResumeItem.Path), "/")
@@ -360,6 +363,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 				transfer.Fastresume.QbtSavePath += `/`
 			}
 		}
+
 		// transform windows prohibited symbols like libtorrent or utorrent do
 		if transfer.Opts.PathSeparator == `\` && transfer.Fastresume.MappedFiles != nil {
 			for index, mappedFile := range transfer.Fastresume.MappedFiles {
