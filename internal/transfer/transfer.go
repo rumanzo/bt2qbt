@@ -291,8 +291,8 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			torrentNameOriginal = prohibitedSymbols.ReplaceAllString(torrentNameOriginal, `_`)
 		}
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
-
-		if len(transfer.TorrentFile.GetFileList()) > 0 {
+		// if FileList contain only 1 file that means it is single file torrent
+		if len(transfer.TorrentFile.GetFileList()) > 1 {
 			var cesu8FilesExists bool
 			for _, filePath := range transfer.TorrentFile.GetFileList() {
 				cesuEncodedFilepath := helpers.HandleCesu8(filePath)
