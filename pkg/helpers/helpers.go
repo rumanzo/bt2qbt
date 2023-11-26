@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -122,8 +123,6 @@ func HandleCesu8(str string) string {
 
 // ReplaceAllSymbols Replace all symbols in set to replacer
 func ReplaceAllSymbols(str string, set string, replacer string) string {
-	for _, n := range set {
-		str = strings.ReplaceAll(str, string(n), replacer)
-	}
-	return str
+	re := regexp.MustCompilePOSIX(`[` + regexp.QuoteMeta(set) + `]`)
+	return re.ReplaceAllString(str, replacer)
 }

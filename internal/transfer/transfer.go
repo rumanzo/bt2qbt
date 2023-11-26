@@ -263,13 +263,13 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 }
 
+// we can't use these symbols on Windows systems, but can use in *nix
+var prohibitedSymbols = regexp.MustCompilePOSIX(`[/:*?"<>|]`)
+
 func (transfer *TransferStructure) HandleSavePaths() {
 	// Original paths always ending with pathSeparator
 	// SubFolder or NoSubfolder never have ending pathSeparator
 	// qBtSavePath always has separator /, otherwise SavePath use os pathSeparator
-
-	// we can't use these symbols on windows systems, but can use in *nix
-	prohibitedSymbols := `/:*?"<>|`
 
 	if transfer.Magnet {
 		transfer.Fastresume.QBtContentLayout = "Original"
@@ -287,8 +287,8 @@ func (transfer *TransferStructure) HandleSavePaths() {
 
 		// transform windows prohibited symbols like libtorrent or utorrent do
 		if transfer.Opts.PathSeparator == `\` {
-			torrentName = helpers.ReplaceAllSymbols(torrentName, prohibitedSymbols, `_`)
-			torrentNameOriginal = helpers.ReplaceAllSymbols(torrentNameOriginal, prohibitedSymbols, `_`)
+			torrentName = prohibitedSymbols.ReplaceAllString(torrentName, `_`)
+			torrentNameOriginal = prohibitedSymbols.ReplaceAllString(torrentNameOriginal, `_`)
 		}
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 
@@ -368,9 +368,9 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		if transfer.Opts.PathSeparator == `\` && transfer.Fastresume.MappedFiles != nil {
 			for index, mappedFile := range transfer.Fastresume.MappedFiles {
 				if fileHelpers.IsAbs(mappedFile) {
-					transfer.Fastresume.MappedFiles[index] = mappedFile[:2] + helpers.ReplaceAllSymbols(mappedFile[2:], prohibitedSymbols, `_`)
+					transfer.Fastresume.MappedFiles[index] = mappedFile[:2] + prohibitedSymbols.ReplaceAllString(mappedFile[2:], `_`)
 				} else {
-					transfer.Fastresume.MappedFiles[index] = helpers.ReplaceAllSymbols(mappedFile, prohibitedSymbols, `_`)
+					transfer.Fastresume.MappedFiles[index] = prohibitedSymbols.ReplaceAllString(mappedFile, `_`)
 				}
 			}
 		}
