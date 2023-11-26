@@ -1220,6 +1220,55 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				Opts: &options.Opts{PathSeparator: `\`},
 			},
 		},
+		{
+			name: "035 Test torrent with windows folder (NoSubfolder) with prohibited symbols.",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Path: `D:\torrents\renamed test_torrent`},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_torrent",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{`#test | test [01]{1} [6K].jpg`}},
+							&torrentStructures.TorrentFile{Path: []string{`testdir1 collection`, `testdir2?`, `1.jpg`}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `D:/torrents/renamed test_torrent`,
+					SavePath:         `D:\torrents\renamed test_torrent`,
+					QBtContentLayout: "NoSubfolder",
+					MappedFiles: []string{
+						`#test _ test [01]{1} [6K].jpg`,
+						`testdir1 collection\testdir2_\1.jpg`,
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+		},
+		{
+			name: "036 Test torrent with windows single nofolder (original) path without replaces. With prohibited symbols",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Path: `D:\torrents\test_torrent.txt`},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: `test|torrent.txt`,
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `D:/torrents/`,
+					SavePath:         `D:\torrents\`,
+					QBtContentLayout: "Original",
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {

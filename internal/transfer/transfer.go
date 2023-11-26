@@ -267,6 +267,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 	// Original paths always ending with pathSeparator
 	// SubFolder or NoSubfolder never have ending pathSeparator
 	// qBtSavePath always has separator /, otherwise SavePath use os pathSeparator
+	prohibitedSymbols := `/:*?"<>|`
 	if transfer.Magnet {
 		transfer.Fastresume.QBtContentLayout = "Original"
 		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(helpers.HandleCesu8(transfer.ResumeItem.Path), "/")
@@ -279,6 +280,12 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		} else {
 			torrentName = helpers.HandleCesu8(transfer.TorrentFile.Info.Name)
 			torrentNameOriginal = transfer.TorrentFile.Info.Name
+		}
+
+		// transform windows prohibited symbols like libtorrent or utorrent do
+		if transfer.Opts.PathSeparator == `\` {
+			torrentName = helpers.ReplaceAllSymbols(torrentName, prohibitedSymbols, `_`)
+			torrentNameOriginal = helpers.ReplaceAllSymbols(torrentNameOriginal, prohibitedSymbols, `_`)
 		}
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 
@@ -351,6 +358,12 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(helpers.HandleCesu8(transfer.ResumeItem.Path), `/`)
 			if string(transfer.Fastresume.QbtSavePath[len(transfer.Fastresume.QbtSavePath)-1]) != `/` {
 				transfer.Fastresume.QbtSavePath += `/`
+			}
+		}
+		// transform windows prohibited symbols like libtorrent or utorrent do
+		if transfer.Opts.PathSeparator == `\` && transfer.Fastresume.MappedFiles != nil {
+			for index, mappedFile := range transfer.Fastresume.MappedFiles {
+				transfer.Fastresume.MappedFiles[index] = helpers.ReplaceAllSymbols(mappedFile, prohibitedSymbols, `_`)
 			}
 		}
 	}
