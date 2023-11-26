@@ -17,7 +17,12 @@ func (t *Torrent) GetFileListWB() []FilepathLength {
 	if t.FilePathLength == nil {
 		if t.IsV2OrHybryd() { // torrents with v2 or hybrid scheme
 			result := getFileListV2(t.Info.FileTree)
-			t.FilePathLength = &result
+			// if v2 torrent contain only one file return empty list
+			if len(result) > 1 {
+				t.FilePathLength = &result
+			} else {
+				t.FilePathLength = &[]FilepathLength{}
+			}
 			return *t.FilePathLength
 		} else { // torrent v1 with FileTree
 			result := getFileListV1(t)

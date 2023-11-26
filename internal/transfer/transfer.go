@@ -227,7 +227,7 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 	var fileOffsets []Offset
 	bytesLength := int64(0)
-	for _, file := range transfer.TorrentFile.GetFileListWB() { // need to adapt for torrents v2 version
+	for _, file := range transfer.TorrentFile.GetFileListWB() {
 		fileFirstOffset := bytesLength + 1
 		bytesLength += file.Length
 		fileLastOffset := bytesLength
