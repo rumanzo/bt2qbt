@@ -363,7 +363,11 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		// transform windows prohibited symbols like libtorrent or utorrent do
 		if transfer.Opts.PathSeparator == `\` && transfer.Fastresume.MappedFiles != nil {
 			for index, mappedFile := range transfer.Fastresume.MappedFiles {
-				transfer.Fastresume.MappedFiles[index] = helpers.ReplaceAllSymbols(mappedFile, prohibitedSymbols, `_`)
+				if fileHelpers.IsAbs(mappedFile) {
+					transfer.Fastresume.MappedFiles[index] = mappedFile[:2] + helpers.ReplaceAllSymbols(mappedFile[2:], prohibitedSymbols, `_`)
+				} else {
+					transfer.Fastresume.MappedFiles[index] = helpers.ReplaceAllSymbols(mappedFile, prohibitedSymbols, `_`)
+				}
 			}
 		}
 	}
