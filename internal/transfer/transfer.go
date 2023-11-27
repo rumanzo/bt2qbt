@@ -265,6 +265,7 @@ func (transfer *TransferStructure) FillPiecesParted() {
 
 // we can't use these symbols on Windows systems, but can use in *nix
 var prohibitedSymbols = regexp.MustCompilePOSIX(`[/:*?"<>|]`)
+var prohibitedSymbolsSrict = regexp.MustCompilePOSIX(`[\\/:*?"<>|]`)
 
 func (transfer *TransferStructure) HandleSavePaths() {
 	// Original paths always ending with pathSeparator
@@ -277,9 +278,9 @@ func (transfer *TransferStructure) HandleSavePaths() {
 	} else {
 		var torrentNameOriginalNormalized string
 		if transfer.TorrentFile.Info.NameUTF8 != "" {
-			torrentNameOriginalNormalized = prohibitedSymbols.ReplaceAllString(transfer.TorrentFile.Info.NameUTF8, `_`)
+			torrentNameOriginalNormalized = prohibitedSymbolsSrict.ReplaceAllString(transfer.TorrentFile.Info.NameUTF8, `_`)
 		} else {
-			torrentNameOriginalNormalized = prohibitedSymbols.ReplaceAllString(transfer.TorrentFile.Info.Name, `_`)
+			torrentNameOriginalNormalized = prohibitedSymbolsSrict.ReplaceAllString(transfer.TorrentFile.Info.Name, `_`)
 		}
 
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
@@ -432,7 +433,7 @@ func (transfer *TransferStructure) HandleNames() {
 	}
 	// transform windows prohibited symbols like libtorrent or utorrent do
 	if transfer.Opts.PathSeparator == `\` {
-		transfer.Fastresume.Name = prohibitedSymbols.ReplaceAllString(transfer.Fastresume.Name, `_`)
+		transfer.Fastresume.Name = prohibitedSymbolsSrict.ReplaceAllString(transfer.Fastresume.Name, `_`)
 	}
 	if string(transfer.Fastresume.Name[len(transfer.Fastresume.Name)-1]) == ` ` {
 		transfer.Fastresume.Name = transfer.Fastresume.Name[:len(transfer.Fastresume.Name)-1] + `_`

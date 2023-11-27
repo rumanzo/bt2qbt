@@ -1541,7 +1541,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 		},
 		{
-			name: "044 Test torrent with multi file torrent (Original) with space at the end directory",
+			name: "044 Test torrent with multi file torrent (NoSubfolder) with space at the end directory",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -1578,7 +1578,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 		},
 		{
-			name: "045 Test torrent with multi file torrent (Original) with space at the end directory with renamed files",
+			name: "045 Test torrent with multi file torrent (NoSubfolder) with space at the end directory with renamed files",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -1616,6 +1616,47 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 						`file2_renamed.txt`,
 						`dir1_\dir2_\file1.txt`,
 						`dir3_\file2.txt`,
+					},
+				},
+			},
+		},
+		{
+			name: "046 Test torrent with multi file torrent with renames(Original) with prohibited symbols in name",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path: `D:\test_torrent_test`,
+					Targets: [][]interface{}{
+						[]interface{}{
+							int64(2),
+							"file0_file.txt",
+						},
+					},
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: `test_torrent\test`,
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"dir1", "file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"dir2", "file2.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file0.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file2.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      `D:/`,
+					SavePath:         `D:\`,
+					Name:             `test_torrent_test`,
+					QBtContentLayout: "Original",
+					MappedFiles: []string{
+						``,
+						``,
+						`test_torrent_test\file0_file.txt`,
 					},
 				},
 			},
