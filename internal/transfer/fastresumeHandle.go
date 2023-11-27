@@ -15,11 +15,7 @@ func (transfer *TransferStructure) HandleStructures() {
 
 	// if torrent name was renamed, add modified name
 	transfer.HandleCaption()
-	if transfer.TorrentFile.Info.NameUTF8 != "" {
-		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.NameUTF8)
-	} else {
-		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.Name)
-	}
+	transfer.HandleNames()
 	transfer.Fastresume.ActiveTime = transfer.ResumeItem.Runtime
 	transfer.Fastresume.AddedTime = transfer.ResumeItem.AddedOn
 	transfer.Fastresume.CompletedTime = transfer.ResumeItem.CompletedOn
