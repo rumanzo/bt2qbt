@@ -276,11 +276,18 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		transfer.Fastresume.QBtContentLayout = "Original"
 		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(helpers.HandleCesu8(transfer.ResumeItem.Path), "/")
 	} else {
-		var torrentNameOriginalNormalized string
-		if transfer.TorrentFile.Info.NameUTF8 != "" {
-			torrentNameOriginalNormalized = prohibitedSymbolsSrict.ReplaceAllString(transfer.TorrentFile.Info.NameUTF8, `_`)
-		} else {
-			torrentNameOriginalNormalized = prohibitedSymbolsSrict.ReplaceAllString(transfer.TorrentFile.Info.Name, `_`)
+		torrentName := transfer.GetTorrentName()
+		torrentNameOriginalNormalized := prohibitedSymbolsSrict.ReplaceAllString(torrentName, `_`)
+		var noNameNormalization bool
+		if !transfer.TorrentFile.IsSingle() && torrentName != torrentNameOriginalNormalized {
+			noNameNormalization = true
+		}
+		if noNameNormalization {
+			transfer.Fastresume.Name = torrentName
+			// only spaces normalization
+			if string(transfer.Fastresume.Name[len(transfer.Fastresume.Name)-1]) == ` ` {
+				transfer.Fastresume.Name = transfer.Fastresume.Name[:len(transfer.Fastresume.Name)-1] + `_`
+			}
 		}
 
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
@@ -306,7 +313,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 				}
 			}
 
-			if lastPathName == transfer.Fastresume.Name && !cesu8FilesExists && !invalidLastSpace {
+			if lastPathName == transfer.Fastresume.Name && !cesu8FilesExists && !invalidLastSpace && !noNameNormalization {
 				transfer.Fastresume.QBtContentLayout = "Original"
 				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(helpers.HandleCesu8(transfer.ResumeItem.Path), transfer.Opts.PathSeparator)
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
@@ -422,15 +429,20 @@ func CreateReplaces(replaces []string) []*replace.Replace {
 	}
 	return r
 }
+
+func (transfer *TransferStructure) GetTorrentName() string {
+	if transfer.TorrentFile.Info.NameUTF8 != "" {
+		return transfer.TorrentFile.Info.NameUTF8
+	} else {
+		return transfer.TorrentFile.Info.Name
+	}
+}
+
 func (transfer *TransferStructure) HandleNames() {
 	if len(transfer.TorrentFile.Info.NameUTF8) == 0 && len(transfer.TorrentFile.Info.Name) == 0 {
 		return
 	}
-	if transfer.TorrentFile.Info.NameUTF8 != "" {
-		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.NameUTF8)
-	} else {
-		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.Name)
-	}
+	transfer.Fastresume.Name = helpers.HandleCesu8(transfer.GetTorrentName())
 	// transform windows prohibited symbols like libtorrent or utorrent do
 	if transfer.Opts.PathSeparator == `\` {
 		transfer.Fastresume.Name = prohibitedSymbolsSrict.ReplaceAllString(transfer.Fastresume.Name, `_`)

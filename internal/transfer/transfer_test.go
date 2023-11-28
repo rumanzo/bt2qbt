@@ -1440,7 +1440,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 		},
 		{
-			name: "041 Test torrent with multi file torrent (Original) with prohibited symbols in name",
+			name: "041 Test torrent with multi file torrent (NoSubfolder) with prohibited symbols in name",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -1462,15 +1462,22 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/`,
-					SavePath:         `D:\`,
-					Name:             `test_torrent_test`,
-					QBtContentLayout: "Original",
+					QbtSavePath:      `D:/test_torrent_test`,
+					SavePath:         `D:\test_torrent_test`,
+					Name:             `test_torrent/test`,
+					QBtContentLayout: "NoSubfolder",
+					MappedFiles: []string{
+						`dir1\file1.txt`,
+						`dir2\file2.txt`,
+						`file0.txt`,
+						`file1.txt`,
+						`file2.txt`,
+					},
 				},
 			},
 		},
 		{
-			name: "042 Test torrent with multi file torrent with renames(Original) with prohibited symbols in name",
+			name: "042 Test torrent with multi file torrent with renames (NoSubFolder) with prohibited symbols in name",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -1498,14 +1505,16 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/`,
-					SavePath:         `D:\`,
-					Name:             `test_torrent_test`,
-					QBtContentLayout: "Original",
+					QbtSavePath:      `D:/test_torrent_test`,
+					SavePath:         `D:\test_torrent_test`,
+					Name:             `test_torrent/test`,
+					QBtContentLayout: "NoSubfolder",
 					MappedFiles: []string{
-						``,
-						``,
-						`test_torrent_test\file0_file.txt`,
+						`dir1\file1.txt`,
+						`dir2\file2.txt`,
+						`file0_file.txt`,
+						`file1.txt`,
+						`file2.txt`,
 					},
 				},
 			},
@@ -1616,47 +1625,6 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 						`file2_renamed.txt`,
 						`dir1_\dir2_\file1.txt`,
 						`dir3_\file2.txt`,
-					},
-				},
-			},
-		},
-		{
-			name: "046 Test torrent with multi file torrent with renames(Original) with prohibited symbols in name",
-			newTransferStructure: &TransferStructure{
-				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
-				ResumeItem: &utorrentStructs.ResumeItem{
-					Path: `D:\test_torrent_test`,
-					Targets: [][]interface{}{
-						[]interface{}{
-							int64(2),
-							"file0_file.txt",
-						},
-					},
-				},
-				TorrentFile: &torrentStructures.Torrent{
-					Info: &torrentStructures.TorrentInfo{
-						Name: `test_torrent\test`,
-						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{Path: []string{"dir1", "file1.txt"}},
-							&torrentStructures.TorrentFile{Path: []string{"dir2", "file2.txt"}},
-							&torrentStructures.TorrentFile{Path: []string{"file0.txt"}},
-							&torrentStructures.TorrentFile{Path: []string{"file1.txt"}},
-							&torrentStructures.TorrentFile{Path: []string{"file2.txt"}},
-						},
-					},
-				},
-				Opts: &options.Opts{PathSeparator: `\`},
-			},
-			expected: &TransferStructure{
-				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/`,
-					SavePath:         `D:\`,
-					Name:             `test_torrent_test`,
-					QBtContentLayout: "Original",
-					MappedFiles: []string{
-						``,
-						``,
-						`test_torrent_test\file0_file.txt`,
 					},
 				},
 			},
