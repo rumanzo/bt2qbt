@@ -1692,7 +1692,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				testCase.newTransferStructure.Replace = replaces
 				testCase.expected.Replace = replaces
 			}
-			testCase.newTransferStructure.Fastresume.Name, _ = testCase.newTransferStructure.GetNormalizedTorrentName()
+			testCase.newTransferStructure.Fastresume.Name, _ = testCase.newTransferStructure.TorrentFile.GetNormalizedTorrentName()
 			testCase.newTransferStructure.HandleCaption()
 			testCase.newTransferStructure.HandleSavePaths()
 			equal := reflect.DeepEqual(testCase.expected.Fastresume, testCase.newTransferStructure.Fastresume)

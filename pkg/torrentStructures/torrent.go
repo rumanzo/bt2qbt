@@ -11,6 +11,7 @@ type Torrent struct {
 	PieceLayers    *map[string]interface{} `bencode:"piece layers"`
 	FilePathLength *[]FilepathLength       `bencode:"-"` // service field
 	FilePaths      *[]string               `bencode:"-"` // service field
+	Single         *bool                   `bencode:"-"` // service field
 }
 
 type TorrentInfo struct {

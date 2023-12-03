@@ -274,7 +274,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(helpers.HandleCesu8(transfer.ResumeItem.Path), "/")
 	} else {
 		var nameNormalized bool
-		transfer.Fastresume.Name, nameNormalized = normalization.FullNormalize(transfer.GetTorrentName())
+		transfer.Fastresume.Name, nameNormalized = normalization.FullNormalize(transfer.TorrentFile.GetTorrentName())
 
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 		// if FileList contain only 1 file that means it is single file torrent
@@ -382,24 +382,4 @@ func CreateReplaces(replaces []string) []*replace.Replace {
 		})
 	}
 	return r
-}
-
-func (transfer *TransferStructure) GetTorrentName() string {
-	if transfer.TorrentFile.Info.NameUTF8 != "" {
-		return transfer.TorrentFile.Info.NameUTF8
-	} else {
-		return transfer.TorrentFile.Info.Name
-	}
-}
-
-func (transfer *TransferStructure) GetNormalizedTorrentName() (string, bool) {
-	torrentName := transfer.GetTorrentName()
-	var normalizedTorrentName string
-	var normalized bool
-	if fileHelpers.IsAbs(torrentName) {
-		normalizedTorrentName, normalized = normalization.NormalizeSpaceEnding(helpers.HandleCesu8(torrentName))
-	} else {
-		normalizedTorrentName, normalized = normalization.FullNormalize(torrentName)
-	}
-	return normalizedTorrentName, normalized
 }

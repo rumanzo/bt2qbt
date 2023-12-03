@@ -2,6 +2,7 @@ package torrentStructures
 
 import (
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
+	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/normalization"
 	"sort"
 )
@@ -14,25 +15,25 @@ func (t *Torrent) IsV2OrHybryd() bool {
 }
 
 func (t *Torrent) IsSingle() bool {
+	if t.Single != nil {
+		return *t.Single
+	}
+	single := false
 	if t.IsV2OrHybryd() {
+		// v2 torrents always have at least one file that equal torrent name
 		if len(t.Info.FileTree) == 1 {
-			var torrentName string
-			if t.Info.NameUTF8 != "" {
-				torrentName = t.Info.NameUTF8
-			} else {
-				torrentName = t.Info.Name
-			}
-
+			torrentName, _ := t.GetNormalizedTorrentName()
 			if _, ok := t.Info.FileTree[torrentName]; ok {
-				return true
+				single = true
 			}
 		}
 	} else {
 		if t.Info.Files == nil {
-			return true
+			single = true
 		}
 	}
-	return false
+	t.Single = &single
+	return *t.Single
 }
 
 // GetFileListWB function that return struct with filelists with bytes from torrent file
@@ -122,4 +123,24 @@ func getFileListV2(f interface{}) ([]FilepathLength, bool) {
 		}
 	}
 	return nfiles, normalized
+}
+
+func (t *Torrent) GetTorrentName() string {
+	if t.Info.NameUTF8 != "" {
+		return t.Info.NameUTF8
+	} else {
+		return t.Info.Name
+	}
+}
+
+func (t *Torrent) GetNormalizedTorrentName() (string, bool) {
+	torrentName := t.GetTorrentName()
+	var normalizedTorrentName string
+	var normalized bool
+	if fileHelpers.IsAbs(torrentName) {
+		normalizedTorrentName, normalized = normalization.NormalizeSpaceEnding(helpers.HandleCesu8(torrentName))
+	} else {
+		normalizedTorrentName, normalized = normalization.FullNormalize(torrentName)
+	}
+	return normalizedTorrentName, normalized
 }
