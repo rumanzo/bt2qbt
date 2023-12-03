@@ -1,3 +1,5 @@
+![GitHub all releases](https://img.shields.io/github/downloads/rumanzo/bt2qbt/total)
+
 # bt2qbt
 
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
