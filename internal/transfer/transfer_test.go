@@ -890,7 +890,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 					Path: `D:\torrents\test`,
 				},
 				TorrentFile: &torrentStructures.Torrent{
-					Info: &torrentStructures.TorrentInfo{},
+					Info: &torrentStructures.TorrentInfo{Name: "torrentname"},
 				},
 				Opts:   &options.Opts{PathSeparator: `\`},
 				Magnet: true,
@@ -899,6 +899,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
 					QbtSavePath:      `D:/torrents/test`,
 					SavePath:         `D:\torrents\test`,
+					Name:             "torrentname",
 					QBtContentLayout: "Original",
 				},
 			},
@@ -1302,6 +1303,9 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 					QbtSavePath:      `D:/torrents/`,
 					SavePath:         `D:\torrents\`,
 					QBtContentLayout: "Original",
+					MappedFiles: []string{
+						`test_torrent.txt`,
+					},
 				},
 			},
 		},
@@ -1328,8 +1332,8 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 					Name:             `test_torrent`,
 					QBtContentLayout: "NoSubfolder",
 					MappedFiles: []string{
-						`#test | test [01]{1} [6K].jpg`,
-						`testdir1 collection/testdir2?/1.jpg`,
+						`#test _ test [01]{1} [6K].jpg`,
+						`testdir1 collection/testdir2_/1.jpg`,
 					},
 				},
 			},
@@ -1350,8 +1354,11 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
 					QbtSavePath:      `D:/torrents/`,
 					SavePath:         `D:/torrents/`,
-					Name:             `test|torrent.txt`,
+					Name:             `test_torrent.txt`,
 					QBtContentLayout: "Original",
+					MappedFiles: []string{
+						`test_torrent.txt`,
+					},
 				},
 			},
 		},
@@ -1464,7 +1471,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
 					QbtSavePath:      `D:/test_torrent_test`,
 					SavePath:         `D:\test_torrent_test`,
-					Name:             `test_torrent/test`,
+					Name:             `test_torrent_test`,
 					QBtContentLayout: "NoSubfolder",
 					MappedFiles: []string{
 						`dir1\file1.txt`,
@@ -1507,7 +1514,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
 					QbtSavePath:      `D:/test_torrent_test`,
 					SavePath:         `D:\test_torrent_test`,
-					Name:             `test_torrent/test`,
+					Name:             `test_torrent_test`,
 					QBtContentLayout: "NoSubfolder",
 					MappedFiles: []string{
 						`dir1\file1.txt`,
@@ -1520,7 +1527,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 		},
 		{
-			name: "043 Test torrent with multi file torrent (Original) with space at the end of torrent name",
+			name: "043 Test torrent with multi file torrent (NoSubfolder) with space at the end of torrent name",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -1542,10 +1549,17 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 			},
 			expected: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					QbtSavePath:      `D:/`,
-					SavePath:         `D:\`,
+					QbtSavePath:      `D:/test_torrent_`,
+					SavePath:         `D:\test_torrent_`,
 					Name:             `test_torrent_`,
-					QBtContentLayout: "Original",
+					QBtContentLayout: "NoSubfolder",
+					MappedFiles: []string{
+						`dir1\file1.txt`,
+						`dir2\file2.txt`,
+						`file0.txt`,
+						`file1.txt`,
+						`file2.txt`,
+					},
 				},
 			},
 		},
@@ -1629,6 +1643,47 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "046 Test torrent with multi file torrent with transfer to NoSubfolder cesu8 symbols in names",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path:    "D:\\test_slashes_emoji \xed\xa0\xbc\xed\xb6\x95_",
+					Caption: "test_slashes_emoji \xed\xa0\xbc\xed\xb6\x95_",
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test_slashes/emoji \xed\xa0\xbc\xed\xb6\x95 ",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"file_with_emoji \xed\xa0\xbc\xed\xb6\x95.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"file_with/slash.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"testdir_with_emoji_and_space \xed\xa0\xbc\xed\xb6\x95 ", "file_with_emoji \xed\xa0\xbc\xed\xb6\x95.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"testdir_with_emoji_and_space \xed\xa0\xbc\xed\xb6\x95 ", "file_with/slash.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"testdir_with_space ", "file_with_emoji \xed\xa0\xbc\xed\xb6\x95.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"testdir_with_space ", "file_with/slash.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      "D:/test_slashes_emoji \xf0\x9f\x86\x95_",
+					SavePath:         "D:\\test_slashes_emoji \xf0\x9f\x86\x95_",
+					Name:             "test_slashes_emoji \xf0\x9f\x86\x95_",
+					QbtName:          "test_slashes_emoji \xf0\x9f\x86\x95_",
+					QBtContentLayout: `NoSubfolder`,
+					MappedFiles: []string{
+						"file_with_emoji \xf0\x9f\x86\x95.txt",
+						"file_with_slash.txt",
+						"testdir_with_emoji_and_space \xf0\x9f\x86\x95_\\file_with_emoji \xf0\x9f\x86\x95.txt",
+						"testdir_with_emoji_and_space \xf0\x9f\x86\x95_\\file_with_slash.txt",
+						"testdir_with_space_\\file_with_emoji \xf0\x9f\x86\x95.txt",
+						"testdir_with_space_\\file_with_slash.txt",
+					},
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -1637,7 +1692,8 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				testCase.newTransferStructure.Replace = replaces
 				testCase.expected.Replace = replaces
 			}
-			testCase.newTransferStructure.HandleNames()
+			testCase.newTransferStructure.Fastresume.Name, _ = testCase.newTransferStructure.GetNormalizedTorrentName()
+			testCase.newTransferStructure.HandleCaption()
 			testCase.newTransferStructure.HandleSavePaths()
 			equal := reflect.DeepEqual(testCase.expected.Fastresume, testCase.newTransferStructure.Fastresume)
 			if !equal && !testCase.mustFail {
@@ -1645,9 +1701,9 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				if err != nil {
 					t.Error(err.Error())
 				}
-				t.Fatalf("Unexpected error: opts isn't equal:\n Got: %#v \n Expect %#v \n Diff: %v\n", testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, spew.Sdump(changes))
+				t.Fatalf("Unexpected error: opts isn't equal:\nGot: %#v\nExpect %#v\nDiff: %v\n", testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, spew.Sdump(changes))
 			} else if equal && testCase.mustFail {
-				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\n Got: %v\n", spew.Sdump(testCase.newTransferStructure.Fastresume))
+				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\nGot: %v\n", spew.Sdump(testCase.newTransferStructure.Fastresume))
 			}
 		})
 	}

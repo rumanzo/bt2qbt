@@ -7,6 +7,7 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
+	"github.com/rumanzo/bt2qbt/pkg/normalization"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
@@ -15,7 +16,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 //goland:noinspection GoNameStartsWithPackageName
@@ -82,7 +82,7 @@ func (transfer *TransferStructure) HandleCaption() {
 }
 
 // HandleState transfer torrents state.
-// if torrent has several files and it doesn't complete downloaded (priority), it will be stopped
+// if torrent has several files, and it doesn't complete downloaded (priority), it will be stopped
 func (transfer *TransferStructure) HandleState() {
 	if transfer.ResumeItem.Started == 0 {
 		transfer.Fastresume.Paused = 1
@@ -227,7 +227,8 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 	var fileOffsets []Offset
 	bytesLength := int64(0)
-	for _, file := range transfer.TorrentFile.GetFileListWB() {
+	fileList, _ := transfer.TorrentFile.GetFileListWB()
+	for _, file := range fileList {
 		fileFirstOffset := bytesLength + 1
 		bytesLength += file.Length
 		fileLastOffset := bytesLength
@@ -263,10 +264,6 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 }
 
-// we can't use these symbols on Windows systems, but can use in *nix
-var prohibitedSymbols = regexp.MustCompilePOSIX(`[/:*?"<>|]`)
-var prohibitedSymbolsSrict = regexp.MustCompilePOSIX(`[\\/:*?"<>|]`)
-
 func (transfer *TransferStructure) HandleSavePaths() {
 	// Original paths always ending with pathSeparator
 	// SubFolder or NoSubfolder never have ending pathSeparator
@@ -276,44 +273,15 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		transfer.Fastresume.QBtContentLayout = "Original"
 		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(helpers.HandleCesu8(transfer.ResumeItem.Path), "/")
 	} else {
-		torrentName := transfer.GetTorrentName()
-		torrentNameOriginalNormalized := prohibitedSymbolsSrict.ReplaceAllString(torrentName, `_`)
-		var noNameNormalization bool
-		if !transfer.TorrentFile.IsSingle() && torrentName != torrentNameOriginalNormalized {
-			noNameNormalization = true
-		}
-		if noNameNormalization {
-			transfer.Fastresume.Name = torrentName
-			// only spaces normalization
-			if string(transfer.Fastresume.Name[len(transfer.Fastresume.Name)-1]) == ` ` {
-				transfer.Fastresume.Name = transfer.Fastresume.Name[:len(transfer.Fastresume.Name)-1] + `_`
-			}
-		}
+		var nameNormalized bool
+		transfer.Fastresume.Name, nameNormalized = normalization.FullNormalize(transfer.GetTorrentName())
 
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 		// if FileList contain only 1 file that means it is single file torrent
 		if !transfer.TorrentFile.IsSingle() {
-			var cesu8FilesExists bool
-			for _, filePath := range transfer.TorrentFile.GetFileList() {
-				cesuEncodedFilepath := helpers.HandleCesu8(filePath)
-				if utf8.RuneCountInString(filePath) != utf8.RuneCountInString(cesuEncodedFilepath) {
-					cesu8FilesExists = true
-					break
-				}
-			}
+			fileList, filesNormalized := transfer.TorrentFile.GetFileList()
 
-			// normalize paths created in *nix systems with space in folder ending
-			var invalidLastSpace bool
-			if transfer.Opts.PathSeparator == `\` {
-				for _, filePath := range transfer.TorrentFile.GetFileList() {
-					if strings.Contains(filePath, ` /`) {
-						invalidLastSpace = true
-						break
-					}
-				}
-			}
-
-			if lastPathName == transfer.Fastresume.Name && !cesu8FilesExists && !invalidLastSpace && !noNameNormalization {
+			if lastPathName == transfer.Fastresume.Name && !filesNormalized && !nameNormalized {
 				transfer.Fastresume.QBtContentLayout = "Original"
 				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(helpers.HandleCesu8(transfer.ResumeItem.Path), transfer.Opts.PathSeparator)
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
@@ -341,13 +309,10 @@ func (transfer *TransferStructure) HandleSavePaths() {
 				}
 			} else {
 				transfer.Fastresume.QBtContentLayout = "NoSubfolder"
-				// NoSubfolder always has full mapped files
-				// so we append all of them
-				for _, filePath := range transfer.TorrentFile.GetFileList() {
-					if transfer.Opts.PathSeparator == `\` {
-						filePath = strings.ReplaceAll(filePath, ` /`, `_/`)
-					}
-					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles, fileHelpers.Normalize(helpers.HandleCesu8(filePath), transfer.Opts.PathSeparator))
+				// NoSubfolder always has full mapped files, so we append all of them
+				for _, filePath := range fileList {
+					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles,
+						fileHelpers.Normalize(filePath, transfer.Opts.PathSeparator))
 				}
 				// and then doing remap if resumeItem contain target field
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
@@ -369,24 +334,13 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			}
 		} else {
 			transfer.Fastresume.QBtContentLayout = "Original" // utorrent\bittorrent don't support create subfolders for torrents with single file
-			if lastPathName != torrentNameOriginalNormalized {
+			if nameNormalized || lastPathName != transfer.Fastresume.Name {
 				//it means that we have renamed path and targets item, and should have mapped files
 				transfer.Fastresume.MappedFiles = []string{lastPathName}
 			}
 			transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(helpers.HandleCesu8(transfer.ResumeItem.Path), `/`)
 			if string(transfer.Fastresume.QbtSavePath[len(transfer.Fastresume.QbtSavePath)-1]) != `/` {
 				transfer.Fastresume.QbtSavePath += `/`
-			}
-		}
-
-		// transform windows prohibited symbols like libtorrent or utorrent do
-		if transfer.Opts.PathSeparator == `\` && transfer.Fastresume.MappedFiles != nil {
-			for index, mappedFile := range transfer.Fastresume.MappedFiles {
-				if fileHelpers.IsAbs(mappedFile) {
-					transfer.Fastresume.MappedFiles[index] = mappedFile[:2] + prohibitedSymbols.ReplaceAllString(mappedFile[2:], `_`)
-				} else {
-					transfer.Fastresume.MappedFiles[index] = prohibitedSymbols.ReplaceAllString(mappedFile, `_`)
-				}
 			}
 		}
 	}
@@ -438,16 +392,14 @@ func (transfer *TransferStructure) GetTorrentName() string {
 	}
 }
 
-func (transfer *TransferStructure) HandleNames() {
-	if len(transfer.TorrentFile.Info.NameUTF8) == 0 && len(transfer.TorrentFile.Info.Name) == 0 {
-		return
+func (transfer *TransferStructure) GetNormalizedTorrentName() (string, bool) {
+	torrentName := transfer.GetTorrentName()
+	var normalizedTorrentName string
+	var normalized bool
+	if fileHelpers.IsAbs(torrentName) {
+		normalizedTorrentName, normalized = normalization.NormalizeSpaceEnding(helpers.HandleCesu8(torrentName))
+	} else {
+		normalizedTorrentName, normalized = normalization.FullNormalize(torrentName)
 	}
-	transfer.Fastresume.Name = helpers.HandleCesu8(transfer.GetTorrentName())
-	// transform windows prohibited symbols like libtorrent or utorrent do
-	if transfer.Opts.PathSeparator == `\` {
-		transfer.Fastresume.Name = prohibitedSymbolsSrict.ReplaceAllString(transfer.Fastresume.Name, `_`)
-	}
-	if string(transfer.Fastresume.Name[len(transfer.Fastresume.Name)-1]) == ` ` {
-		transfer.Fastresume.Name = transfer.Fastresume.Name[:len(transfer.Fastresume.Name)-1] + `_`
-	}
+	return normalizedTorrentName, normalized
 }

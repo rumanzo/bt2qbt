@@ -2,6 +2,7 @@ package torrentStructures
 
 import (
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
+	"github.com/rumanzo/bt2qbt/pkg/normalization"
 	"sort"
 )
 
@@ -35,25 +36,26 @@ func (t *Torrent) IsSingle() bool {
 }
 
 // GetFileListWB function that return struct with filelists with bytes from torrent file
-func (t *Torrent) GetFileListWB() []FilepathLength {
+func (t *Torrent) GetFileListWB() ([]FilepathLength, bool) {
 	if t.FilePathLength == nil {
 		if t.IsV2OrHybryd() { // torrents with v2 or hybrid scheme
-			result := getFileListV2(t.Info.FileTree)
+			result, normalized := getFileListV2(t.Info.FileTree)
 			t.FilePathLength = &result
-			return *t.FilePathLength
+			return *t.FilePathLength, normalized
 		} else { // torrent v1 with FileTree
-			result := getFileListV1(t)
+			result, normalized := getFileListV1(t)
 			t.FilePathLength = &result
-			return *t.FilePathLength
+			return *t.FilePathLength, normalized
 		}
 	} else {
-		return *t.FilePathLength
+		return *t.FilePathLength, false
 	}
 }
 
-func (t *Torrent) GetFileList() []string {
+func (t *Torrent) GetFileList() ([]string, bool) {
+	var normalized bool
 	if t.FilePathLength == nil {
-		t.GetFileListWB()
+		_, normalized = t.GetFileListWB()
 	}
 	if t.FilePaths == nil {
 		t.FilePaths = &[]string{}
@@ -61,28 +63,37 @@ func (t *Torrent) GetFileList() []string {
 			*t.FilePaths = append(*t.FilePaths, fb.Path)
 		}
 	}
-	return *t.FilePaths
+	return *t.FilePaths, normalized
 }
 
-func getFileListV1(t *Torrent) []FilepathLength {
+func getFileListV1(t *Torrent) ([]FilepathLength, bool) {
+	var normalized bool
 	var files []FilepathLength
-	for _, file := range t.Info.Files {
-		if file.PathUTF8 != nil {
-			files = append(files, FilepathLength{
-				Path:   fileHelpers.Join(file.PathUTF8, `/`),
-				Length: file.Length,
-			})
+	for _, fileList := range t.Info.Files {
+
+		var normalizedFileList []string
+		if fileList.PathUTF8 != nil {
+			normalizedFileList = fileList.PathUTF8
 		} else {
-			files = append(files, FilepathLength{
-				Path:   fileHelpers.Join(file.Path, `/`),
-				Length: file.Length,
-			})
+			normalizedFileList = fileList.Path
 		}
+		for index, filePathPart := range normalizedFileList {
+			normalizedFilePathPart, gotNormalized := normalization.FullNormalize(filePathPart)
+			if gotNormalized {
+				normalized = true
+				normalizedFileList[index] = normalizedFilePathPart
+			}
+		}
+		files = append(files, FilepathLength{
+			Path:   fileHelpers.Join(normalizedFileList, `/`),
+			Length: fileList.Length,
+		})
 	}
-	return files
+	return files, normalized
 }
 
-func getFileListV2(f interface{}) []FilepathLength {
+func getFileListV2(f interface{}) ([]FilepathLength, bool) {
+	var normalized bool
 	nfiles := []FilepathLength{}
 
 	// sort map previously
@@ -96,12 +107,19 @@ func getFileListV2(f interface{}) []FilepathLength {
 		v := f.(map[string]interface{})[k]
 		if len(k) == 0 { // it's means that next will be structure with length and piece root
 			nfiles = append(nfiles, FilepathLength{Path: "", Length: v.(map[string]interface{})["length"].(int64)})
-			return nfiles
+			return nfiles, normalized
 		}
-		s := getFileListV2(v)
+		s, gotNormalized := getFileListV2(v)
+		if gotNormalized {
+			normalized = true
+		}
 		for _, fpl := range s {
-			nfiles = append(nfiles, FilepathLength{Path: fileHelpers.Join(append([]string{k}, fpl.Path), `/`), Length: fpl.Length})
+			normalizedPath, gotNormalized := normalization.FullNormalize(k)
+			if gotNormalized {
+				normalized = true
+			}
+			nfiles = append(nfiles, FilepathLength{Path: fileHelpers.Join(append([]string{normalizedPath}, fpl.Path), `/`), Length: fpl.Length})
 		}
 	}
-	return nfiles
+	return nfiles, normalized
 }
