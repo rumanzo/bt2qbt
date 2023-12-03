@@ -5,9 +5,8 @@ import (
 	"regexp"
 )
 
-// we can't use these symbols on Windows systems, but can use in *nix
-var ProhibitedSymbols = regexp.MustCompilePOSIX(`[/:*?"<>|]`)
-var ProhibitedSymbolsSrict = regexp.MustCompilePOSIX(`[\\/:*?"<>|]`)
+// ProhibitedSymbolsStrict we can't use these symbols on Windows systems, but can use in *nix
+var ProhibitedSymbolsStrict = regexp.MustCompilePOSIX(`[\\/:*?"<>|]`)
 
 func NormalizeSpaceEnding(str string) (string, bool) {
 	var normalized bool
@@ -20,7 +19,7 @@ func NormalizeSpaceEnding(str string) (string, bool) {
 
 func FullNormalize(str string) (string, bool) {
 	var normalized bool
-	s1 := ProhibitedSymbolsSrict.ReplaceAllString(str, `_`)
+	s1 := ProhibitedSymbolsStrict.ReplaceAllString(str, `_`)
 	if s1 != str {
 		normalized = true
 	}

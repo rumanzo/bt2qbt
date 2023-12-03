@@ -95,7 +95,7 @@ func getFileListV1(t *Torrent) ([]FilepathLength, bool) {
 
 func getFileListV2(f interface{}) ([]FilepathLength, bool) {
 	var normalized bool
-	nfiles := []FilepathLength{}
+	var nfiles []FilepathLength
 
 	// sort map previously
 	keys := make([]string, 0, len(f.(map[string]interface{})))
