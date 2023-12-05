@@ -1,3 +1,5 @@
+![GitHub all releases](https://img.shields.io/github/downloads/rumanzo/bt2qbt/total)
+
 # bt2qbt
 
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
@@ -5,7 +7,7 @@ bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert
 > Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2. It should work with older version utorrent and newer version of qBittorrent, but it isn't tested.
 
 > [!IMPORTANT]
-> In most cases just enough run app. For windows users double click on downloaded exe file. But read notices and warnings below
+> In most cases just enough run app. For Windows users double-click on downloaded exe file. But read notices and warnings below
 > 
 - [bt2qbt](#bt2qbt)
     - [Feature](#user-content-feature)

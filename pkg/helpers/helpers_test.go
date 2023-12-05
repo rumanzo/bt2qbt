@@ -57,10 +57,79 @@ func TestDecodeTorrentFile(t *testing.T) {
 		})
 	}
 }
+
 func TestEmojiCesu8(t *testing.T) {
 	cesu8 := "normal_text \xed\xa0\xbc\xed\xb6\x95 normal_text \xed\xa0\xbd\xed\xba\x9c.txt.torrent"
 	utf8 := "normal_text \xf0\x9f\x86\x95 normal_text \xf0\x9f\x9a\x9c.txt.torrent"
 	if utf8 != HandleCesu8(cesu8) {
 		t.Fatalf("Cesu8 to utf-8 transformation fail")
+	}
+}
+func TestReplaceAllSymbols(t *testing.T) {
+	type Case struct {
+		name     string
+		str      string
+		set      string
+		replacer string
+		expected string
+	}
+	cases := []Case{
+		{
+			name:     "001 one symbol",
+			str:      `qwerty`,
+			set:      `qry`,
+			replacer: `_`,
+			expected: `_we_t_`,
+		},
+		{
+			name:     "002 several replacer symbol",
+			str:      `qwerty`,
+			set:      `qry`,
+			replacer: `AAA`,
+			expected: `AAAweAAAtAAA`,
+		},
+		{
+			name:     "003 several replacer symbol that exists in str",
+			str:      `qwerty`,
+			set:      `qry`,
+			replacer: `qwerty`,
+			expected: `qwertyweqwertytqwerty`,
+		},
+		{
+			name:     "004 several replacer symbol that exists in str with special symbols",
+			str:      `[qwerty]`,
+			set:      `[qry]`,
+			replacer: `qwerty`,
+			expected: `qwertyqwertyweqwertytqwertyqwerty`,
+		},
+		{
+			name:     "005 several replacer symbol that exists in str with special symbols",
+			str:      `[qwerty]`,
+			set:      `[qry]`,
+			replacer: `[qwerty]`,
+			expected: `[qwerty][qwerty]we[qwerty]t[qwerty][qwerty]`,
+		},
+		{
+			name:     "006 emoji replace",
+			str:      `qwer🚎y`,
+			set:      `🚎`,
+			replacer: `_`,
+			expected: `qwer_y`,
+		},
+		{
+			name:     "006 two emoji replace",
+			str:      `qwer🚎y👍`,
+			set:      `🚎😊`,
+			replacer: `_`,
+			expected: `qwer_y👍`,
+		},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			replaced := ReplaceAllSymbols(testCase.str, testCase.set, testCase.replacer)
+			if replaced != testCase.expected {
+				t.Fatalf("Unexpected error:\nstr: %v set: %v replacer: %v\nGot: %v\nExpect %v\n", testCase.str, testCase.set, testCase.replacer, replaced, testCase.expected)
+			}
+		})
 	}
 }

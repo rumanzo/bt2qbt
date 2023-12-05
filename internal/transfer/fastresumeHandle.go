@@ -15,11 +15,6 @@ func (transfer *TransferStructure) HandleStructures() {
 
 	// if torrent name was renamed, add modified name
 	transfer.HandleCaption()
-	if transfer.TorrentFile.Info.NameUTF8 != "" {
-		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.NameUTF8)
-	} else {
-		transfer.Fastresume.Name = helpers.HandleCesu8(transfer.TorrentFile.Info.Name)
-	}
 	transfer.Fastresume.ActiveTime = transfer.ResumeItem.Runtime
 	transfer.Fastresume.AddedTime = transfer.ResumeItem.AddedOn
 	transfer.Fastresume.CompletedTime = transfer.ResumeItem.CompletedOn
@@ -46,6 +41,6 @@ func (transfer *TransferStructure) HandleStructures() {
 	transfer.NumPieces = int64(len(transfer.TorrentFile.Info.Pieces)) / 20
 
 	transfer.HandleCompleted() // important handle priorities before handling pieces
-	transfer.HandleSavePaths()
+	transfer.HandleSavePaths() // and there we handle torrent name also
 	transfer.HandlePieces()
 }

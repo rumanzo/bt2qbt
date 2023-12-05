@@ -6,8 +6,8 @@ import (
 	"github.com/crazytyper/go-cesu8"
 	"github.com/zeebo/bencode"
 	"io"
-	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -35,7 +35,7 @@ func CheckExists(s string, arr []string) (bool, string) {
 }
 
 func DecodeTorrentFile(path string, decodeTo interface{}) error {
-	dat, err := ioutil.ReadFile(path)
+	dat, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -118,4 +118,10 @@ func HandleCesu8(str string) string {
 		return cesu8.DecodeString([]byte(str))
 	}
 	return str
+}
+
+// ReplaceAllSymbols Replace all symbols in set to replacer
+func ReplaceAllSymbols(str string, set string, replacer string) string {
+	re := regexp.MustCompilePOSIX(`[` + regexp.QuoteMeta(set) + `]`)
+	return re.ReplaceAllString(str, replacer)
 }

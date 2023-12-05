@@ -2,13 +2,12 @@ package transfer
 
 import (
 	"github.com/rumanzo/bt2qbt/internal/options"
-	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestProcessLabelsExisting(t *testing.T) {
-	err := ioutil.WriteFile("../../test/categories_existing.json", []byte("{}"), 0755)
+	err := os.WriteFile("../../test/categories_existing.json", []byte("{}"), 0755)
 	if err != nil {
 		t.Fatalf("Can't write empty categories test file. Err: %v", err.Error())
 	}

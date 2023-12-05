@@ -7,6 +7,7 @@ import (
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
+	"github.com/rumanzo/bt2qbt/pkg/normalization"
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
@@ -15,7 +16,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 //goland:noinspection GoNameStartsWithPackageName
@@ -82,13 +82,13 @@ func (transfer *TransferStructure) HandleCaption() {
 }
 
 // HandleState transfer torrents state.
-// if torrent has several files and it doesn't complete downloaded (priority), it will be stopped
+// if torrent has several files, and it doesn't complete downloaded (priority), it will be stopped
 func (transfer *TransferStructure) HandleState() {
 	if transfer.ResumeItem.Started == 0 {
 		transfer.Fastresume.Paused = 1
 		transfer.Fastresume.AutoManaged = 0
 	} else {
-		if len(transfer.TorrentFile.GetFileList()) > 1 {
+		if !transfer.TorrentFile.IsSingle() {
 			var parted bool
 			for _, prio := range transfer.Fastresume.FilePriority {
 				if prio == 0 {
@@ -202,7 +202,7 @@ func (transfer *TransferStructure) HandlePieces() {
 	if transfer.Fastresume.Unfinished != nil {
 		transfer.FillWholePieces(0)
 	} else {
-		if len(transfer.TorrentFile.GetFileList()) > 0 {
+		if !transfer.TorrentFile.IsSingle() {
 			transfer.FillPiecesParted()
 		} else {
 			transfer.FillWholePieces(1)
@@ -227,7 +227,8 @@ func (transfer *TransferStructure) FillPiecesParted() {
 	}
 	var fileOffsets []Offset
 	bytesLength := int64(0)
-	for _, file := range transfer.TorrentFile.GetFileListWB() { // need to adapt for torrents v2 version
+	fileList, _ := transfer.TorrentFile.GetFileListWB()
+	for _, file := range fileList {
 		fileFirstOffset := bytesLength + 1
 		bytesLength += file.Length
 		fileLastOffset := bytesLength
@@ -267,31 +268,20 @@ func (transfer *TransferStructure) HandleSavePaths() {
 	// Original paths always ending with pathSeparator
 	// SubFolder or NoSubfolder never have ending pathSeparator
 	// qBtSavePath always has separator /, otherwise SavePath use os pathSeparator
+
 	if transfer.Magnet {
 		transfer.Fastresume.QBtContentLayout = "Original"
 		transfer.Fastresume.QbtSavePath = fileHelpers.Normalize(helpers.HandleCesu8(transfer.ResumeItem.Path), "/")
 	} else {
-		var torrentName string
-		var torrentNameOriginal string
-		if transfer.TorrentFile.Info.NameUTF8 != "" {
-			torrentName = helpers.HandleCesu8(transfer.TorrentFile.Info.NameUTF8)
-			torrentNameOriginal = transfer.TorrentFile.Info.NameUTF8
-		} else {
-			torrentName = helpers.HandleCesu8(transfer.TorrentFile.Info.Name)
-			torrentNameOriginal = transfer.TorrentFile.Info.Name
-		}
-		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
+		var nameNormalized bool
+		transfer.Fastresume.Name, nameNormalized = normalization.FullNormalize(transfer.TorrentFile.GetTorrentName())
 
-		if len(transfer.TorrentFile.GetFileList()) > 0 {
-			var cesu8FilesExists bool
-			for _, filePath := range transfer.TorrentFile.GetFileList() {
-				cesuEncodedFilepath := helpers.HandleCesu8(filePath)
-				if utf8.RuneCountInString(filePath) != utf8.RuneCountInString(cesuEncodedFilepath) {
-					cesu8FilesExists = true
-					break
-				}
-			}
-			if lastPathName == torrentName && !cesu8FilesExists {
+		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
+		// if FileList contain only 1 file that means it is single file torrent
+		if !transfer.TorrentFile.IsSingle() {
+			fileList, filesNormalized := transfer.TorrentFile.GetFileList()
+
+			if lastPathName == transfer.Fastresume.Name && !filesNormalized && !nameNormalized {
 				transfer.Fastresume.QBtContentLayout = "Original"
 				transfer.Fastresume.QbtSavePath = fileHelpers.CutLastPath(helpers.HandleCesu8(transfer.ResumeItem.Path), transfer.Opts.PathSeparator)
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
@@ -309,7 +299,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 								pathParts[num] = helpers.HandleCesu8(part.(string))
 							}
 							// we have to append torrent name(from torrent file) at the top of path
-							transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(append([]string{torrentName}, pathParts...), transfer.Opts.PathSeparator)
+							transfer.Fastresume.MappedFiles[index] = fileHelpers.Join(append([]string{transfer.Fastresume.Name}, pathParts...), transfer.Opts.PathSeparator)
 						}
 					}
 				}
@@ -319,10 +309,10 @@ func (transfer *TransferStructure) HandleSavePaths() {
 				}
 			} else {
 				transfer.Fastresume.QBtContentLayout = "NoSubfolder"
-				// NoSubfolder always has full mapped files
-				// so we append all of them
-				for _, filePath := range transfer.TorrentFile.GetFileList() {
-					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles, fileHelpers.Normalize(helpers.HandleCesu8(filePath), transfer.Opts.PathSeparator))
+				// NoSubfolder always has full mapped files, so we append all of them
+				for _, filePath := range fileList {
+					transfer.Fastresume.MappedFiles = append(transfer.Fastresume.MappedFiles,
+						fileHelpers.Normalize(filePath, transfer.Opts.PathSeparator))
 				}
 				// and then doing remap if resumeItem contain target field
 				if maxIndex := transfer.FindHighestIndexOfMappedFiles(); maxIndex >= 0 {
@@ -344,7 +334,7 @@ func (transfer *TransferStructure) HandleSavePaths() {
 			}
 		} else {
 			transfer.Fastresume.QBtContentLayout = "Original" // utorrent\bittorrent don't support create subfolders for torrents with single file
-			if lastPathName != torrentNameOriginal {
+			if nameNormalized || lastPathName != transfer.Fastresume.Name {
 				//it means that we have renamed path and targets item, and should have mapped files
 				transfer.Fastresume.MappedFiles = []string{lastPathName}
 			}

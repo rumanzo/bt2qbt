@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rumanzo/bt2qbt/internal/options"
-	"io/ioutil"
 	"os"
 )
 
@@ -14,7 +13,7 @@ func ProcessLabels(opts *options.Opts, newtags []string) error {
 
 	// check if categories is new file. If it exists it must be unmarshaled. Default categories file contains only {}
 	var categoriesIsNew bool
-	file, err := os.OpenFile(opts.Categories, os.O_RDWR, 0644)
+	_, err := os.Stat(opts.Categories)
 	if errors.Is(err, os.ErrNotExist) {
 		categoriesIsNew = true
 	} else if err != nil {
@@ -22,14 +21,9 @@ func ProcessLabels(opts *options.Opts, newtags []string) error {
 	}
 
 	if !categoriesIsNew {
-		dataRaw, err := ioutil.ReadAll(file)
+		dataRaw, err := os.ReadFile(opts.Categories)
 		if err != nil {
 			return errors.New(fmt.Sprintf("Unexpected error while read categories.json. Error:\n%v\n", err))
-		}
-
-		err = file.Close()
-		if err != nil {
-			return errors.New(fmt.Sprintf("Can't close categories.json. Error:\n%v\n", err))
 		}
 
 		err = json.Unmarshal(dataRaw, &categories)
@@ -56,7 +50,7 @@ func ProcessLabels(opts *options.Opts, newtags []string) error {
 		return errors.New(fmt.Sprintf("Can't marshal categories. Error:\n%v\n", err))
 	}
 
-	err = ioutil.WriteFile(opts.Categories, newCategories, 0644)
+	err = os.WriteFile(opts.Categories, newCategories, 0644)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Can't write categories.json. Error:\n%v\n", err))
 	}

@@ -129,7 +129,7 @@ func TestJoin(t *testing.T) {
 			expected:  `..\..\testdir\my test file.txt`,
 		},
 		{
-			name:      "009 windows relative paths join. check normalize",
+			name:      "009 linux relative paths join. check normalize",
 			paths:     []string{`./testdir/../testdir/../testdir/./`, `my test file.txt`},
 			separator: `/`,
 			expected:  `testdir/my test file.txt`,

@@ -149,7 +149,7 @@ func HandleTorrentFilePath(transferStructure *TransferStructure, key string) {
 	}
 }
 
-// if we can find torrent file, we start check another locations from options search paths
+// FindTorrentFile if we can find torrent file, we start check another locations from options search paths
 func FindTorrentFile(transferStructure *TransferStructure) error {
 	if _, err := os.Stat(transferStructure.TorrentFilePath); os.IsNotExist(err) {
 		for _, searchPath := range transferStructure.Opts.SearchPaths {
