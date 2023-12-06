@@ -3,6 +3,11 @@ package transfer
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"io"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/internal/replace"
 	"github.com/rumanzo/bt2qbt/pkg/fileHelpers"
@@ -12,10 +17,6 @@ import (
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
-	"io"
-	"regexp"
-	"strings"
-	"time"
 )
 
 //goland:noinspection GoNameStartsWithPackageName
@@ -276,10 +277,19 @@ func (transfer *TransferStructure) HandleSavePaths() {
 		var nameNormalized bool
 		transfer.Fastresume.Name, nameNormalized = normalization.FullNormalize(transfer.TorrentFile.GetTorrentName())
 
+		if strings.ContainsAny(transfer.Fastresume.Name, "\u200e\u200f") {
+			nameNormalized = true
+		}
+
 		lastPathName := fileHelpers.Base(helpers.HandleCesu8(transfer.ResumeItem.Path))
 		// if FileList contain only 1 file that means it is single file torrent
 		if !transfer.TorrentFile.IsSingle() {
 			fileList, filesNormalized := transfer.TorrentFile.GetFileList()
+			for _, file := range fileList {
+				if strings.ContainsAny(file, "\u200e\u200f") {
+					filesNormalized = true
+				}
+			}
 
 			if lastPathName == transfer.Fastresume.Name && !filesNormalized && !nameNormalized {
 				transfer.Fastresume.QBtContentLayout = "Original"

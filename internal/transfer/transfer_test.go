@@ -1,6 +1,10 @@
 package transfer
 
 import (
+	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/r3labs/diff/v2"
 	_ "github.com/r3labs/diff/v2"
@@ -8,8 +12,6 @@ import (
 	"github.com/rumanzo/bt2qbt/pkg/qBittorrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/torrentStructures"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
-	"reflect"
-	"testing"
 )
 
 func TestTransferStructure_HandleSavePaths(t *testing.T) {
@@ -1684,6 +1686,37 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "047 Test torrent with multi file torrent with transfer to NoSubfolder RLF LRF symbols in torrent name and files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Path:    "D:\\test files \u200e\u200f",
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Name: "test files \u200e\u200f",
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{"file_with_emoji \u200e\u200f\xed\xa0\xbc\xed\xb6\x95.txt"}},
+							&torrentStructures.TorrentFile{Path: []string{"testdir_with_emoji_and_space \u200e\u200f\xed\xa0\xbc\xed\xb6\x95 ", "file_with/slash.txt"}},
+						},
+					},
+				},
+				Opts: &options.Opts{PathSeparator: `\`},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					QbtSavePath:      "D:/test files \u200e\u200f",
+					SavePath:         "D:\\test files \u200e\u200f",
+					Name:             "test files \u200e\u200f",
+					QBtContentLayout: `NoSubfolder`,
+					MappedFiles: []string{
+						"file_with_emoji \u200e\u200f\xf0\x9f\x86\x95.txt",
+						"testdir_with_emoji_and_space \u200e\u200f\xf0\x9f\x86\x95_\\file_with_slash.txt",
+					},
+				},
+			},
+		},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -1704,6 +1737,7 @@ func TestTransferStructure_HandleSavePaths(t *testing.T) {
 				t.Fatalf("Unexpected error: opts isn't equal:\nGot: %#v\nExpect %#v\nDiff: %v\n", testCase.newTransferStructure.Fastresume, testCase.expected.Fastresume, spew.Sdump(changes))
 			} else if equal && testCase.mustFail {
 				t.Fatalf("Unexpected error: structures are equal, but they shouldn't\nGot: %v\n", spew.Sdump(testCase.newTransferStructure.Fastresume))
+				fmt.Print("\u200e")
 			}
 		})
 	}
