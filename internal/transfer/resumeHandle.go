@@ -44,7 +44,7 @@ func HandleResumeItem(key string, transferStruct *TransferStructure, chans *Chan
 	// struct for work with
 	err = helpers.DecodeTorrentFile(transferStruct.TorrentFilePath, transferStruct.TorrentFile)
 	if err != nil {
-		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", transferStruct.TorrentFilePath, key)
+		chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for torrent %v with error %v", transferStruct.TorrentFilePath, key, err)
 		return err
 	}
 
@@ -52,7 +52,7 @@ func HandleResumeItem(key string, transferStruct *TransferStructure, chans *Chan
 	if !strings.HasPrefix(key, "magnet:?") {
 		err = helpers.DecodeTorrentFile(transferStruct.TorrentFilePath, &transferStruct.TorrentFileRaw)
 		if err != nil {
-			chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for %v", transferStruct.TorrentFilePath, key)
+			chans.ErrChannel <- fmt.Sprintf("Can't decode torrent file %v for torrent %v with error %v", transferStruct.TorrentFilePath, key, err)
 			return err
 		}
 	} else {

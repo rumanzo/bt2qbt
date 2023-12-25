@@ -4,7 +4,7 @@ type Torrent struct {
 	Announce       string                  `bencode:"announce"`
 	Comment        string                  `bencode:"comment"`
 	CreatedBy      string                  `bencode:"created by"`
-	CreationDate   int64                   `bencode:"creation date"`
+	CreationDate   interface{}             `bencode:"creation date"` // can't be string or int64
 	Info           *TorrentInfo            `bencode:"info"`
 	Publisher      string                  `bencode:"publisher,omitempty"`
 	PublisherUrl   string                  `bencode:"publisher-url,omitempty"`
