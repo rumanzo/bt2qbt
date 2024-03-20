@@ -85,28 +85,31 @@ func (transfer *TransferStructure) HandleCaption() {
 // HandleState transfer torrents state.
 // if torrent has several files, and it doesn't complete downloaded (priority), it will be stopped
 func (transfer *TransferStructure) HandleState() {
-	if transfer.ResumeItem.Started == 0 {
-		transfer.Fastresume.Paused = 1
-		transfer.Fastresume.AutoManaged = 0
-	} else {
-		if !transfer.TorrentFile.IsSingle() {
-			var parted bool
-			for _, prio := range transfer.Fastresume.FilePriority {
-				if prio == 0 {
-					parted = true
-					break
-				}
-			}
-			if parted {
-				transfer.Fastresume.Paused = 1
-				transfer.Fastresume.AutoManaged = 0
-				return
+	var parted bool = false
+	if !transfer.TorrentFile.IsSingle() {
+		for _, prio := range transfer.Fastresume.FilePriority {
+			if prio == 0 {
+				parted = true
+				break
 			}
 		}
-		transfer.Fastresume.Paused = 0
-		transfer.Fastresume.AutoManaged = 1
 	}
 
+	if transfer.ResumeItem.Started == 0 || parted {
+		transfer.Fastresume.Paused = 1
+	} else {
+		transfer.Fastresume.Paused = 0
+	}
+
+	if parted {
+		transfer.Fastresume.AutoManaged = 0 // incomplete torrents always should be stopped
+	} else {
+		if transfer.ResumeItem.Started == 0 || transfer.ResumeItem.Started == 2 { // just stoped or started completed torrents
+			transfer.Fastresume.AutoManaged = 1
+		} else { // should be 1 - forced
+			transfer.Fastresume.AutoManaged = 0
+		}
+	}
 }
 
 func (transfer *TransferStructure) HandleTotalDownloaded() {

@@ -2126,14 +2126,176 @@ func TestTransferStructure_HandleState(t *testing.T) {
 				},
 			},
 			expected: &TransferStructure{
-				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 1},
 			},
 		},
 		{
-			name: "003 started resume",
+			name: "003 forced started resume",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{Started: 1},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 0, AutoManaged: 0},
+			},
+		},
+		{
+			name: "004 force started resume with full downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 0, AutoManaged: 0},
+			},
+		},
+		{
+			name: "005 force started resume with parted downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
+				},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Paused:       1,
+					AutoManaged:  0,
+					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
+				},
+			},
+		},
+		{
+			name: "006 force started resume with prioritized parted downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
+				},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Paused:       1,
+					AutoManaged:  0,
+					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
+				},
+			},
+		},
+		{
+			name: "007 force started resume with prioritized complete downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 1, 1, 1, 1, 6, 6},
+				},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Paused:       0,
+					AutoManaged:  0,
+					FilePriority: []int64{1, 1, 1, 1, 1, 6, 6},
+				},
+			},
+		},
+		{
+			name: "008 force started resume with parted prioritized downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
+				},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 1,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Paused:       1,
+					AutoManaged:  0,
+					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
+				},
+			},
+		},
+		{
+			name: "009 started resume",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
+				ResumeItem: &utorrentStructs.ResumeItem{Started: 2},
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{},
 				},
@@ -2143,11 +2305,11 @@ func TestTransferStructure_HandleState(t *testing.T) {
 			},
 		},
 		{
-			name: "004 started resume with full downloaded files",
+			name: "010 started resume with fully downloaded files",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
-					Started: 1,
+					Started: 2,
 				},
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
@@ -2168,13 +2330,13 @@ func TestTransferStructure_HandleState(t *testing.T) {
 			},
 		},
 		{
-			name: "005 started resume with parted downloaded files",
+			name: "011 started resume with parted downloaded files",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
 					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
 				},
 				ResumeItem: &utorrentStructs.ResumeItem{
-					Started: 1,
+					Started: 2,
 				},
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
@@ -2199,13 +2361,13 @@ func TestTransferStructure_HandleState(t *testing.T) {
 			},
 		},
 		{
-			name: "006 started resume with parted downloaded files",
+			name: "012 started resume with prioritized parted downloaded files",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
 					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
 				},
 				ResumeItem: &utorrentStructs.ResumeItem{
-					Started: 1,
+					Started: 2,
 				},
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
@@ -2230,13 +2392,44 @@ func TestTransferStructure_HandleState(t *testing.T) {
 			},
 		},
 		{
-			name: "007 started resume with full downloaded files",
+			name: "013 started resume with prioritized complete downloaded files",
+			newTransferStructure: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					FilePriority: []int64{1, 1, 1, 1, 1, 6, 6},
+				},
+				ResumeItem: &utorrentStructs.ResumeItem{
+					Started: 2,
+				},
+				TorrentFile: &torrentStructures.Torrent{
+					Info: &torrentStructures.TorrentInfo{
+						Files: []*torrentStructures.TorrentFile{
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+							&torrentStructures.TorrentFile{Path: []string{`/`}},
+						},
+					},
+				},
+			},
+			expected: &TransferStructure{
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
+					Paused:       0,
+					AutoManaged:  1,
+					FilePriority: []int64{1, 1, 1, 1, 1, 6, 6},
+				},
+			},
+		},
+		{
+			name: "014 started resume with prioritized parted downloaded files",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
 					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
 				},
 				ResumeItem: &utorrentStructs.ResumeItem{
-					Started: 1,
+					Started: 2,
 				},
 				TorrentFile: &torrentStructures.Torrent{
 					Info: &torrentStructures.TorrentInfo{
@@ -2261,38 +2454,7 @@ func TestTransferStructure_HandleState(t *testing.T) {
 			},
 		},
 		{
-			name: "008 started resume with parted downloaded files",
-			newTransferStructure: &TransferStructure{
-				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
-				},
-				ResumeItem: &utorrentStructs.ResumeItem{
-					Started: 1,
-				},
-				TorrentFile: &torrentStructures.Torrent{
-					Info: &torrentStructures.TorrentInfo{
-						Files: []*torrentStructures.TorrentFile{
-							&torrentStructures.TorrentFile{Path: []string{`/`}},
-							&torrentStructures.TorrentFile{Path: []string{`/`}},
-							&torrentStructures.TorrentFile{Path: []string{`/`}},
-							&torrentStructures.TorrentFile{Path: []string{`/`}},
-							&torrentStructures.TorrentFile{Path: []string{`/`}},
-							&torrentStructures.TorrentFile{Path: []string{`/`}},
-							&torrentStructures.TorrentFile{Path: []string{`/`}},
-						},
-					},
-				},
-			},
-			expected: &TransferStructure{
-				Fastresume: &qBittorrentStructures.QBittorrentFastresume{
-					Paused:       1,
-					AutoManaged:  0,
-					FilePriority: []int64{1, 0, 1, 1, 1, 6, 6},
-				},
-			},
-		},
-		{
-			name: "009 started resume without files",
+			name: "015 started resume without files",
 			newTransferStructure: &TransferStructure{
 				Fastresume: &qBittorrentStructures.QBittorrentFastresume{},
 				ResumeItem: &utorrentStructs.ResumeItem{
@@ -2303,7 +2465,7 @@ func TestTransferStructure_HandleState(t *testing.T) {
 				},
 			},
 			expected: &TransferStructure{
-				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 0},
+				Fastresume: &qBittorrentStructures.QBittorrentFastresume{Paused: 1, AutoManaged: 1},
 			},
 		},
 	}
