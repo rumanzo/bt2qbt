@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path"
+	"runtime"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/rumanzo/bt2qbt/internal/options"
 	"github.com/rumanzo/bt2qbt/internal/transfer"
 	"github.com/rumanzo/bt2qbt/pkg/helpers"
 	"github.com/rumanzo/bt2qbt/pkg/utorrentStructs"
 	"github.com/zeebo/bencode"
-	"log"
-	"os"
-	"path"
-	"runtime"
-	"time"
 )
 
 var version, commit, date, buildImage string
@@ -21,8 +22,7 @@ func main() {
 	opts := options.MakeOpts()
 
 	if opts.Version {
-		date = time.Now().Format("2006-01-02 15:04:05")
-		fmt.Printf("Version: %v\nCommit: %v\nGolang version: %v\nBuild image: %v\nBuild date: %v\n", version, commit, runtime.Version(), buildImage, date)
+		fmt.Printf("Version: %v\nCommit: %v\nGolang version: %v\nBuild image: %v\n", version, commit, runtime.Version(), buildImage)
 		os.Exit(0)
 	}
 
