@@ -4,7 +4,8 @@
 
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
 > [!IMPORTANT]
-> Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2. It should work with older version utorrent and newer version of qBittorrent, but it isn't tested.
+> Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2. It should work with older version utorrent and newer version of qBittorrent, but it isn't tested.  
+> The `1.21` version is compatible with **Windows 7**. Please download newer `1.22+` or the: [1.20](https://github.com/rumanzo/bt2qbt/releases/tag/v1.20)  
 
 > [!IMPORTANT]
 > In most cases just enough run app. For Windows users double-click on downloaded exe file. But read notices and warnings below
@@ -36,10 +37,9 @@ Feature:
 > \* If you migrate from windows to linux and use replace function attention that multiple flags -r processing one by one
 
 > [!NOTE]
-> \* If you migrate from windows to linux and yours torrent files saves to some place you must use flag --search with actual paths in yours system
-
-> [!NOTE]
-> \* If you migrate from windows to linux you may need to define path separathor with --sep flag
+> \* If you migrate **from windows -> to linux**
+>    - If your torrent files are saved to some other place, you must use the flag: **--search** ... _with actual paths in yours system_
+>    - You may need to define **path separathor** with **--sep** flag
 
 > [!NOTE]
 > \*\* The calculation of the completed parts is based only on the priority of the files in torrent. Don't transfer global uTorrent/BitTorrent statistics.
@@ -48,10 +48,14 @@ Feature:
 > \*\*\* Partially downloaded torrents will be visible as 100% completed, but in fact you will need to do a recheck (right click on torrent -> Force recheck). Without recheck torrents not will be valid. This is due to the fact that conversion of .dat files in which parts of objects are stored is not implemented.
 
 > [!IMPORTANT]
-> Don't forget before use make backup bittorrent\utorrent, qbittorrent folder. and config %APPDATA%/Roaming/qBittorrent/qBittorrent.ini. Close all this program before.
->
+> Before using `bt2qbt`, do not forget to **make backup** from:
+>    - bittorrent\utorrent data, 
+>    - qbittorrent folder, and
+>    - config %APPDATA%/Roaming/qBittorrent/qBittorrent.ini.
+> Close both programs before making a copy!
+
 > [!IMPORTANT]
-> You must previously disable option "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files wouldn't be handled
+> You must previously disable option: "Append .!ut/.!bt to incomplete files" in preferences of uTorrent/Bittorrent, or that files wouldn't be handled
 
 Help:
 -------
@@ -60,7 +64,7 @@ Help (from cmd or powershell)
 
 ```
 Usage:
-  bt2qbt_v1.999_amd64.exe [OPTIONS]
+  bt2qbt_v1.99_amd64.exe [OPTIONS]
 
 Application Options:
   -s, --source=         Source directory that contains resume.dat and torrents files (default:
@@ -86,8 +90,9 @@ Application Options:
 Usage examples:
 ----------------
 
-- If you just run application, it will handle torrents from %APPDATA%\uTorrent\ to
-  %LOCALAPPDATA%\qBittorrent\BT_BACKUP\
+- If you just run the application with no options specified, it will convert torrents:
+    - from: `%APPDATA%\uTorrent\`  
+    - to: `%LOCALAPPDATA%\qBittorrent\BT_BACKUP\`  
 
 ```
 C:\Users\user\Downloads> .\bt2qbt.exe
