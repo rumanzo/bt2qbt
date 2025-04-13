@@ -5,10 +5,13 @@
 bt2qbt is cli tool for export from uTorrent\Bittorrent into qBittorrent (convert)
 > [!IMPORTANT]
 > Actual version tested with uTorrent 3.5.5 (build 46206) and qBittorrent 4.4.2. It should work with older version utorrent and newer version of qBittorrent, but it isn't tested.  
-> The `1.21` version is compatible with **Windows 7**. Please download newer `1.22+` or the: [1.20](https://github.com/rumanzo/bt2qbt/releases/tag/v1.20)  
 
 > [!IMPORTANT]
 > In most cases just enough run app. For Windows users double-click on downloaded exe file. But read notices and warnings below
+>
+
+> [!IMPORTANT]
+> For new qBittorrent 5.X+ check that it use fastresume files before you migrate. Preferences -> Advanced -> Resume data storage type -> Fastresume files
 > 
 - [bt2qbt](#bt2qbt)
     - [Feature](#user-content-feature)
