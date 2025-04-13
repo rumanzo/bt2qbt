@@ -10,6 +10,9 @@ var ProhibitedSymbolsStrict = regexp.MustCompilePOSIX(`[\\/:*?"<>|]`)
 
 func NormalizeSpaceEnding(str string) (string, bool) {
 	var normalized bool
+	if len(str) == 0 {
+		return str, true
+	}
 	if string(str[len(str)-1]) == ` ` {
 		str = str[:len(str)-1] + `_`
 		normalized = true
